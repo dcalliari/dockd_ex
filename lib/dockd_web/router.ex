@@ -17,7 +17,7 @@ defmodule DockdWeb.Router do
   scope "/", DockdWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", CatalogLive, :index
   end
 
   scope "/api/v1", DockdWeb do
