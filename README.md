@@ -2,7 +2,7 @@
 
 > Biblioteca, backlog e planejador de compras para jogos Nintendo Switch e Switch 2.
 
-[![Elixir](https://img.shields.io/badge/Elixir-1.17%2B-4B275F?logo=elixir&logoColor=white)](https://elixir-lang.org/) [![Phoenix](https://img.shields.io/badge/Phoenix-1.8.13-FD4F00?logo=phoenixframework&logoColor=white)](https://www.phoenixframework.org/)
+[![Elixir](https://img.shields.io/badge/Elixir-1.17%2B-4B275F?logo=elixir&logoColor=white)](https://elixir-lang.org/) [![Phoenix](https://img.shields.io/badge/Phoenix-1.8.13-FD4F00?logo=phoenixframework&logoColor=white)](https://www.phoenixframework.org/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Dockd parte de uma ideia simples: o problema não é ter mais uma lista de jogos. É decidir **o que comprar, quando comprar e por quê**. O planejador é o centro do produto; biblioteca e backlog existem para dar contexto financeiro e de calendário a essa decisão. Jogos parados também precisam aparecer como um argumento honesto contra a próxima compra.
 
@@ -174,4 +174,4 @@ Coleções, feedback explícito de recomendações e histórico completo de pre�
 
 ## Licença
 
-A licença do projeto ainda não foi definida.
+O Dockd é distribuído sob a licença [MIT](LICENSE).

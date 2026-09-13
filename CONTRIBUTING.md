@@ -7,4 +7,4 @@ Obrigado por contribuir com o Dockd. Antes de abrir uma mudança:
 3. Mantenha mudanças pequenas, cobertas por testes e compatíveis com Elixir e Phoenix suportados.
 4. Execute `mix precommit` antes de enviar o pull request.
 
-Descreva no pull request o problema, a solução, como validar e eventuais decisões de produto. Alterações de banco devem incluir migração e testes apropriados. Nunca envie credenciais, arquivos `.env` ou dados pessoais.
+Descreva no pull request o problema, a solução, como validar e eventuais decisões de produto. Alterações de banco devem incluir migração e testes apropriados. Nunca envie credenciais, arquivos `.env` ou dados pessoais. Ao contribuir, você aceita que sua contribuição seja distribuída sob a licença MIT.
