@@ -20,6 +20,7 @@ services:
       DOCKD_DB_PASSWORD: ${POSTGRES_PASSWORD:-dockd}
       DOCKD_DB_HOST: db
       MIX_ENV: dev
+      DOCKD_BIND_ALL: "true"
     depends_on:
       db:
         condition: service_healthy
