@@ -2,12 +2,20 @@ defmodule Dockd.Repo.Migrations.CreateCatalogGamesAndReleases do
   use Ecto.Migration
 
   def change do
-    create enum(:game_availability, [:nintendo_exclusive, :switch2_exclusive, :multiplatform])
-    create enum(:game_pace, [:relaxing, :normal, :demanding])
-    create enum(:game_play_mode, [:solo, :multi, :both])
-    create enum(:release_platform, [:switch, :switch_2])
+    execute "CREATE TYPE game_availability AS ENUM ('nintendo_exclusive', 'switch2_exclusive', 'multiplatform')",
+            "DROP TYPE game_availability"
 
-    create table(:games) do
+    execute "CREATE TYPE game_pace AS ENUM ('relaxing', 'normal', 'demanding')",
+            "DROP TYPE game_pace"
+
+    execute "CREATE TYPE game_play_mode AS ENUM ('solo', 'multi', 'both')",
+            "DROP TYPE game_play_mode"
+
+    execute "CREATE TYPE release_platform AS ENUM ('switch', 'switch_2')",
+            "DROP TYPE release_platform"
+
+    create table(:games, primary_key: false) do
+      add :id, :binary_id, primary_key: true
       add :title, :text, null: false
       add :slug, :text, null: false
       add :cover_url, :text
@@ -23,7 +31,8 @@ defmodule Dockd.Repo.Migrations.CreateCatalogGamesAndReleases do
 
     create unique_index(:games, [:slug])
 
-    create table(:releases) do
+    create table(:releases, primary_key: false) do
+      add :id, :binary_id, primary_key: true
       add :game_id, references(:games, type: :binary_id, on_delete: :delete_all), null: false
       add :platform, :release_platform, null: false
       add :edition, :text

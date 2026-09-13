@@ -2,6 +2,7 @@ defmodule Dockd.Catalog.Release do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
   schema "releases" do
     field :platform, Ecto.Enum, values: [:switch, :switch_2]
     field :edition, :string
@@ -9,7 +10,7 @@ defmodule Dockd.Catalog.Release do
     field :physical_available, :boolean, default: false
     field :digital_available, :boolean, default: false
     field :physical_is_key_card, :boolean
-    belongs_to :game, Dockd.Catalog.Game
+    belongs_to :game, Dockd.Catalog.Game, type: :binary_id
     timestamps(type: :utc_datetime_usec)
   end
 

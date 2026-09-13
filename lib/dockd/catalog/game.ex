@@ -4,6 +4,7 @@ defmodule Dockd.Catalog.Game do
 
   @availability_values [:nintendo_exclusive, :switch2_exclusive, :multiplatform]
 
+  @primary_key {:id, :binary_id, autogenerate: true}
   schema "games" do
     field :title, :string
     field :slug, :string
