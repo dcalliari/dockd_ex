@@ -23,7 +23,8 @@ config :dockd, Dockd.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-bind_ip = if System.get_env("DOCKD_BIND_ALL") in ~w(true 1), do: {0, 0, 0, 0}, else: {127, 0, 0, 1}
+bind_ip =
+  if System.get_env("DOCKD_BIND_ALL") in ~w(true 1), do: {0, 0, 0, 0}, else: {127, 0, 0, 1}
 
 config :dockd, DockdWeb.Endpoint,
   http: [ip: bind_ip],
