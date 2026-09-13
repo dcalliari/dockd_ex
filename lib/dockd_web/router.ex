@@ -20,10 +20,13 @@ defmodule DockdWeb.Router do
     get "/", PageController, :home
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", DockdWeb do
-  #   pipe_through :api
-  # end
+  scope "/api/v1", DockdWeb do
+    pipe_through :api
+
+    resources "/games", GameController, only: [:index, :show, :create, :update] do
+      resources "/releases", ReleaseController, only: [:index, :show, :create, :update]
+    end
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:dockd, :dev_routes) do
