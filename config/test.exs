@@ -7,15 +7,16 @@ import Config
 # Run `mix help test` for more information.
 # Mesmo papel do ambiente de desenvolvimento. Senha fora do repositorio.
 config :dockd, Dockd.Repo,
-  username: "dockd",
+  username: System.get_env("DOCKD_DB_USER", "dockd"),
   password:
     System.get_env("DOCKD_DB_PASSWORD") ||
       raise("""
       DOCKD_DB_PASSWORD nao definida.
       A credencial do papel dockd esta guardada fora do repositorio.
       """),
-  hostname: "localhost",
-  database: "dockd_test#{System.get_env("MIX_TEST_PARTITION")}",
+  hostname: System.get_env("DOCKD_DB_HOST", "localhost"),
+  port: String.to_integer(System.get_env("DOCKD_DB_PORT", "5432")),
+  database: System.get_env("DOCKD_DB_NAME", "dockd_test#{System.get_env("MIX_TEST_PARTITION")}"),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 

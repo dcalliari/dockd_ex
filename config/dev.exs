@@ -11,6 +11,7 @@ config :dockd, Dockd.Repo,
       A credencial do banco esta guardada fora do repositorio.
       """),
   hostname: System.get_env("DOCKD_DB_HOST", "localhost"),
+  port: String.to_integer(System.get_env("DOCKD_DB_PORT", "5432")),
   database: System.get_env("DOCKD_DB_NAME", "dockd_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
