@@ -1,8 +1,7 @@
 import Config
 
 # Configure your database
-# Usa o Postgres que ja roda no laboratorio, com papel proprio do projeto.
-# A senha NAO e versionada: vem de DOCKD_DB_PASSWORD.
+# A senha nao e versionada: vem de DOCKD_DB_PASSWORD.
 config :dockd, Dockd.Repo,
   username: "dockd",
   password:

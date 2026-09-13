@@ -5,7 +5,7 @@ import Config
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-# Mesmo papel do dev, no Postgres do laboratorio. Senha fora do repositorio.
+# Mesmo papel do ambiente de desenvolvimento. Senha fora do repositorio.
 config :dockd, Dockd.Repo,
   username: "dockd",
   password:
