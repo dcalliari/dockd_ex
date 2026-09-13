@@ -20,6 +20,10 @@ defmodule DockdWeb.Router do
     live "/", CatalogLive, :index
   end
 
+  scope "/" do
+    get "/health", DockdWeb.HealthController, :show
+  end
+
   scope "/api/v1", DockdWeb do
     pipe_through :api
 

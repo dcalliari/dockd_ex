@@ -1,0 +1,19 @@
+services:
+  app:
+    environment:
+      PHX_HOST: ${PHX_HOST:?set PHX_HOST}
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE}
+      PHX_SERVER: "true"
+    networks:
+      shared:
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.dockd.rule: "Host(`${PHX_HOST}`)"
+      traefik.http.routers.dockd.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
+      traefik.http.routers.dockd.tls: "true"
+      traefik.http.services.dockd.loadbalancer.server.port: "4000"
+networks:
+  shared:
+    external: true
+    name: ${TRAEFIK_NETWORK:?set TRAEFIK_NETWORK}

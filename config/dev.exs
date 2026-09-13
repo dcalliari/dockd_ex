@@ -3,15 +3,15 @@ import Config
 # Configure your database
 # A senha nao e versionada: vem de DOCKD_DB_PASSWORD.
 config :dockd, Dockd.Repo,
-  username: "dockd",
+  username: System.get_env("DOCKD_DB_USER", "dockd"),
   password:
     System.get_env("DOCKD_DB_PASSWORD") ||
       raise("""
       DOCKD_DB_PASSWORD nao definida.
-      A credencial do papel dockd esta guardada fora do repositorio.
+      A credencial do banco esta guardada fora do repositorio.
       """),
-  hostname: "localhost",
-  database: "dockd_dev",
+  hostname: System.get_env("DOCKD_DB_HOST", "localhost"),
+  database: System.get_env("DOCKD_DB_NAME", "dockd_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

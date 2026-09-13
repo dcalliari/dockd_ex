@@ -113,23 +113,33 @@ As versões efetivamente resolvidas estão em [`mix.lock`](mix.lock); as restri�
 
 ### Pré-requisitos
 
-- Elixir compatível com `~> 1.17` e Erlang/OTP correspondente.
-- PostgreSQL disponível localmente.
-- Node.js não é necessário para o fluxo padrão de assets: os binários são instalados pelas tarefas do projeto.
+Para o caminho nativo, instale [mise](https://mise.jdx.dev/), que seleciona as versões definidas em [`.tool-versions`](.tool-versions), e tenha PostgreSQL disponível.
 
 ### Configuração local
 
-A configuração de desenvolvimento usa PostgreSQL local e exige a variável `DOCKD_DB_PASSWORD`. O banco e o usuário esperados podem ser ajustados em `config/dev.exs` para o seu ambiente. Não coloque credenciais no repositório.
+A forma mais rápida, sem instalar Elixir ou PostgreSQL, é:
 
 ```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Abra <http://localhost:4000>. Esse compose cria um PostgreSQL próprio e inicializa o banco junto com a aplicação. Os volumes podem ser removidos com `docker compose down -v`.
+
+No caminho nativo:
+
+```bash
+cp .env.example .env
 export DOCKD_DB_PASSWORD='sua-senha-local'
 mix setup
 mix phx.server
 ```
 
-Abra <http://localhost:4000>. Para desenvolvimento, `mix setup` instala dependências, cria e migra o banco, instala os binários de assets e compila CSS e JavaScript.
+`mix setup` instala dependências, cria e migra o banco, instala os binários de assets e compila CSS e JavaScript. O [Makefile](Makefile) reúne atalhos para setup, desenvolvimento, testes, lint, formatação, banco e Docker.
 
-Em produção, a configuração usa `DATABASE_URL` e `SECRET_KEY_BASE`. As opções `PORT`, `PHX_HOST`, `POOL_SIZE` e `ECTO_IPV6` também são lidas em runtime quando aplicável. Consulte [`config/runtime.exs`](config/runtime.exs) para o contrato completo, sem versionar valores sensíveis.
+Para usar um proxy reverso, copie `.env.example`, preencha `PHX_HOST`, `DATABASE_URL`, `SECRET_KEY_BASE`, `TRAEFIK_NETWORK` e `TRAEFIK_ENTRYPOINT`, e execute `docker compose -f docker-compose.yml -f compose.traefik.yml up --build`. O overlay não cria a rede externa: ela deve existir no ambiente escolhido.
+
+Em produção, `DATABASE_URL` e `SECRET_KEY_BASE` são obrigatórios. `PORT`, `PHX_HOST`, `POOL_SIZE` e `ECTO_IPV6` também são lidos em runtime. Migrações de release podem ser executadas com `bin/migrate` dentro da imagem.
 
 ### Testes e validações
 
@@ -138,7 +148,7 @@ mix test
 mix precommit
 ```
 
-`mix test` prepara o banco de teste e executa a suíte. `mix precommit` compila com warnings tratados como erro, remove dependências não utilizadas, formata o código e executa os testes.
+`mix precommit` compila com warnings tratados como erro, verifica formatação, executa Credo em modo estrito e roda os testes.
 
 ## Roadmap
 

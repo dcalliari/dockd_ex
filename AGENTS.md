@@ -447,3 +447,11 @@ And **never** do this:
 <!-- phoenix:liveview-end -->
 
 <!-- usage-rules-end -->
+
+## Operação local
+
+Os caminhos suportados estão documentados no [README](README.md). Use `mix setup` e `mix phx.server` para desenvolvimento nativo, ou `docker compose up --build` para o ambiente autocontido. O overlay `compose.traefik.yml` adiciona o proxy reverso a uma rede externa.
+
+Variáveis relevantes: `DOCKD_DB_PASSWORD`, `DOCKD_DB_USER`, `DOCKD_DB_HOST`, `DOCKD_DB_NAME`, `DATABASE_URL`, `SECRET_KEY_BASE`, `PHX_HOST`, `TRAEFIK_NETWORK` e `TRAEFIK_ENTRYPOINT`. Os nomes e exemplos ficam em [`.env.example`](.env.example); valores locais ficam em `.env`.
+
+Valide mudanças com `mix precommit`. O [Makefile](Makefile) oferece atalhos equivalentes e o `Dockerfile` define a imagem de release.

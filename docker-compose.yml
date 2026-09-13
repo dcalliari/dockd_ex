@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dockd}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dockd}
+      POSTGRES_DB: ${POSTGRES_DB:-dockd_dev}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dockd} -d ${POSTGRES_DB:-dockd_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - dockd_db_data:/var/lib/postgresql/data
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      DOCKD_DB_PASSWORD: ${POSTGRES_PASSWORD:-dockd}
+      DOCKD_DB_HOST: db
+      MIX_ENV: dev
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "mix setup && mix phx.server"
+    volumes:
+      - .:/app
+      - dockd_deps:/app/deps
+      - dockd_build:/app/_build
+    ports:
+      - "${APP_PORT:-4000}:4000"
+volumes:
+  dockd_db_data:
+  dockd_deps:
+  dockd_build:

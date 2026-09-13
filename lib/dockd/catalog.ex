@@ -1,4 +1,5 @@
 defmodule Dockd.Catalog do
+  @moduledoc false
   import Ecto.Query
   alias Dockd.Catalog.{Game, Release}
   alias Dockd.Repo

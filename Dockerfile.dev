@@ -1,0 +1,9 @@
+FROM hexpm/elixir:1.18.3-erlang-27.3.4.2-debian-bookworm
+RUN apt-get update && apt-get install -y --no-install-recommends git inotify-tools npm && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+ENV MIX_ENV=dev
+RUN mix local.hex --force && mix local.rebar --force
+COPY mix.exs mix.lock ./
+RUN mix deps.get
+COPY . .
+CMD ["mix", "phx.server"]

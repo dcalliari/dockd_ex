@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+
+exec /app/bin/dockd eval 'Dockd.Release.migrate()'

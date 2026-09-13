@@ -1,0 +1,7 @@
+.git
+_build
+deps
+.env
+*.log
+priv/static/assets
+priv/static/cache_manifest.json
