@@ -29,8 +29,6 @@ defmodule DockdWeb.PlannerWalletLiveTest do
     assert Dockd.Wallet.get_balance(user, :eshop).amount_cents == 12_345
     assert Process.alive?(view.pid)
 
-    view |> element("#new-reservation-button") |> render_click()
-
     view
     |> element("#reservation-form")
     |> render_submit(%{
@@ -50,6 +48,7 @@ defmodule DockdWeb.PlannerWalletLiveTest do
   test "wallet creates edits and deletes a reservation and edits balance", %{conn: conn} do
     game = Dockd.DomainFixtures.game_fixture(%{title: "Reserved game"})
     user = Dockd.Accounts.default_owner()
+    {:ok, _entry} = Dockd.Library.create_entry(user, %{game_id: game.id})
     {:ok, view, _html} = live(conn, "/carteira")
 
     view
@@ -57,8 +56,6 @@ defmodule DockdWeb.PlannerWalletLiveTest do
     |> render_submit()
 
     assert Dockd.Wallet.get_balance(user, :eshop).amount_cents == 12_345
-
-    view |> element("#new-reservation-button") |> render_click()
 
     view
     |> form("#reservation-form",
@@ -70,17 +67,15 @@ defmodule DockdWeb.PlannerWalletLiveTest do
     assert reservation.amount_cents == 5_000
     assert has_element?(view, "#reservation-#{reservation.id}")
 
-    view |> element("#reservation-#{reservation.id} button", "Editar") |> render_click()
-
     view
-    |> form("#reservation-form",
+    |> form("#reservation-form-#{reservation.id}",
       balance_reservation: %{game_id: game.id, amount_cents: "60,00", note: "Atualizada"}
     )
     |> render_submit()
 
     assert Dockd.Wallet.get_reservation!(user, reservation.id).amount_cents == 6_000
 
-    view |> element("#reservation-#{reservation.id} button", "Excluir") |> render_click()
+    view |> element("#delete-reservation-#{reservation.id}") |> render_click()
     refute has_element?(view, "#reservation-#{reservation.id}")
   end
 end

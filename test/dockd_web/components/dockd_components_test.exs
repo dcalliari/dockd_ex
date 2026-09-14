@@ -3,19 +3,6 @@ defmodule DockdWeb.DockdComponentsTest do
 
   import Phoenix.LiveViewTest
 
-  test "money card preserves its public attributes" do
-    html =
-      render_component(&DockdWeb.DockdComponents.money_card/1, %{
-        label: "Disponível",
-        value: 19_990,
-        currency: "BRL"
-      })
-
-    assert html =~ "Disponível"
-    assert html =~ "R$ 199,90"
-    assert html =~ "tabular-nums"
-  end
-
   test "parses Brazilian money inputs" do
     assert DockdWeb.DockdComponents.parse_money("199,90") == {:ok, 19_990}
     assert DockdWeb.DockdComponents.parse_money("199.90") == {:ok, 19_990}

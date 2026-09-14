@@ -140,39 +140,6 @@ defmodule DockdWeb.DockdComponents do
     """
   end
 
-  @doc "Renders a financial metric card."
-  attr :label, :string, required: true
-  attr :value, :integer, required: true
-  attr :currency, :string, default: "BRL"
-  attr :detail, :string, default: nil
-  attr :tone, :string, default: "primary"
-
-  def money_card(assigns) do
-    ~H"""
-    <article class="rounded-2xl bg-neutral p-5 text-neutral-content shadow-sm sm:p-6">
-      <p class="text-sm opacity-70">{@label}</p><p class={[
-        "mt-4 text-3xl font-black tabular-nums text-neutral-content"
-      ]}>
-        {money(@value, @currency)}
-      </p><p :if={@detail} class="mt-2 text-sm opacity-70">{@detail}</p>
-    </article>
-    """
-  end
-
-  @doc "Renders a compact stat card."
-  attr :label, :string, required: true
-  attr :value, :string, required: true
-  attr :detail, :string, default: nil
-
-  def stat_card(assigns),
-    do: ~H"""
-    <article class="rounded-2xl border border-base-content/10 bg-base-100 p-5">
-      <p class="text-sm text-base-content/60">{@label}</p><p class="mt-3 text-3xl font-black tabular-nums">
-        {@value}
-      </p><p :if={@detail} class="mt-2 text-sm text-base-content/60">{@detail}</p>
-    </article>
-    """
-
   @doc "Converts domain enum values to Portuguese labels for the interface."
   def enum_label(value) when is_atom(value), do: enum_label(Atom.to_string(value))
   def enum_label("nintendo_exclusive"), do: "Exclusivo Nintendo"
@@ -206,6 +173,11 @@ defmodule DockdWeb.DockdComponents do
   def enum_label("borrowed"), do: "Emprestado"
   def enum_label("reserve"), do: "Reservar"
   def enum_label("can_wait"), do: "Pode esperar"
+  def enum_label("relaxing"), do: "Relaxante"
+  def enum_label("demanding"), do: "Exigente"
+  def enum_label("solo"), do: "Solo"
+  def enum_label("multi"), do: "Multijogador"
+  def enum_label("both"), do: "Solo e multi"
 
   def enum_label(value) when is_binary(value),
     do: value |> String.replace("_", " ") |> String.capitalize()
@@ -361,9 +333,8 @@ defmodule DockdWeb.DockdComponents do
       <%= if @cover_url && @cover_url != "" do %>
         <img src={@cover_url} alt={@title} class="h-full w-full object-cover" loading="lazy" />
       <% else %>
-        <div class="flex h-full flex-col justify-between bg-gradient-to-br from-primary/20 via-base-200 to-neutral/20 p-4">
-          <span class="text-xs font-bold uppercase tracking-[.18em] text-primary">dockd</span>
-          <span class="display text-4xl font-black leading-none text-base-content/75">{@initials}</span>
+        <div class="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 via-base-200 to-neutral/20 p-3">
+          <span class="display text-[clamp(1.5rem,8vw,3.5rem)] font-black leading-none text-base-content/75">{@initials}</span>
         </div>
       <% end %>
     </div>

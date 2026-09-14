@@ -1,6 +1,7 @@
 defmodule DockdWeb.WalletLive do
   use DockdWeb, :live_view
   alias Dockd.Accounts
+  alias Dockd.Library
   alias Dockd.Wallet
   alias Dockd.Wallet.{BalanceReservation, StoreBalance}
 
@@ -82,6 +83,7 @@ defmodule DockdWeb.WalletLive do
       owner: owner,
       balance: balance,
       reservations: Wallet.list_reservations(owner),
+      games: owner |> Library.list_entries() |> Enum.map(& &1.game),
       balance_form: to_form(Ecto.Changeset.change(balance)),
       reservation_form: to_form(Ecto.Changeset.change(%BalanceReservation{}))
     )

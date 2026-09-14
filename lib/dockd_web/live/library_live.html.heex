@@ -36,28 +36,6 @@
         label="Buscar"
         value={@filters["search"] || ""}
       />
-      <.input
-        field={to_form(@filters, as: :filters)[:backlog]}
-        name="backlog"
-        type="select"
-        label="Backlog"
-        options={[{"Todos", ""}, {"Backlog", "backlog"}, {"Ativo", "active"}, {"Fora", "no"}]}
-        value={@filters["backlog"] || ""}
-      />
-      <.input
-        field={to_form(@filters, as: :filters)[:play_state]}
-        name="play_state"
-        type="select"
-        label="Estado"
-        options={[
-          {"Todos", ""},
-          {"Jogando", "playing"},
-          {"Não iniciado", "unplayed"},
-          {"Terminado", "finished"},
-          {"Abandonado", "abandoned"}
-        ]}
-        value={@filters["play_state"] || ""}
-      />
     </.form>
 
     <div

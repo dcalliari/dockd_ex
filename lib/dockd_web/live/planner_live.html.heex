@@ -20,11 +20,6 @@
           {money(@summary.money.spent_month_cents, @summary.money.currency)}
         </p>
       </div>
-      <div>
-        <p class="text-xs text-base-content/60">Não jogados</p><p class="mt-1 font-bold tabular-nums">
-          {length(@summary.backlog)}
-        </p>
-      </div>
     </section>
     <div class="grid gap-8 lg:grid-cols-[1.2fr_.8fr]">
       <section>
@@ -59,7 +54,7 @@
         <h2 class="text-xl font-bold">Backlog</h2><.link
           navigate="/biblioteca"
           class="mt-2 inline-flex items-baseline gap-2 hover:text-primary"
-        ><span class="text-3xl font-black">{length(@summary.backlog)}</span><span class="text-sm text-base-content/60">jogos para jogar</span></.link><ul class="mt-5 divide-y divide-base-content/10">
+        ><span class="text-3xl font-black">{length(@summary.backlog)}</span><span class="text-sm text-base-content/60">no backlog</span></.link><ul class="mt-5 divide-y divide-base-content/10">
           <%= for item <- Enum.take(@summary.backlog, 5) do %>
             <li>
               <.link
