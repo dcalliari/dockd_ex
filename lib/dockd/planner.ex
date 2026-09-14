@@ -80,7 +80,8 @@ defmodule Dockd.Planner do
           select: %{entry: e, game: g}
       )
 
-    Enum.map(entries, fn item ->
+    entries
+    |> Enum.map(fn item ->
       Map.put(
         item,
         :oldest_at,
@@ -94,6 +95,9 @@ defmodule Dockd.Planner do
             select: event.occurred_at
         )
       )
+    end)
+    |> Enum.sort_by(&(&1.oldest_at || ~U[9999-12-31 00:00:00Z]), fn a, b ->
+      DateTime.compare(a, b) != :gt
     end)
   end
 end
