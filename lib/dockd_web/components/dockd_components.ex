@@ -69,7 +69,9 @@ defmodule DockdWeb.DockdComponents do
 
   @doc """Renders the Dockd wordmark."""
   def brand(assigns) do
-    ~H"""<a href="/catalogo" class="display text-2xl font-black tracking-tight">dockd<span class="text-primary">.</span></a>"""
+    ~H"""
+<a href="/catalogo" class="display text-2xl font-black tracking-tight">dockd<span class="text-primary">.</span></a>
+"""
   end
 
   @doc """Renders a compact theme switcher."""
@@ -107,7 +109,9 @@ defmodule DockdWeb.DockdComponents do
   slot :inner_block, required: true
 
   def section_card(assigns) do
-    ~H"""<section class={["rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm sm:p-6", @class]}><h2 class="text-lg font-bold">{@title}</h2><div class="mt-5">{render_slot(@inner_block)}</div></section>"""
+    ~H"""
+<section class={["rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm sm:p-6", @class]}><h2 class="text-lg font-bold">{@title}</h2><div class="mt-5">{render_slot(@inner_block)}</div></section>
+"""
   end
 
   @doc """Renders a financial metric card."""
@@ -118,21 +122,27 @@ defmodule DockdWeb.DockdComponents do
   attr :tone, :string, default: "primary"
 
   def money_card(assigns) do
-    ~H"""<article class="rounded-2xl bg-neutral p-5 text-neutral-content shadow-sm sm:p-6"><p class="text-sm opacity-70">{@label}</p><p class={["mt-4 text-3xl font-black tabular-nums", @tone == "primary" && "text-primary-content"]}>{money(@value, @currency)}</p><p :if={@detail} class="mt-2 text-sm opacity-70">{@detail}</p></article>"""
+    ~H"""
+<article class="rounded-2xl bg-neutral p-5 text-neutral-content shadow-sm sm:p-6"><p class="text-sm opacity-70">{@label}</p><p class={["mt-4 text-3xl font-black tabular-nums", @tone == "primary" && "text-primary-content"]}>{money(@value, @currency)}</p><p :if={@detail} class="mt-2 text-sm opacity-70">{@detail}</p></article>
+"""
   end
 
   @doc """Renders a compact stat card."""
   attr :label, :string, required: true
   attr :value, :string, required: true
   attr :detail, :string, default: nil
-  def stat_card(assigns), do: ~H"""<article class="rounded-2xl border border-base-content/10 bg-base-100 p-5"><p class="text-sm text-base-content/60">{@label}</p><p class="mt-3 text-3xl font-black tabular-nums">{@value}</p><p :if={@detail} class="mt-2 text-sm text-base-content/60">{@detail}</p></article>"""
+  def stat_card(assigns), do: ~H"""
+<article class="rounded-2xl border border-base-content/10 bg-base-100 p-5"><p class="text-sm text-base-content/60">{@label}</p><p class="mt-3 text-3xl font-black tabular-nums">{@value}</p><p :if={@detail} class="mt-2 text-sm text-base-content/60">{@detail}</p></article>
+"""
 
   @doc """Renders a platform badge."""
   attr :platform, :atom, required: true
   def platform_badge(assigns) do
     label = if assigns.platform in [:switch_2, :switch2], do: "Switch 2", else: "Switch"
     assigns = assign(assigns, :label, label)
-    ~H"""<span class="badge badge-neutral">{@label}</span>"""
+    ~H"""
+<span class="badge badge-neutral">{@label}</span>
+"""
   end
 
   @doc """Renders a media format badge."""
@@ -140,38 +150,50 @@ defmodule DockdWeb.DockdComponents do
   def media_badge(assigns) do
     label = %{physical: "físico", digital: "digital", key_card: "key-card"} |> Map.get(assigns.media, to_string(assigns.media))
     assigns = assign(assigns, :label, label)
-    ~H"""<span class="badge badge-outline">{@label}</span>"""
+    ~H"""
+<span class="badge badge-outline">{@label}</span>
+"""
   end
 
   @doc """Renders a status chip with an intent tone."""
   attr :label, :string, required: true
   attr :tone, :string, default: "neutral", values: ~w(primary secondary success warning error info neutral)
-  def status_chip(assigns), do: ~H"""<span class={["badge", "badge-#{@tone}"]}>{@label}</span>"""
+  def status_chip(assigns), do: ~H"""
+<span class={["badge", "badge-#{@tone}"]}>{@label}</span>
+"""
 
   @doc """Renders a dated value and marks old observations."""
   attr :value, :integer, required: true
   attr :currency, :string, default: "BRL"
   attr :observed_at, :any, required: true
   attr :stale, :boolean, default: false
-  def dated_value(assigns), do: ~H"""<div><p class={["font-bold tabular-nums", @stale && "text-error"]}>{money(@value, @currency)}</p><p class="text-xs text-base-content/60">observado em {date_pt_br(@observed_at)} <span :if={@stale} class="font-semibold text-error">· desatualizado</span></p></div>"""
+  def dated_value(assigns), do: ~H"""
+<div><p class={["font-bold tabular-nums", @stale && "text-error"]}>{money(@value, @currency)}</p><p class="text-xs text-base-content/60">observado em {date_pt_br(@observed_at)} <span :if={@stale} class="font-semibold text-error">· desatualizado</span></p></div>
+"""
 
   @doc """Renders one release in a date ordered calendar."""
   attr :title, :string, required: true
   attr :date, :any, required: true
   attr :platform, :atom, required: true
   attr :media, :atom, required: true
-  def release_calendar_item(assigns), do: ~H"""<div class="flex min-w-0 items-center gap-3"><time class="w-14 shrink-0 rounded-xl bg-primary p-2 text-center text-primary-content"><b class="block text-lg">{Calendar.strftime(@date, "%d")}</b><small>{Calendar.strftime(@date, "%b") |> String.upcase()}</small></time><div class="min-w-0"><p class="truncate font-bold">{@title}</p><div class="mt-1 flex flex-wrap gap-1"><.platform_badge platform={@platform} /><.media_badge media={@media} /></div></div></div>"""
+  def release_calendar_item(assigns), do: ~H"""
+<div class="flex min-w-0 items-center gap-3"><time class="w-14 shrink-0 rounded-xl bg-primary p-2 text-center text-primary-content"><b class="block text-lg">{Calendar.strftime(@date, "%d")}</b><small>{Calendar.strftime(@date, "%b") |> String.upcase()}</small></time><div class="min-w-0"><p class="truncate font-bold">{@title}</p><div class="mt-1 flex flex-wrap gap-1"><.platform_badge platform={@platform} /><.media_badge media={@media} /></div></div></div>
+"""
 
   @doc """Renders the backlog pressure indicator."""
   attr :count, :integer, required: true
   attr :label, :string, default: "parados"
-  def backlog_pressure(assigns), do: ~H"""<div class="rounded-xl border-l-4 border-warning bg-warning/10 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2"><p class="text-2xl font-black tabular-nums">{@count} <span class="text-base font-normal">{@label}</span></p><.status_chip label="atenção" tone="warning" /></div><p class="mt-2 text-sm text-base-content/70">Antes de comprar, há jogos esperando sua vez.</p></div>"""
+  def backlog_pressure(assigns), do: ~H"""
+<div class="rounded-xl border-l-4 border-warning bg-warning/10 p-4"><div class="flex flex-wrap items-baseline justify-between gap-2"><p class="text-2xl font-black tabular-nums">{@count} <span class="text-base font-normal">{@label}</span></p><.status_chip label="atenção" tone="warning" /></div><p class="mt-2 text-sm text-base-content/70">Antes de comprar, há jogos esperando sua vez.</p></div>
+"""
 
   @doc """Renders an empty collection message."""
   attr :title, :string, required: true
   attr :description, :string, default: nil
   slot :action
-  def empty_state(assigns), do: ~H"""<div class="rounded-2xl border border-dashed border-base-content/20 p-8 text-center"><p class="font-bold">{@title}</p><p :if={@description} class="mt-2 text-sm text-base-content/60">{@description}</p><div :if={@action} class="mt-4">{render_slot(@action)}</div></div>"""
+  def empty_state(assigns), do: ~H"""
+<div class="rounded-2xl border border-dashed border-base-content/20 p-8 text-center"><p class="font-bold">{@title}</p><p :if={@description} class="mt-2 text-sm text-base-content/60">{@description}</p><div :if={@action} class="mt-4">{render_slot(@action)}</div></div>
+"""
 
   defp navigation, do: [%{label: "Catálogo", path: "/catalogo"}]
 
