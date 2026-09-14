@@ -72,6 +72,28 @@ defmodule Dockd.DomainTest do
     assert {:ok, _} = Library.delete_veto(user, veto)
   end
 
+  test "purchase ownership failure rolls back purchase and event", %{user: user, release: release} do
+    assert {:ok, _} =
+             Library.create_ownership(user, %{
+               release_id: release.id,
+               ownership_type: :digital,
+               acquired_at: DateTime.utc_now()
+             })
+
+    assert {:error, changeset} =
+             Purchasing.create_purchase(user, %{
+               release_id: release.id,
+               format: :digital,
+               price_cents: 100,
+               purchased_at: DateTime.utc_now(),
+               retailer: "eShop"
+             })
+
+    assert changeset.errors[:user_id]
+    assert Purchasing.list_purchases(user, release.id) == []
+    refute Enum.any?(Activity.list_events(user), &(&1.type == :purchased))
+  end
+
   test "purchase and veto append their event atomically", %{user: user, release: release} do
     assert {:ok, _} =
              Purchasing.create_purchase(user, %{

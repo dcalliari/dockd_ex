@@ -4,6 +4,7 @@ defmodule Dockd.Purchasing do
   import Ecto.Changeset
   alias Dockd.Accounts.User
   alias Dockd.Activity
+  alias Dockd.Library
   alias Dockd.Purchasing.PriceObservation
   alias Dockd.Purchasing.Purchase
   alias Dockd.Repo
@@ -44,6 +45,17 @@ defmodule Dockd.Purchasing do
       occurred_at: DateTime.utc_now(),
       payload: Map.new(attrs)
     })
+    |> then(fn multi ->
+      Library.append_ownership(
+        multi,
+        %User{id: user_id},
+        %{
+          release_id: attrs[:release_id],
+          ownership_type: attrs[:format],
+          acquired_at: attrs[:purchased_at]
+        }
+      )
+    end)
     |> Repo.transaction()
     |> result(:purchase)
   end
