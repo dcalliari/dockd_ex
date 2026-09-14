@@ -1,42 +1,31 @@
 services:
   db:
+    profiles: [local-db]
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-dockd}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dockd}
-      POSTGRES_DB: ${POSTGRES_DB:-dockd_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-dockd_prod}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dockd} -d ${POSTGRES_DB:-dockd_dev}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dockd} -d ${POSTGRES_DB:-dockd_prod}"]
       interval: 5s
       timeout: 5s
       retries: 10
-    networks:
-      shared:
+    networks: [shared]
     volumes:
       - dockd_traefik_db_data:/var/lib/postgresql/data
   app:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    command: sh -c "mix setup && mix phx.server"
+      dockerfile: Dockerfile
     environment:
-      DOCKD_DB_PASSWORD: ${POSTGRES_PASSWORD:-dockd}
-      DOCKD_DB_HOST: db
-      DOCKD_BIND_ALL: "true"
-      MIX_ENV: dev
+      MIX_ENV: prod
       PHX_HOST: ${PHX_HOST:?set PHX_HOST}
       DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE}
       PHX_SERVER: "true"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      shared:
-    volumes:
-      - .:/app
-      - dockd_traefik_deps:/app/deps
-      - dockd_traefik_build:/app/_build
+    command: sh -c "bin/migrate && exec bin/dockd start"
+    networks: [shared]
     labels:
       traefik.enable: "true"
       traefik.http.routers.dockd.rule: "Host(`${PHX_HOST}`)"
@@ -45,8 +34,6 @@ services:
       traefik.http.services.dockd.loadbalancer.server.port: "4000"
 volumes:
   dockd_traefik_db_data:
-  dockd_traefik_deps:
-  dockd_traefik_build:
 networks:
   shared:
     external: true

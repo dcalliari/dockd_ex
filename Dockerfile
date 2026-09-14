@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.17.3-erlang-27.1.2-debian-bookworm-20241016 AS build
+FROM hexpm/elixir:1.18.3-erlang-27.3.4.3-debian-bookworm-20250929 AS build
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV MIX_ENV=prod
