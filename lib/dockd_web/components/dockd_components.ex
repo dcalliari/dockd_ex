@@ -304,9 +304,11 @@ defmodule DockdWeb.DockdComponents do
     default: "neutral",
     values: ~w(primary secondary success warning error info neutral)
 
-  def status_chip(assigns),
+  def status_mark(assigns),
     do: ~H"""
-    <span class={["badge", "badge-#{@tone}"]}>{@label}</span>
+    <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-base-content/70">
+      <span class={["size-2 rounded-full", "bg-#{@tone}"]}></span>{@label}
+    </span>
     """
 
   @doc "Renders a dated value and marks old observations."
@@ -367,18 +369,6 @@ defmodule DockdWeb.DockdComponents do
     </div>
     """
   end
-
-  @doc "Renders the backlog pressure indicator."
-  attr :count, :integer, required: true
-  attr :label, :string, default: "parados"
-
-  def backlog_pressure(assigns),
-    do: ~H"""
-    <div class="flex items-baseline gap-2">
-      <span class="text-3xl font-black tabular-nums">{@count}</span>
-      <span class="text-sm text-base-content/60">{@label}</span>
-    </div>
-    """
 
   @doc "Renders an empty collection message."
   attr :title, :string, required: true

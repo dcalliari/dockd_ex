@@ -7,22 +7,26 @@
     </.page_header>
 
     <div class="flex flex-wrap gap-2">
-      <.status_chip label={enum_label(@game.availability)} tone="primary" />
-      <.status_chip
+      <.status_mark label={enum_label(@game.availability)} tone="primary" />
+      <.status_mark
         :if={@game.estimated_duration_minutes}
         label={"#{@game.estimated_duration_minutes} min"}
       />
-      <.status_chip :if={@game.pace} label={enum_label(@game.pace)} />
-      <.status_chip :if={@game.play_mode} label={enum_label(@game.play_mode)} />
+      <.status_mark :if={@game.pace} label={enum_label(@game.pace)} />
+      <.status_mark :if={@game.play_mode} label={enum_label(@game.play_mode)} />
     </div>
 
     <.section_card title="Minha entrada">
       <div :if={@entry} class="mb-5 flex flex-wrap gap-3 text-sm">
-        <.status_chip
-          label={"intenção: #{enum_label(@entry.purchase_intent || :none)}"}
+        <.status_mark
+          :if={@entry.purchase_intent not in [nil, :none]}
+          label={enum_label(@entry.purchase_intent)}
           tone="secondary"
         />
-        <.status_chip label={"estado: #{enum_label(@entry.play_state || :unplayed)}"} />
+        <.status_mark
+          :if={@entry.play_state not in [nil, :unplayed]}
+          label={enum_label(@entry.play_state)}
+        />
         <span :if={@entry.target_price_cents} class="font-semibold">Alvo: {money(
           @entry.target_price_cents,
           @entry.currency
@@ -81,7 +85,7 @@
             <span :if={release.release_date} class="text-base-content/60">{date_pt_br(
               release.release_date
             )}</span>
-            <.status_chip :if={veto} label="vetada" tone="error" />
+            <.status_mark :if={veto} label="vetada" tone="error" />
           </div>
           <p :if={veto} class="mt-3 text-sm text-error">
             {veto.reason || "Sem motivo informado"}

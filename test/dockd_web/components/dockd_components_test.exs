@@ -26,7 +26,7 @@ defmodule DockdWeb.DockdComponentsTest do
 
   test "status and platform badges preserve their labels" do
     html =
-      render_component(&DockdWeb.DockdComponents.status_chip/1, %{
+      render_component(&DockdWeb.DockdComponents.status_mark/1, %{
         label: "não iniciado",
         tone: "warning"
       })
@@ -34,7 +34,7 @@ defmodule DockdWeb.DockdComponentsTest do
     platform =
       render_component(&DockdWeb.DockdComponents.platform_badge/1, %{platform: :switch_2})
 
-    assert html =~ "badge-warning"
+    assert html =~ "bg-warning"
     assert html =~ "não iniciado"
     assert platform =~ "Switch 2"
   end
