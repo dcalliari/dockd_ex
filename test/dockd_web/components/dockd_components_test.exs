@@ -4,7 +4,12 @@ defmodule DockdWeb.DockdComponentsTest do
   import Phoenix.LiveViewTest
 
   test "money card preserves its public attributes" do
-    html = render_component(&DockdWeb.DockdComponents.money_card/1, %{label: "Disponível", value: 19990, currency: "BRL"})
+    html =
+      render_component(&DockdWeb.DockdComponents.money_card/1, %{
+        label: "Disponível",
+        value: 19_990,
+        currency: "BRL"
+      })
 
     assert html =~ "Disponível"
     assert html =~ "R$ 199,90"
@@ -12,8 +17,14 @@ defmodule DockdWeb.DockdComponentsTest do
   end
 
   test "status and platform badges preserve their labels" do
-    html = render_component(&DockdWeb.DockdComponents.status_chip/1, %{label: "não iniciado", tone: "warning"})
-    platform = render_component(&DockdWeb.DockdComponents.platform_badge/1, %{platform: :switch_2})
+    html =
+      render_component(&DockdWeb.DockdComponents.status_chip/1, %{
+        label: "não iniciado",
+        tone: "warning"
+      })
+
+    platform =
+      render_component(&DockdWeb.DockdComponents.platform_badge/1, %{platform: :switch_2})
 
     assert html =~ "badge-warning"
     assert html =~ "não iniciado"
