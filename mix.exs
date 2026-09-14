@@ -70,6 +70,7 @@ defmodule Dockd.MixProject do
        depth: 1},
       {:swoosh, "~> 1.16"},
       {:req, "~> 0.5"},
+      {:open_api_spex, "~> 3.22"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 1.0"},
@@ -94,6 +95,7 @@ defmodule Dockd.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["compile", "tailwind dockd", "esbuild dockd"],
+      "openapi.export": ["openapi.spec.json --spec DockdWeb.ApiSpec"],
       "assets.deploy": [
         "tailwind dockd --minify",
         "esbuild dockd --minify",

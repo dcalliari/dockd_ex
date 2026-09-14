@@ -12,6 +12,7 @@ defmodule DockdWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug OpenApiSpex.Plug.PutApiSpec, module: DockdWeb.ApiSpec
   end
 
   scope "/", DockdWeb do
@@ -22,6 +23,12 @@ defmodule DockdWeb.Router do
 
   scope "/" do
     get "/health", DockdWeb.HealthController, :show
+  end
+
+  scope "/api" do
+    pipe_through :api
+
+    get "/openapi", OpenApiSpex.Plug.RenderSpec, []
   end
 
   scope "/api/v1", DockdWeb do
