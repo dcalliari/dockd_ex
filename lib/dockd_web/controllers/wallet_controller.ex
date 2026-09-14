@@ -24,6 +24,26 @@ defmodule DockdWeb.WalletController do
     responses: %{201 => {"Reservation", "application/json", DockdWeb.ApiSchemas.Error}}
   )
 
+  operation(:update_balance,
+    summary: "Update balance",
+    responses: %{200 => {"Balance", "application/json", DockdWeb.ApiSchemas.Error}}
+  )
+
+  operation(:delete_balance,
+    summary: "Delete balance",
+    responses: %{204 => {nil, "application/json", nil}}
+  )
+
+  operation(:update_reservation,
+    summary: "Update reservation",
+    responses: %{200 => {"Reservation", "application/json", DockdWeb.ApiSchemas.Error}}
+  )
+
+  operation(:delete_reservation,
+    summary: "Delete reservation",
+    responses: %{204 => {nil, "application/json", nil}}
+  )
+
   def balances(conn, _),
     do: json(conn, %{data: Enum.map(Wallet.list_balances(Accounts.default_owner()), &encode/1)})
 
@@ -49,6 +69,38 @@ defmodule DockdWeb.WalletController do
       {:error, changeset} ->
         conn |> put_status(:unprocessable_entity) |> json(%{errors: translate_errors(changeset)})
     end
+  end
+
+  def update_balance(conn, %{"id" => id, "balance" => attrs}) do
+    owner = Accounts.default_owner()
+
+    with balance when not is_nil(balance) <- Wallet.get_balance!(owner, id),
+         {:ok, balance} <- Wallet.update_balance(owner, balance, attrs),
+         do: json(conn, %{data: encode(balance)})
+  end
+
+  def delete_balance(conn, %{"id" => id}) do
+    owner = Accounts.default_owner()
+
+    :ok =
+      case Wallet.delete_balance(owner, Wallet.get_balance!(owner, id)) do
+        {:ok, _} -> :ok
+      end
+
+    send_resp(conn, :no_content, "")
+  end
+
+  def update_reservation(conn, %{"id" => id, "reservation" => attrs}) do
+    owner = Accounts.default_owner()
+    reservation = Wallet.get_reservation!(owner, id)
+    {:ok, reservation} = Wallet.update_reservation(owner, reservation, attrs)
+    json(conn, %{data: encode(reservation)})
+  end
+
+  def delete_reservation(conn, %{"id" => id}) do
+    owner = Accounts.default_owner()
+    {:ok, _} = Wallet.delete_reservation(owner, Wallet.get_reservation!(owner, id))
+    send_resp(conn, :no_content, "")
   end
 
   defp encode(struct), do: struct |> Map.from_struct() |> Map.drop([:__meta__, :user, :game])
