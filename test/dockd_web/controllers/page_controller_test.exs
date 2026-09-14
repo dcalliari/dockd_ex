@@ -1,8 +1,9 @@
 defmodule DockdWeb.PageControllerTest do
   use DockdWeb.ConnCase
 
-  test "GET / redirects to the catalog", %{conn: conn} do
+  test "GET / renders the planner", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert redirected_to(conn) == ~p"/catalogo"
+    assert conn.status == 200
+    assert conn.resp_body =~ "Planejador"
   end
 end

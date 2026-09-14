@@ -1,7 +1,13 @@
 defmodule DockdWeb.PlannerController do
   use DockdWeb, :controller
+  use OpenApiSpex.ControllerSpecs
   alias Dockd.Accounts
   alias Dockd.Planner
+
+  operation(:show,
+    summary: "Show planner summary",
+    responses: %{200 => {"Planner", "application/json", DockdWeb.ApiSchemas.Error}}
+  )
 
   def show(conn, _params) do
     summary = Planner.summary(Accounts.default_owner())

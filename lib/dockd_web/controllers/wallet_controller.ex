@@ -1,7 +1,28 @@
 defmodule DockdWeb.WalletController do
   use DockdWeb, :controller
+  use OpenApiSpex.ControllerSpecs
   alias Dockd.Accounts
   alias Dockd.Wallet
+
+  operation(:balances,
+    summary: "List balances",
+    responses: %{200 => {"Balances", "application/json", DockdWeb.ApiSchemas.Error}}
+  )
+
+  operation(:create_balance,
+    summary: "Create balance",
+    responses: %{201 => {"Balance", "application/json", DockdWeb.ApiSchemas.Error}}
+  )
+
+  operation(:reservations,
+    summary: "List reservations",
+    responses: %{200 => {"Reservations", "application/json", DockdWeb.ApiSchemas.Error}}
+  )
+
+  operation(:create_reservation,
+    summary: "Create reservation",
+    responses: %{201 => {"Reservation", "application/json", DockdWeb.ApiSchemas.Error}}
+  )
 
   def balances(conn, _),
     do: json(conn, %{data: Enum.map(Wallet.list_balances(Accounts.default_owner()), &encode/1)})
