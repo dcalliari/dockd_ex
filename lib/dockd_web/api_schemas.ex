@@ -117,6 +117,168 @@ defmodule DockdWeb.ApiSchemas.ReleaseAttributes do
   })
 end
 
+defmodule DockdWeb.ApiSchemas.Entry do
+  @moduledoc false
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "Entry",
+    type: :object,
+    properties: %{
+      id: %Schema{type: :string, format: :uuid},
+      user_id: %Schema{type: :string, format: :uuid},
+      game_id: %Schema{type: :string, format: :uuid},
+      purchase_intent: %Schema{type: :string},
+      play_state: %Schema{type: :string},
+      backlog: %Schema{type: :string},
+      priority: %Schema{type: :string},
+      media_preference: %Schema{type: :string},
+      target_price_cents: %Schema{type: :integer, nullable: true},
+      currency: %Schema{type: :string},
+      owned_elsewhere: %Schema{type: :boolean},
+      owned_elsewhere_note: %Schema{type: :string, nullable: true},
+      notes: %Schema{type: :string, nullable: true}
+    },
+    required: [:id, :user_id, :game_id]
+  })
+end
+
+defmodule DockdWeb.ApiSchemas.Ownership do
+  @moduledoc false
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "Ownership",
+    type: :object,
+    properties: %{
+      id: %Schema{type: :string, format: :uuid},
+      user_id: %Schema{type: :string, format: :uuid},
+      release_id: %Schema{type: :string, format: :uuid},
+      ownership_type: %Schema{type: :string},
+      acquired_at: %Schema{type: :string, format: :date_time},
+      purchase_id: %Schema{type: :string, format: :uuid, nullable: true}
+    },
+    required: [:id, :user_id, :release_id, :ownership_type, :acquired_at]
+  })
+end
+
+defmodule DockdWeb.ApiSchemas.EntryAttributes do
+  @moduledoc false
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "EntryAttributes",
+    type: :object,
+    properties: %{
+      game_id: %Schema{type: :string, format: :uuid},
+      purchase_intent: %Schema{type: :string},
+      play_state: %Schema{type: :string},
+      backlog: %Schema{type: :string},
+      priority: %Schema{type: :string},
+      media_preference: %Schema{type: :string},
+      target_price_cents: %Schema{type: :integer},
+      currency: %Schema{type: :string},
+      owned_elsewhere: %Schema{type: :boolean},
+      owned_elsewhere_note: %Schema{type: :string},
+      notes: %Schema{type: :string}
+    }
+  })
+end
+
+defmodule DockdWeb.ApiSchemas.OwnershipAttributes do
+  @moduledoc false
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "OwnershipAttributes",
+    type: :object,
+    properties: %{
+      release_id: %Schema{type: :string, format: :uuid},
+      ownership_type: %Schema{type: :string},
+      acquired_at: %Schema{type: :string, format: :date_time},
+      purchase_id: %Schema{type: :string, format: :uuid}
+    }
+  })
+end
+
+defmodule DockdWeb.ApiSchemas.EntryRequest do
+  @moduledoc false
+  require OpenApiSpex
+
+  OpenApiSpex.schema(%{
+    title: "EntryRequest",
+    type: :object,
+    required: [:entry],
+    properties: %{entry: DockdWeb.ApiSchemas.EntryAttributes}
+  })
+end
+
+defmodule DockdWeb.ApiSchemas.OwnershipRequest do
+  @moduledoc false
+  require OpenApiSpex
+
+  OpenApiSpex.schema(%{
+    title: "OwnershipRequest",
+    type: :object,
+    required: [:ownership],
+    properties: %{ownership: DockdWeb.ApiSchemas.OwnershipAttributes}
+  })
+end
+
+defmodule DockdWeb.ApiSchemas.EntryResponse do
+  @moduledoc false
+  require OpenApiSpex
+
+  OpenApiSpex.schema(%{
+    title: "EntryResponse",
+    type: :object,
+    required: [:data],
+    properties: %{data: DockdWeb.ApiSchemas.Entry}
+  })
+end
+
+defmodule DockdWeb.ApiSchemas.EntryListResponse do
+  @moduledoc false
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "EntryListResponse",
+    type: :object,
+    required: [:data],
+    properties: %{data: %Schema{type: :array, items: DockdWeb.ApiSchemas.Entry}}
+  })
+end
+
+defmodule DockdWeb.ApiSchemas.OwnershipResponse do
+  @moduledoc false
+  require OpenApiSpex
+
+  OpenApiSpex.schema(%{
+    title: "OwnershipResponse",
+    type: :object,
+    required: [:data],
+    properties: %{data: DockdWeb.ApiSchemas.Ownership}
+  })
+end
+
+defmodule DockdWeb.ApiSchemas.OwnershipListResponse do
+  @moduledoc false
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "OwnershipListResponse",
+    type: :object,
+    required: [:data],
+    properties: %{data: %Schema{type: :array, items: DockdWeb.ApiSchemas.Ownership}}
+  })
+end
+
 defmodule DockdWeb.ApiSchemas do
   @moduledoc false
   alias OpenApiSpex.Schema

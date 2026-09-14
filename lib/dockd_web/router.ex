@@ -20,6 +20,7 @@ defmodule DockdWeb.Router do
 
     get "/", PageController, :home
     live "/catalogo", CatalogLive, :index
+    live "/biblioteca", LibraryLive, :index
   end
 
   scope "/" do
@@ -34,6 +35,9 @@ defmodule DockdWeb.Router do
 
   scope "/api/v1", DockdWeb do
     pipe_through :api
+
+    resources "/entries", LibraryController, only: [:index, :show, :create, :update, :delete]
+    resources "/ownerships", OwnershipController, only: [:index, :show, :create, :update, :delete]
 
     resources "/games", GameController, only: [:index, :show, :create, :update] do
       resources "/releases", ReleaseController, only: [:index, :show, :create, :update]

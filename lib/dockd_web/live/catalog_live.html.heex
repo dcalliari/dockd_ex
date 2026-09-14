@@ -14,15 +14,23 @@
       <.section_card title="Obras cadastradas" class="h-fit">
         <div id="games-list" class="space-y-2">
           <%= for game <- @games do %>
-            <button
-              id={"game-#{game.id}"}
-              class="flex min-h-16 w-full items-center justify-between gap-4 rounded-xl border border-base-content/10 p-4 text-left transition hover:border-primary hover:bg-base-200"
-              phx-click="edit_game"
-              phx-value-id={game.id}
-            >
-              <span class="min-w-0"><strong class="block truncate">{game.title}</strong><span class="mt-1 block text-sm text-base-content/60">{game.availability}</span></span>
-              <span class="badge badge-ghost shrink-0">{length(game.releases)} versões</span>
-            </button>
+            <div class="flex gap-2">
+              <button
+                id={"game-#{game.id}"}
+                class="flex min-h-16 min-w-0 flex-1 items-center justify-between gap-4 rounded-xl border border-base-content/10 p-4 text-left transition hover:border-primary hover:bg-base-200"
+                phx-click="edit_game"
+                phx-value-id={game.id}
+              >
+                <span class="min-w-0"><strong class="block truncate">{game.title}</strong><span class="mt-1 block text-sm text-base-content/60">{game.availability}</span></span>
+                <span class="badge badge-ghost shrink-0">{length(game.releases)} versões</span>
+              </button>
+              <button
+                id={"add-library-#{game.id}"}
+                class="btn btn-sm btn-primary min-h-10 self-center"
+                phx-click="add_to_library"
+                phx-value-id={game.id}
+              >Biblioteca</button>
+            </div>
           <% end %>
           <.empty_state
             :if={@games == []}

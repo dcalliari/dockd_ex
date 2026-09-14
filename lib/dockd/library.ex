@@ -184,4 +184,47 @@ defmodule Dockd.Library do
   defp event_type(:backlog, _), do: :activated
   defp result({:ok, values}, key), do: {:ok, values[key]}
   defp result({:error, _op, changeset, _}, _), do: {:error, changeset}
+
+  @doc "Lists entries for a user, optionally filtered by backlog, play state, or search term."
+  def list_entries(%User{} = user, filters) when is_map(filters) do
+    entries = list_entries(user)
+
+    search =
+      Map.get(filters, :search, Map.get(filters, "search", ""))
+      |> to_string()
+      |> String.downcase()
+
+    backlog = filters |> Map.get(:backlog, Map.get(filters, "backlog")) |> normalize_filter()
+
+    play_state =
+      filters |> Map.get(:play_state, Map.get(filters, "play_state")) |> normalize_filter()
+
+    Enum.filter(entries, fn entry ->
+      matches_search = search == "" or String.contains?(String.downcase(entry.game.title), search)
+      matches_backlog = is_nil(backlog) or entry.backlog == normalize_enum(backlog)
+      matches_play_state = is_nil(play_state) or entry.play_state == normalize_enum(play_state)
+      matches_search and matches_backlog and matches_play_state
+    end)
+  end
+
+  @doc "Returns the entry for a game, scoped to a user, or nil when absent."
+  def get_entry_by_game(%User{id: user_id}, game_id),
+    do:
+      Repo.one(
+        from e in Entry, where: e.user_id == ^user_id and e.game_id == ^game_id, preload: [:game]
+      )
+
+  defp normalize_filter(value) when value in [nil, ""], do: nil
+  defp normalize_filter(value), do: normalize_enum(value)
+
+  defp normalize_enum(value) when is_atom(value), do: value
+
+  defp normalize_enum(value) when is_binary(value) do
+    Enum.find(
+      [:no, :backlog, :active, :unplayed, :playing, :paused, :finished, :abandoned],
+      fn atom -> Atom.to_string(atom) == value end
+    )
+  end
+
+  defp normalize_enum(value), do: value
 end

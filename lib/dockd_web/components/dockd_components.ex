@@ -288,7 +288,8 @@ defmodule DockdWeb.DockdComponents do
     </div>
     """
 
-  defp navigation, do: [%{label: "Catálogo", path: "/catalogo"}]
+  defp navigation,
+    do: [%{label: "Catálogo", path: "/catalogo"}, %{label: "Biblioteca", path: "/biblioteca"}]
 
   defp format_integer(value) do
     value
