@@ -1,0 +1,93 @@
+<Layouts.app flash={@flash} current="Planejador">
+  <div class="space-y-8">
+    <.page_header
+      eyebrow="Dockd"
+      title="Planejador"
+      description="Seu dinheiro primeiro. Depois, o próximo jogo."
+    />
+    <section id="planner-money" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <.money_card
+        label="Saldo eShop"
+        value={@summary.money.balance_cents}
+        currency={@summary.money.currency}
+      />
+      <.money_card
+        label="Reservado"
+        value={@summary.money.reserved_cents}
+        currency={@summary.money.currency}
+        tone="secondary"
+      />
+      <.money_card
+        label="Livre para gastar"
+        value={@summary.money.free_cents}
+        currency={@summary.money.currency}
+        tone="success"
+      />
+      <.money_card
+        label="Compras este mês"
+        value={@summary.money.spent_month_cents}
+        currency={@summary.money.currency}
+        tone="neutral"
+      />
+    </section>
+    <div class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+      <.section_card title="Próximos lançamentos">
+        <div id="planner-calendar" class="space-y-4">
+          <%= for item <- @summary.calendar do %>
+            <.link
+              navigate={"/jogos/#{item.game.id}"}
+              id={"release-#{item.release.id}"}
+              class="block rounded-xl p-2 transition hover:bg-base-200"
+            >
+              <.release_calendar_item
+                title={item.game.title}
+                date={item.release.release_date}
+                platform={item.release.platform}
+                media={:digital}
+              />
+              <.status_chip
+                label={if item.recommendation == "reserve", do: "reservar", else: "pode esperar"}
+                tone={if item.recommendation == "reserve", do: "primary", else: "neutral"}
+              />
+            </.link>
+          <% end %>
+          <.empty_state
+            :if={@summary.calendar == []}
+            title="Nenhum lançamento no radar"
+            description="Explore o catálogo e marque os jogos que você quer comprar."
+          >
+            <:action>
+              <.link navigate="/catalogo" class="btn btn-primary">Ver catálogo</.link>
+            </:action>
+          </.empty_state>
+        </div>
+      </.section_card>
+      <.section_card title="Pressão do backlog">
+        <div id="planner-backlog">
+          <%= if @summary.backlog == [] do %>
+            <.empty_state
+              title="Backlog limpo"
+              description="Sua próxima aventura pode começar agora."
+            >
+              <:action>
+                <.link navigate="/biblioteca" class="btn btn-secondary">Abrir biblioteca</.link>
+              </:action>
+            </.empty_state>
+          <% else %>
+            <.backlog_pressure count={length(@summary.backlog)} />
+            <ul class="mt-5 space-y-3">
+              <%= for item <- Enum.take(@summary.backlog, 5) do %>
+                <li>
+                  <.link
+                    navigate={"/jogos/#{item.game.id}"}
+                    class="font-semibold hover:text-primary"
+                  >{item.game.title}</.link>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        </div>
+      </.section_card>
+    </div>
+  </div>
+</Layouts.app>

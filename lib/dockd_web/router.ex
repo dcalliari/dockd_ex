@@ -18,9 +18,10 @@ defmodule DockdWeb.Router do
   scope "/", DockdWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
-    live "/catalogo", CatalogLive, :index
+    live "/", PlannerLive, :index
+    live "/carteira", WalletLive, :index
     live "/biblioteca", LibraryLive, :index
+    live "/catalogo", CatalogLive, :index
     live "/jogos/:id", GameLive, :show
   end
 
@@ -42,6 +43,11 @@ defmodule DockdWeb.Router do
     post "/releases/:release_id/price-observations", PurchasingController, :create_observation
     post "/releases/:release_id/purchases", PurchasingController, :create_purchase
     post "/releases/:release_id/vetoes", PurchasingController, :create_veto
+    get "/planner", PlannerController, :show
+    get "/wallet/balances", WalletController, :balances
+    post "/wallet/balances", WalletController, :create_balance
+    get "/wallet/reservations", WalletController, :reservations
+    post "/wallet/reservations", WalletController, :create_reservation
 
     resources "/games", GameController, only: [:index, :show, :create, :update] do
       resources "/releases", ReleaseController, only: [:index, :show, :create, :update]

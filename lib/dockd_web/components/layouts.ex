@@ -26,7 +26,7 @@ defmodule DockdWeb.Layouts do
 
   """
   attr :flash, :map, required: true, doc: "the map of flash messages"
-  attr :current, :string, default: nil
+  attr :current, :string, default: "Planejador"
 
   attr :current_scope, :map,
     default: nil,
@@ -36,7 +36,7 @@ defmodule DockdWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <.dockd_app_shell current={@current || "Catálogo"}>
+    <.dockd_app_shell current={@current}>
       {render_slot(@inner_block)}
     </.dockd_app_shell>
     <.flash_group flash={@flash} />

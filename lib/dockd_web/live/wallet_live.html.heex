@@ -1,0 +1,62 @@
+<Layouts.app flash={@flash} current="Carteira">
+  <div class="space-y-8">
+    <.page_header
+      eyebrow="Dinheiro"
+      title="Carteira"
+      description="Veja o saldo disponível e proteja o que já está comprometido."
+    />
+    <section id="balance-section" class="max-w-xl">
+      <.section_card title="Saldo eShop">
+        <.form for={@balance_form} id="balance-form" phx-submit="save-balance" class="space-y-4">
+          <.input field={@balance_form[:amount_cents]} type="number" label="Saldo (centavos)" />
+          <.input field={@balance_form[:currency]} label="Moeda" />
+          <button id="save-balance-button" class="btn btn-primary" type="submit">Salvar saldo</button>
+        </.form>
+      </.section_card>
+    </section>
+    <section id="reservations-section">
+      <.section_card title="Reservas para lançamentos">
+        <div id="reservations-list" class="space-y-3">
+          <%= for reservation <- @reservations do %>
+            <article
+              id={"reservation-#{reservation.id}"}
+              class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-base-content/10 p-4"
+            >
+              <div>
+                <p class="font-bold">{reservation.game.title}</p><p class="text-sm text-base-content/60">
+                  {money(reservation.amount_cents, "BRL")}
+                </p>
+              </div>
+              <button
+                class="btn btn-ghost btn-sm"
+                phx-click="delete-reservation"
+                phx-value-id={reservation.id}
+              >Excluir</button>
+            </article>
+          <% end %>
+          <.empty_state
+            :if={@reservations == []}
+            title="Nenhuma reserva"
+            description="Reserve saldo para um lançamento que você já decidiu comprar."
+          />
+        </div>
+        <button
+          id="new-reservation-button"
+          class="btn btn-secondary mt-5"
+          phx-click="new-reservation"
+        >Nova reserva</button>
+        <.form
+          for={@reservation_form}
+          id="reservation-form"
+          phx-submit="save-reservation"
+          class="mt-5 grid gap-4"
+        >
+          <.input field={@reservation_form[:game_id]} label="ID do jogo" />
+          <.input field={@reservation_form[:amount_cents]} type="number" label="Valor (centavos)" />
+          <.input field={@reservation_form[:note]} label="Observação" />
+          <button id="save-reservation-button" class="btn btn-primary" type="submit">Salvar reserva</button>
+        </.form>
+      </.section_card>
+    </section>
+  </div>
+</Layouts.app>

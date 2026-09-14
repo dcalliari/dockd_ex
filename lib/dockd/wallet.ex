@@ -65,4 +65,21 @@ defmodule Dockd.Wallet do
       |> validate_required([:user_id, :store, :game_id, :amount_cents])
       |> validate_number(:amount_cents, greater_than_or_equal_to: 0)
       |> assoc_constraint(:game)
+
+  @doc "Gets a balance scoped to a user."
+  def get_balance!(%User{id: id}, balance_id),
+    do: Repo.one!(from b in StoreBalance, where: b.id == ^balance_id and b.user_id == ^id)
+
+  @doc "Deletes a balance scoped to a user."
+  def delete_balance(%User{id: id}, %StoreBalance{} = balance),
+    do: if(balance.user_id == id, do: Repo.delete(balance), else: {:error, :not_found})
+
+  @doc "Gets a reservation scoped to a user."
+  def get_reservation!(%User{id: id}, reservation_id),
+    do:
+      Repo.one!(
+        from r in BalanceReservation,
+          where: r.id == ^reservation_id and r.user_id == ^id,
+          preload: [:game]
+      )
 end

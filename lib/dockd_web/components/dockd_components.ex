@@ -1,6 +1,4 @@
 defmodule DockdWeb.DockdComponents do
-  @moduledoc "Reusable visual primitives for Dockd screens."
-
   use Phoenix.Component
   alias Phoenix.LiveView.JS
 
@@ -66,7 +64,7 @@ defmodule DockdWeb.DockdComponents do
         class="fixed inset-x-0 bottom-0 z-30 border-t border-base-content/10 bg-base-100/95 px-3 py-2 backdrop-blur lg:hidden"
         aria-label="Navegação principal"
       >
-        <div class="mx-auto flex max-w-lg justify-around gap-2">
+        <div class="mx-auto flex max-w-lg justify-around">
           <%= for item <- navigation() do %>
             <.link
               navigate={item.path}
@@ -289,7 +287,12 @@ defmodule DockdWeb.DockdComponents do
     """
 
   defp navigation,
-    do: [%{label: "Catálogo", path: "/catalogo"}, %{label: "Biblioteca", path: "/biblioteca"}]
+    do: [
+      %{label: "Planejador", path: "/"},
+      %{label: "Biblioteca", path: "/biblioteca"},
+      %{label: "Catálogo", path: "/catalogo"},
+      %{label: "Carteira", path: "/carteira"}
+    ]
 
   defp format_integer(value) do
     value
