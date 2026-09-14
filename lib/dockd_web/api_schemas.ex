@@ -57,6 +57,8 @@ defmodule DockdWeb.ApiSchemas.Game do
       title: %Schema{type: :string},
       slug: %Schema{type: :string},
       cover_url: %Schema{type: :string, nullable: true},
+      igdb_id: %Schema{type: :integer, nullable: true},
+      synced_at: %Schema{type: :string, format: :date_time, nullable: true},
       developer: %Schema{type: :string, nullable: true},
       publisher: %Schema{type: :string, nullable: true},
       availability: %Schema{

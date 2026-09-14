@@ -7,16 +7,17 @@ defmodule Dockd.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [
-      DockdWeb.Telemetry,
-      Dockd.Repo,
-      {DNSCluster, query: Application.get_env(:dockd, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: Dockd.PubSub},
-      # Start a worker by calling: Dockd.Worker.start_link(arg)
-      # {Dockd.Worker, arg},
-      # Start to serve requests, typically the last entry
-      DockdWeb.Endpoint
-    ]
+    children =
+      [
+        DockdWeb.Telemetry,
+        Dockd.Repo,
+        {DNSCluster, query: Application.get_env(:dockd, :dns_cluster_query) || :ignore},
+        {Phoenix.PubSub, name: Dockd.PubSub},
+        # Start a worker by calling: Dockd.Worker.start_link(arg)
+        # {Dockd.Worker, arg},
+        # Start to serve requests, typically the last entry
+        DockdWeb.Endpoint
+      ] ++ if Dockd.IGDB.configured?(), do: [Dockd.IGDB.SyncScheduler], else: []
 
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options

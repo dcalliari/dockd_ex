@@ -9,6 +9,8 @@ defmodule Dockd.Catalog.Game do
     field :title, :string
     field :slug, :string
     field :cover_url, :string
+    field :igdb_id, :integer
+    field :synced_at, :utc_datetime_usec
     field :developer, :string
     field :publisher, :string
     field :availability, Ecto.Enum, values: @availability_values
@@ -26,6 +28,8 @@ defmodule Dockd.Catalog.Game do
       :title,
       :slug,
       :cover_url,
+      :igdb_id,
+      :synced_at,
       :developer,
       :publisher,
       :availability,
@@ -40,6 +44,7 @@ defmodule Dockd.Catalog.Game do
     |> validate_number(:estimated_duration_minutes, greater_than: 0)
     |> validate_other_platforms()
     |> unique_constraint(:slug)
+    |> unique_constraint(:igdb_id)
   end
 
   defp put_slug(changeset) do

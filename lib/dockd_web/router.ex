@@ -44,6 +44,10 @@ defmodule DockdWeb.Router do
     post "/releases/:release_id/purchases", PurchasingController, :create_purchase
     post "/releases/:release_id/vetoes", PurchasingController, :create_veto
     get "/planner", PlannerController, :show
+    get "/igdb/search", IGDBController, :search
+    post "/igdb/games/:igdb_id/import", IGDBController, :import
+    post "/igdb/sync", IGDBController, :sync
+    post "/igdb/match", IGDBController, :match
     get "/wallet/balances", WalletController, :balances
     post "/wallet/balances", WalletController, :create_balance
     get "/wallet/reservations", WalletController, :reservations

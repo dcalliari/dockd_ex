@@ -80,6 +80,8 @@ defmodule DockdWeb.GameController do
       title: game.title,
       slug: game.slug,
       cover_url: game.cover_url,
+      igdb_id: game.igdb_id,
+      synced_at: game.synced_at,
       developer: game.developer,
       publisher: game.publisher,
       availability: game.availability,

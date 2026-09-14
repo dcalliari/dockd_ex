@@ -22,6 +22,11 @@ end
 
 config :dockd, DockdWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+config :dockd, :igdb,
+  client_id: System.get_env("IGDB_CLIENT_ID"),
+  client_secret: System.get_env("IGDB_CLIENT_SECRET"),
+  sync_interval: String.to_integer(System.get_env("IGDB_SYNC_INTERVAL_MS", "86400000"))
+
 if config_env() == :dev do
   # Reload browser tabs when matching files change.
   config :dockd, DockdWeb.Endpoint,
