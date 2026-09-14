@@ -1,8 +1,8 @@
 defmodule DockdWeb.PageControllerTest do
   use DockdWeb.ConnCase
 
-  test "GET /", %{conn: conn} do
+  test "GET / redirects to the catalog", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Catálogo"
+    assert redirected_to(conn) == ~p"/catalogo"
   end
 end

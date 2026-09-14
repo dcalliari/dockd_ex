@@ -86,6 +86,7 @@ defmodule DockdWeb do
       import Phoenix.HTML
       # Core UI components
       import DockdWeb.CoreComponents
+      import DockdWeb.DockdComponents
 
       # Common modules used in templates
       alias DockdWeb.Layouts

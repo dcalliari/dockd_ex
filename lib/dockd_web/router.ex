@@ -18,7 +18,8 @@ defmodule DockdWeb.Router do
   scope "/", DockdWeb do
     pipe_through :browser
 
-    live "/", CatalogLive, :index
+    get "/", PageController, :home
+    live "/catalogo", CatalogLive, :index
   end
 
   scope "/" do

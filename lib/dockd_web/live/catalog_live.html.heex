@@ -1,136 +1,57 @@
 <Layouts.app flash={@flash}>
-  <div class="space-y-8">
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="text-sm uppercase tracking-wide opacity-60">Dockd</p>
-        <h1 class="text-3xl font-bold">Catálogo</h1>
-      </div>
-      <button id="new-game-button" class="btn btn-primary" phx-click="new_game">Nova obra</button>
-    </div>
+  <div class="mx-auto max-w-6xl space-y-8">
+    <.page_header eyebrow="Biblioteca pessoal" title="Catálogo" description="Organize as obras e versões que orientam suas próximas decisões.">
+      <:actions><button id="new-game-button" class="btn btn-primary min-h-11" phx-click="new_game">Nova obra</button></:actions>
+    </.page_header>
 
-    <div class="grid gap-8 lg:grid-cols-[1fr_1.2fr]">
-      <section class="card bg-base-200 shadow-sm">
-        <div class="card-body">
-          <h2 class="card-title">Obras cadastradas</h2>
-          <div id="games-list" class="space-y-2">
-            <%= for game <- @games do %>
-              <button
-                id={"game-#{game.id}"}
-                class="w-full rounded-lg border border-base-300 p-3 text-left hover:bg-base-300"
-                phx-click="edit_game"
-                phx-value-id={game.id}
-              >
-                <strong>{game.title}</strong>
-                <span class="block text-sm opacity-70">{game.availability} · {length(
-                  game.releases
-                )} versão(ões)</span>
+    <div class="grid gap-6 xl:grid-cols-[.8fr_1.2fr]">
+      <.section_card title="Obras cadastradas" class="h-fit">
+        <div id="games-list" class="space-y-2">
+          <%= for game <- @games do %>
+            <button id={"game-#{game.id}"} class="flex min-h-16 w-full items-center justify-between gap-4 rounded-xl border border-base-content/10 p-4 text-left transition hover:border-primary hover:bg-base-200" phx-click="edit_game" phx-value-id={game.id}>
+              <span class="min-w-0"><strong class="block truncate">{game.title}</strong><span class="mt-1 block text-sm text-base-content/60">{game.availability}</span></span>
+              <span class="badge badge-ghost shrink-0">{length(game.releases)} versões</span>
+            </button>
+          <% end %>
+          <.empty_state :if={@games == []} title="Nenhuma obra cadastrada" description="Comece adicionando um jogo à sua biblioteca." />
+        </div>
+      </.section_card>
+
+      <div class="space-y-6">
+        <.section_card title={if(@game, do: "Editar obra", else: "Cadastrar obra")}>
+          <.form for={@game_form} id="game-form" phx-submit="save_game" class="grid gap-3 sm:grid-cols-2">
+            <.input field={@game_form[:title]} label="Título" />
+            <.input field={@game_form[:slug]} label="Slug (opcional)" />
+            <.input field={@game_form[:developer]} label="Desenvolvedora" />
+            <.input field={@game_form[:publisher]} label="Publicadora" />
+            <.input field={@game_form[:cover_url]} label="URL da capa" class="sm:col-span-2" />
+            <.input field={@game_form[:availability]} type="select" label="Disponibilidade" options={[{"Exclusivo Nintendo", :nintendo_exclusive}, {"Exclusivo Switch 2", :switch2_exclusive}, {"Multiplataforma", :multiplatform}]} />
+            <.input field={@game_form[:other_platforms]} label="Outras plataformas" value={Enum.join(@game_form[:other_platforms].value || [], ", ")} />
+            <.input field={@game_form[:estimated_duration_minutes]} type="number" label="Duração estimada (minutos)" />
+            <.input field={@game_form[:pace]} type="select" label="Ritmo" options={[{"Relaxante", :relaxing}, {"Normal", :normal}, {"Exigente", :demanding}]} prompt="Escolha" />
+            <.input field={@game_form[:play_mode]} type="select" label="Modo de jogo" options={[{"Solo", :solo}, {"Multi", :multi}, {"Solo e multi", :both}]} prompt="Escolha" />
+            <button id="save-game-button" class="btn btn-primary min-h-11 sm:col-span-2" type="submit">Salvar obra</button>
+          </.form>
+        </.section_card>
+
+        <.section_card :if={@game} title={"Versões de #{@game.title}"}>
+          <div id="releases-list" class="space-y-2">
+            <%= for release <- @game.releases do %>
+              <button id={"release-#{release.id}"} class="flex min-h-12 w-full items-center justify-between rounded-xl border border-base-content/10 p-3 text-left transition hover:border-primary hover:bg-base-200" phx-click="edit_release" phx-value-id={release.id} phx-value-game-id={@game.id}>
+                <span>{release.edition || "Edição padrão"}</span><span class="badge badge-neutral">{release.platform}</span>
               </button>
             <% end %>
-            <p :if={@games == []} class="opacity-60">Nenhuma obra cadastrada.</p>
           </div>
-        </div>
-      </section>
-
-      <section class="space-y-6">
-        <div class="card bg-base-200 shadow-sm">
-          <div class="card-body">
-            <h2 class="card-title">{if @game, do: "Editar obra", else: "Cadastrar obra"}</h2>
-            <.form for={@game_form} id="game-form" phx-submit="save_game" class="grid gap-3">
-              <.input field={@game_form[:title]} label="Título" />
-              <.input field={@game_form[:slug]} label="Slug (opcional)" />
-              <.input field={@game_form[:developer]} label="Desenvolvedora" />
-              <.input field={@game_form[:publisher]} label="Publicadora" />
-              <.input field={@game_form[:cover_url]} label="URL da capa" />
-              <.input
-                field={@game_form[:availability]}
-                type="select"
-                label="Disponibilidade"
-                options={[
-                  {"Exclusivo Nintendo", :nintendo_exclusive},
-                  {"Exclusivo Switch 2", :switch2_exclusive},
-                  {"Multiplataforma", :multiplatform}
-                ]}
-              />
-              <.input
-                field={@game_form[:other_platforms]}
-                label="Outras plataformas (separadas por vírgula)"
-                value={Enum.join(@game_form[:other_platforms].value || [], ", ")}
-              />
-              <.input
-                field={@game_form[:estimated_duration_minutes]}
-                type="number"
-                label="Duração estimada (minutos)"
-              />
-              <.input
-                field={@game_form[:pace]}
-                type="select"
-                label="Ritmo"
-                options={[{"Relaxante", :relaxing}, {"Normal", :normal}, {"Exigente", :demanding}]}
-                prompt="Escolha"
-              />
-              <.input
-                field={@game_form[:play_mode]}
-                type="select"
-                label="Modo de jogo"
-                options={[{"Solo", :solo}, {"Multi", :multi}, {"Solo e multi", :both}]}
-                prompt="Escolha"
-              />
-              <button id="save-game-button" class="btn btn-primary" type="submit">Salvar obra</button>
-            </.form>
-          </div>
-        </div>
-
-        <div :if={@game} class="card bg-base-200 shadow-sm">
-          <div class="card-body">
-            <h2 class="card-title">Versões de {@game.title}</h2>
-            <div id="releases-list" class="space-y-2">
-              <%= for release <- @game.releases do %>
-                <button
-                  id={"release-#{release.id}"}
-                  class="w-full rounded border border-base-300 p-2 text-left"
-                  phx-click="edit_release"
-                  phx-value-id={release.id}
-                  phx-value-game-id={@game.id}
-                >
-                  {release.platform} · {release.edition || "Edição padrão"}
-                </button>
-              <% end %>
-            </div>
-            <.form
-              for={@release_form}
-              id="release-form"
-              phx-submit="save_release"
-              class="grid gap-3"
-            >
-              <input type="hidden" name="release[id]" value={@release_form.data.id} />
-              <.input
-                field={@release_form[:platform]}
-                type="select"
-                label="Plataforma"
-                options={[{"Switch", :switch}, {"Switch 2", :switch_2}]}
-                prompt="Escolha"
-              />
-              <.input field={@release_form[:edition]} label="Edição" />
-              <.input
-                field={@release_form[:release_date]}
-                type="date"
-                label="Data de lançamento (opcional)"
-              />
-              <.input
-                field={@release_form[:physical_available]}
-                type="checkbox"
-                label="Disponível físico"
-              />
-              <.input
-                field={@release_form[:digital_available]}
-                type="checkbox"
-                label="Disponível digital"
-              />
-              <button id="save-release-button" class="btn btn-secondary" type="submit">Salvar versão</button>
-            </.form>
-          </div>
-        </div>
-      </section>
+          <.form for={@release_form} id="release-form" phx-submit="save_release" class="mt-5 grid gap-3 sm:grid-cols-2">
+            <input type="hidden" name="release[id]" value={@release_form.data.id} />
+            <.input field={@release_form[:platform]} type="select" label="Plataforma" options={[{"Switch", :switch}, {"Switch 2", :switch_2}]} prompt="Escolha" />
+            <.input field={@release_form[:edition]} label="Edição" />
+            <.input field={@release_form[:release_date]} type="date" label="Data de lançamento (opcional)" />
+            <div class="grid grid-cols-2 gap-3 sm:col-span-2"><.input field={@release_form[:physical_available]} type="checkbox" label="Disponível físico" /><.input field={@release_form[:digital_available]} type="checkbox" label="Disponível digital" /></div>
+            <button id="save-release-button" class="btn btn-secondary min-h-11 sm:col-span-2" type="submit">Salvar versão</button>
+          </.form>
+        </.section_card>
+      </div>
     </div>
   </div>
 </Layouts.app>
