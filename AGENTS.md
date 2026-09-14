@@ -455,3 +455,10 @@ Os caminhos suportados estão documentados no [README](README.md). Use `mix setu
 Variáveis relevantes: `DOCKD_DB_PASSWORD`, `DOCKD_DB_USER`, `DOCKD_DB_HOST`, `DOCKD_DB_NAME`, `DATABASE_URL`, `SECRET_KEY_BASE`, `PHX_HOST`, `TRAEFIK_NETWORK` e `TRAEFIK_ENTRYPOINT`. Os nomes e exemplos ficam em [`.env.example`](.env.example); valores locais ficam em `.env`.
 
 Valide mudanças com `mix precommit`. O [Makefile](Makefile) oferece atalhos equivalentes e o `Dockerfile` define a imagem de release.
+
+## Maintaining this file
+
+Keep this file for knowledge useful to almost every future agent session in this project.
+Do not repeat what the codebase already shows; point to the authoritative file or command instead.
+Prefer rewriting or pruning existing entries over appending new ones.
+When updating this file, preserve this bar for all agents and keep entries concise.
