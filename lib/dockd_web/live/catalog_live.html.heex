@@ -27,7 +27,7 @@
           <.empty_state
             :if={@games == []}
             title="Nenhuma obra cadastrada"
-            description="Comece adicionando um jogo à sua biblioteca."
+            description="Comece adicionando uma obra ao seu catálogo."
           />
         </div>
       </.section_card>
@@ -44,7 +44,9 @@
             <.input field={@game_form[:slug]} label="Slug (opcional)" />
             <.input field={@game_form[:developer]} label="Desenvolvedora" />
             <.input field={@game_form[:publisher]} label="Publicadora" />
-            <.input field={@game_form[:cover_url]} label="URL da capa" class="sm:col-span-2" />
+            <div class="sm:col-span-2">
+              <.input field={@game_form[:cover_url]} label="URL da capa" />
+            </div>
             <.input
               field={@game_form[:availability]}
               type="select"
