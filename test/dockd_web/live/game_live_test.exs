@@ -32,6 +32,7 @@ defmodule DockdWeb.GameLiveTest do
              })
 
     {:ok, view, _html} = live(conn, ~p"/jogos/#{game.id}")
+    assert has_element?(view, "#igdb-attribution a[href='https://www.igdb.com']")
     assert has_element?(view, "#observation-form-#{release.id}")
 
     assert render_submit(element(view, "#observation-form-#{release.id}"), %{

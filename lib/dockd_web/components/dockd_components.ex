@@ -31,6 +31,7 @@ defmodule DockdWeb.DockdComponents do
   @doc "Renders the application shell with responsive navigation."
   attr :current, :string, default: nil
   slot :inner_block, required: true
+  slot :footer
 
   def dockd_app_shell(assigns) do
     ~H"""
@@ -60,6 +61,7 @@ defmodule DockdWeb.DockdComponents do
             </div>
           </header>
           <main class="px-4 py-8 sm:px-8 lg:px-12 lg:py-12">{render_slot(@inner_block)}</main>
+          <div class="px-4 pb-8 sm:px-8 lg:px-12">{render_slot(@footer)}</div>
         </div>
       </div>
       <nav

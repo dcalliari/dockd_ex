@@ -23,6 +23,7 @@ A restrição a Switch e Switch 2 é uma escolha de produto, não uma limitaçã
 - API JSON versionada em `/api/v1` e especificação em `/api/openapi`.
 - Seeds demonstrativas idempotentes, executadas por `mix ecto.setup`.
 - Interface responsiva com temas `dockd-light` e `dockd-dark`.
+- Integração opcional com IGDB para sincronizar dados de jogos. O uso não comercial exige atribuição visível à fonte, disponível no rodapé da aplicação.
 
 ### Próximos passos
 

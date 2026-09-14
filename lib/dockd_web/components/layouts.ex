@@ -38,8 +38,27 @@ defmodule DockdWeb.Layouts do
     ~H"""
     <.dockd_app_shell current={@current}>
       {render_slot(@inner_block)}
+      <:footer><.igdb_attribution /></:footer>
     </.dockd_app_shell>
     <.flash_group flash={@flash} />
+    """
+  end
+
+  @doc "Credits IGDB as the source of game data."
+  def igdb_attribution(assigns) do
+    ~H"""
+    <footer
+      id="igdb-attribution"
+      class="mt-12 border-t border-base-content/10 pt-4 text-center text-sm text-base-content/70"
+    >
+      Dados de jogos por
+      <a
+        href="https://www.igdb.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="underline decoration-base-content/40 underline-offset-2 transition-colors hover:text-base-content"
+      >IGDB</a>
+    </footer>
     """
   end
 
