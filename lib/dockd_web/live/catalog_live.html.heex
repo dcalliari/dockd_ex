@@ -30,6 +30,11 @@
                 phx-click="add_to_library"
                 phx-value-id={game.id}
               >Biblioteca</button>
+              <.link
+                id={"game-detail-#{game.id}"}
+                navigate={~p"/jogos/#{game.id}"}
+                class="btn btn-sm btn-ghost min-h-10 self-center"
+              >Detalhes</.link>
             </div>
           <% end %>
           <.empty_state

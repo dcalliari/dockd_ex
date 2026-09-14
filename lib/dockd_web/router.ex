@@ -21,6 +21,7 @@ defmodule DockdWeb.Router do
     get "/", PageController, :home
     live "/catalogo", CatalogLive, :index
     live "/biblioteca", LibraryLive, :index
+    live "/jogos/:id", GameLive, :show
   end
 
   scope "/" do
@@ -38,6 +39,9 @@ defmodule DockdWeb.Router do
 
     resources "/entries", LibraryController, only: [:index, :show, :create, :update, :delete]
     resources "/ownerships", OwnershipController, only: [:index, :show, :create, :update, :delete]
+    post "/releases/:release_id/price-observations", PurchasingController, :create_observation
+    post "/releases/:release_id/purchases", PurchasingController, :create_purchase
+    post "/releases/:release_id/vetoes", PurchasingController, :create_veto
 
     resources "/games", GameController, only: [:index, :show, :create, :update] do
       resources "/releases", ReleaseController, only: [:index, :show, :create, :update]

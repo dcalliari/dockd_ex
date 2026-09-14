@@ -97,6 +97,7 @@ defmodule Dockd.Library do
 
   @doc "Creates a release veto and its event atomically."
   def create_veto(%User{id: user_id}, attrs) do
+    attrs = normalize_veto_attrs(attrs)
     cs = veto_changeset(%ReleaseVeto{user_id: user_id}, Map.put(attrs, :user_id, user_id))
 
     Ecto.Multi.new()
@@ -218,10 +219,22 @@ defmodule Dockd.Library do
           preload: [game: :releases]
       )
 
+  defp normalize_veto_attrs(attrs) do
+    Enum.reduce([:release_id, :reason], %{}, fn key, result ->
+      value = Map.get(attrs, key, Map.get(attrs, Atom.to_string(key)))
+      if is_nil(value), do: result, else: Map.put(result, key, value)
+    end)
+  end
+
   @doc "Appends an ownership insert to a purchase transaction."
   def append_ownership(multi, %User{id: user_id}, attrs) do
     Ecto.Multi.run(multi, :ownership, fn repo, %{purchase: purchase} ->
-      changeset = ownership_changeset(%Ownership{user_id: user_id}, Map.merge(attrs, %{user_id: user_id, purchase_id: purchase.id}))
+      changeset =
+        ownership_changeset(
+          %Ownership{user_id: user_id},
+          Map.merge(attrs, %{user_id: user_id, purchase_id: purchase.id})
+        )
+
       repo.insert(changeset)
     end)
   end
@@ -232,7 +245,10 @@ defmodule Dockd.Library do
 
   @doc "Returns a user's veto for a release when it exists."
   def get_veto_for_release(%User{id: user_id}, release_id),
-    do: Repo.one(from v in ReleaseVeto, where: v.user_id == ^user_id and v.release_id == ^release_id)
+    do:
+      Repo.one(
+        from v in ReleaseVeto, where: v.user_id == ^user_id and v.release_id == ^release_id
+      )
 
   defp normalize_filter(value) when value in [nil, ""], do: nil
   defp normalize_filter(value), do: normalize_enum(value)
