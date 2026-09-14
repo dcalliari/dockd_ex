@@ -51,7 +51,6 @@ defmodule DockdWeb.DockdComponents do
               </.link>
             <% end %>
           </nav>
-          <p class="mt-auto text-xs text-base-content/50">comprar menos no escuro.</p>
         </aside>
         <div class="min-w-0 flex-1 pb-24 lg:pb-0">
           <header class="sticky top-0 z-20 border-b border-base-content/10 bg-base-100/90 px-4 py-4 backdrop-blur sm:px-8">
@@ -113,21 +112,13 @@ defmodule DockdWeb.DockdComponents do
   end
 
   @doc "Renders a page title with an optional action slot."
-  attr :eyebrow, :string, default: nil
   attr :title, :string, required: true
-  attr :description, :string, default: nil
   slot :actions
 
   def page_header(assigns) do
     ~H"""
-    <div class="flex flex-wrap items-end justify-between gap-5">
-      <div class="min-w-0">
-        <p :if={@eyebrow} class="eyebrow text-xs font-bold uppercase text-primary">{@eyebrow}</p>
-        <h1 class="display mt-2 text-4xl font-black tracking-tight sm:text-5xl">{@title}</h1>
-        <p :if={@description} class="mt-3 max-w-2xl text-base leading-relaxed text-base-content/70">
-          {@description}
-        </p>
-      </div>
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <h1 class="display text-4xl font-black tracking-tight sm:text-5xl">{@title}</h1>
       <div :if={@actions} class="shrink-0">{render_slot(@actions)}</div>
     </div>
     """
@@ -306,7 +297,7 @@ defmodule DockdWeb.DockdComponents do
     """
   end
 
-  @doc "Renders a status chip with an intent tone."
+  @doc "Renders a compact status marker."
   attr :label, :string, required: true
 
   attr :tone, :string,
@@ -354,20 +345,38 @@ defmodule DockdWeb.DockdComponents do
     </div>
     """
 
+  @doc "Renders a designed cover placeholder when artwork is unavailable."
+  attr :title, :string, required: true
+  attr :cover_url, :string, default: nil
+  attr :class, :string, default: ""
+
+  def game_cover(assigns) do
+    initials = assigns.title |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
+    assigns = assign(assigns, :initials, String.upcase(initials))
+
+    ~H"""
+    <div class={["aspect-[3/4] overflow-hidden rounded-xl bg-primary/15", @class]}>
+      <%= if @cover_url && @cover_url != "" do %>
+        <img src={@cover_url} alt={@title} class="h-full w-full object-cover" loading="lazy" />
+      <% else %>
+        <div class="flex h-full flex-col justify-between bg-gradient-to-br from-primary/20 via-base-200 to-neutral/20 p-4">
+          <span class="text-xs font-bold uppercase tracking-[.18em] text-primary">dockd</span>
+          <span class="display text-4xl font-black leading-none text-base-content/75">{@initials}</span>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
   @doc "Renders the backlog pressure indicator."
   attr :count, :integer, required: true
   attr :label, :string, default: "parados"
 
   def backlog_pressure(assigns),
     do: ~H"""
-    <div class="rounded-xl border-l-4 border-warning bg-warning/10 p-4">
-      <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <p class="text-2xl font-black tabular-nums">
-          {@count} <span class="text-base font-normal">{@label}</span>
-        </p><.status_chip label="atenção" tone="warning" />
-      </div><p class="mt-2 text-sm text-base-content/70">
-        Antes de comprar, há jogos esperando sua vez.
-      </p>
+    <div class="flex items-baseline gap-2">
+      <span class="text-3xl font-black tabular-nums">{@count}</span>
+      <span class="text-sm text-base-content/60">{@label}</span>
     </div>
     """
 

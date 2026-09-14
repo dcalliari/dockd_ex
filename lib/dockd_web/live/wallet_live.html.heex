@@ -1,10 +1,6 @@
 <Layouts.app flash={@flash} current="Carteira">
   <div class="space-y-8">
-    <.page_header
-      eyebrow="Dinheiro"
-      title="Carteira"
-      description="Veja o saldo disponível e proteja o que já está comprometido."
-    />
+    <.page_header title="Carteira" />
     <section id="balance-section" class="max-w-xl">
       <.section_card title="Saldo eShop">
         <.form for={@balance_form} id="balance-form" phx-submit="save-balance" class="space-y-4">
@@ -44,7 +40,6 @@
           <.empty_state
             :if={@reservations == []}
             title="Nenhuma reserva"
-            description="Reserve saldo para um lançamento que você já decidiu comprar."
           />
         </div>
         <button

@@ -1,10 +1,6 @@
 <Layouts.app flash={@flash} current="Catálogo">
   <div class="mx-auto max-w-6xl space-y-8">
-    <.page_header
-      eyebrow="Jogo"
-      title={@game.title}
-      description="Fatos para decidir quando e como comprar."
-    >
+    <.page_header title={@game.title}>
       <:actions>
         <.link navigate={~p"/catalogo"} class="btn btn-ghost">Voltar ao catálogo</.link>
       </:actions>

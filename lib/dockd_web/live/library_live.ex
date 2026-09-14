@@ -5,7 +5,6 @@ defmodule DockdWeb.LibraryLive do
   alias Dockd.Catalog
   alias Dockd.Library
   alias Dockd.Library.Entry
-  alias DockdWeb.DockdComponents
 
   @impl true
   def mount(params, _session, socket) do
@@ -104,6 +103,12 @@ defmodule DockdWeb.LibraryLive do
 
   defp group_for(_), do: "Outros"
 
-  defp target_price(nil, _), do: "Sem preço alvo"
-  defp target_price(cents, currency), do: DockdComponents.money(cents, currency)
+  defp status_label(%{play_state: :playing}), do: "Jogando"
+  defp status_label(%{play_state: :finished}), do: "Terminado"
+  defp status_label(%{play_state: :abandoned}), do: "Abandonado"
+  defp status_label(%{backlog: :backlog}), do: "Backlog"
+  defp status_label(_), do: nil
+
+  defp platform_label(%{releases: [%{platform: platform} | _]}), do: enum_label(platform)
+  defp platform_label(_), do: nil
 end

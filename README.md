@@ -18,7 +18,7 @@ A restrição a Switch e Switch 2 é uma escolha de produto, não uma limitaçã
 
 - Planejador em `/`, com saldo, reservas, calendário e pressão do backlog.
 - Biblioteca em `/biblioteca`, com estados pessoais, filtros e registros de posse.
-- Catálogo em `/catalogo` e decisão por jogo em `/jogos/:id`, com versões, preços, compras e vetos.
+- Catálogo em `/catalogo` e decisão por jogo em `/jogos/:id`, com versões, preços, compras e vetos. O catálogo é administrado pela API; a interface web é somente para consulta e ações do usuário.
 - Carteira em `/carteira`, com saldo e reservas editáveis.
 - API JSON versionada em `/api/v1` e especificação em `/api/openapi`.
 - Seeds demonstrativas idempotentes, executadas por `mix ecto.setup`.

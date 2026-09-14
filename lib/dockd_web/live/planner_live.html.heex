@@ -1,93 +1,75 @@
 <Layouts.app flash={@flash} current="Planejador">
   <div class="space-y-8">
-    <.page_header
-      eyebrow="Dockd"
-      title="Planejador"
-      description="Seu dinheiro primeiro. Depois, o próximo jogo."
-    />
-    <section id="planner-money" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <.money_card
-        label="Saldo eShop"
-        value={@summary.money.balance_cents}
-        currency={@summary.money.currency}
-      />
-      <.money_card
-        label="Reservado"
-        value={@summary.money.reserved_cents}
-        currency={@summary.money.currency}
-        tone="secondary"
-      />
-      <.money_card
-        label="Livre para gastar"
-        value={@summary.money.free_cents}
-        currency={@summary.money.currency}
-        tone="success"
-      />
-      <.money_card
-        label="Compras este mês"
-        value={@summary.money.spent_month_cents}
-        currency={@summary.money.currency}
-        tone="neutral"
-      />
+    <.page_header title="Planejador" />
+    <section
+      id="planner-money"
+      class="grid grid-cols-2 gap-x-6 gap-y-5 border-y border-base-content/10 py-5 sm:grid-cols-4"
+    >
+      <div class="col-span-2 sm:col-span-1">
+        <p class="text-xs text-base-content/60">Livre para gastar</p><p class="mt-1 text-2xl font-black tabular-nums">
+          {money(@summary.money.free_cents, @summary.money.currency)}
+        </p>
+      </div>
+      <div>
+        <p class="text-xs text-base-content/60">Reservado</p><p class="mt-1 font-bold tabular-nums">
+          {money(@summary.money.reserved_cents, @summary.money.currency)}
+        </p>
+      </div>
+      <div>
+        <p class="text-xs text-base-content/60">Este mês</p><p class="mt-1 font-bold tabular-nums">
+          {money(@summary.money.spent_month_cents, @summary.money.currency)}
+        </p>
+      </div>
+      <div>
+        <p class="text-xs text-base-content/60">Não jogados</p><p class="mt-1 font-bold tabular-nums">
+          {length(@summary.backlog)}
+        </p>
+      </div>
     </section>
-    <div class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-      <.section_card title="Próximos lançamentos">
-        <div id="planner-calendar" class="space-y-4">
+    <div class="grid gap-8 lg:grid-cols-[1.2fr_.8fr]">
+      <section>
+        <h2 class="mb-4 text-xl font-bold">Próximos lançamentos</h2><div
+          id="planner-calendar"
+          class="divide-y divide-base-content/10"
+        >
           <%= for item <- @summary.calendar do %>
             <.link
               navigate={"/jogos/#{item.game.id}"}
               id={"release-#{item.release.id}"}
-              class="block rounded-xl p-2 transition hover:bg-base-200"
-            >
-              <.release_calendar_item
-                title={item.game.title}
-                date={item.release.release_date}
-                platform={item.release.platform}
-                media={:digital}
-              />
-              <.status_chip
-                label={if item.recommendation == "reserve", do: "reservar", else: "pode esperar"}
-                tone={if item.recommendation == "reserve", do: "primary", else: "neutral"}
-              />
-            </.link>
+              class="flex items-center gap-4 py-3 transition hover:text-primary"
+            ><div class="w-12 shrink-0 text-center">
+              <b class="block text-xl">{Calendar.strftime(item.release.release_date, "%d")}</b><small class="text-xs uppercase text-base-content/55">{Calendar.strftime(
+                item.release.release_date,
+                "%b"
+              )}</small>
+            </div><.game_cover
+              title={item.game.title}
+              cover_url={item.game.cover_url}
+              class="w-12 shrink-0"
+            /><span class="truncate font-semibold">{item.game.title}</span></.link>
           <% end %>
-          <.empty_state
-            :if={@summary.calendar == []}
-            title="Nenhum lançamento no radar"
-            description="Explore o catálogo e marque os jogos que você quer comprar."
-          >
+          <.empty_state :if={@summary.calendar == []} title="Nenhum lançamento">
             <:action>
-              <.link navigate="/catalogo" class="btn btn-primary">Ver catálogo</.link>
+              <.link navigate="/catalogo" class="btn btn-ghost">Ver catálogo</.link>
             </:action>
           </.empty_state>
         </div>
-      </.section_card>
-      <.section_card title="Pressão do backlog">
-        <div id="planner-backlog">
-          <%= if @summary.backlog == [] do %>
-            <.empty_state
-              title="Backlog limpo"
-              description="Sua próxima aventura pode começar agora."
-            >
-              <:action>
-                <.link navigate="/biblioteca" class="btn btn-secondary">Abrir biblioteca</.link>
-              </:action>
-            </.empty_state>
-          <% else %>
-            <.backlog_pressure count={length(@summary.backlog)} />
-            <ul class="mt-5 space-y-3">
-              <%= for item <- Enum.take(@summary.backlog, 5) do %>
-                <li>
-                  <.link
-                    navigate={"/jogos/#{item.game.id}"}
-                    class="font-semibold hover:text-primary"
-                  >{item.game.title}</.link>
-                </li>
-              <% end %>
-            </ul>
+      </section>
+      <section id="planner-backlog" class="border-l border-base-content/10 pl-6">
+        <h2 class="text-xl font-bold">Backlog</h2><.link
+          navigate="/biblioteca"
+          class="mt-2 inline-flex items-baseline gap-2 hover:text-primary"
+        ><span class="text-3xl font-black">{length(@summary.backlog)}</span><span class="text-sm text-base-content/60">jogos para jogar</span></.link><ul class="mt-5 divide-y divide-base-content/10">
+          <%= for item <- Enum.take(@summary.backlog, 5) do %>
+            <li>
+              <.link
+                navigate={"/jogos/#{item.game.id}"}
+                class="block py-3 font-semibold hover:text-primary"
+              >{item.game.title}</.link>
+            </li>
           <% end %>
-        </div>
-      </.section_card>
+        </ul>
+      </section>
     </div>
   </div>
 </Layouts.app>
