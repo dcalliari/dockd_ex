@@ -16,7 +16,7 @@ defmodule Dockd.Wallet do
   def create_balance(%User{id: id}, attrs),
     do:
       %StoreBalance{user_id: id}
-      |> balance_changeset(Map.put(normalize_attrs(attrs), :user_id, id))
+      |> balance_changeset(attrs)
       |> Repo.insert()
 
   @doc "Updates a store balance scoped to a user."
@@ -35,7 +35,7 @@ defmodule Dockd.Wallet do
   def create_reservation(%User{id: id}, attrs),
     do:
       %BalanceReservation{user_id: id}
-      |> reservation_changeset(Map.put(normalize_attrs(attrs), :user_id, id))
+      |> reservation_changeset(attrs)
       |> Repo.insert()
 
   @doc "Updates a reservation scoped to a user."
@@ -53,7 +53,7 @@ defmodule Dockd.Wallet do
   defp balance_changeset(s, a),
     do:
       s
-      |> cast(a, [:user_id, :store, :amount_cents, :currency])
+      |> cast(a, [:store, :amount_cents, :currency])
       |> validate_required([:user_id, :store, :amount_cents])
       |> validate_number(:amount_cents, greater_than_or_equal_to: 0)
       |> unique_constraint([:user_id, :store])
@@ -61,16 +61,10 @@ defmodule Dockd.Wallet do
   defp reservation_changeset(s, a),
     do:
       s
-      |> cast(a, [:user_id, :store, :game_id, :amount_cents, :note])
+      |> cast(a, [:store, :game_id, :amount_cents, :note])
       |> validate_required([:user_id, :store, :game_id, :amount_cents])
       |> validate_number(:amount_cents, greater_than_or_equal_to: 0)
       |> assoc_constraint(:game)
-
-  defp normalize_attrs(attrs),
-    do:
-      Map.new(attrs, fn {key, value} ->
-        {if(is_binary(key), do: String.to_existing_atom(key), else: key), value}
-      end)
 
   @doc "Gets a balance scoped to a user."
   def get_balance!(%User{id: id}, balance_id),
