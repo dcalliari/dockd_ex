@@ -87,7 +87,6 @@ defmodule DockdWeb do
       # Core UI components
       import DockdWeb.CoreComponents
       import DockdWeb.DockdComponents
-      import DockdWeb.DockdComponents
 
       # Common modules used in templates
       alias DockdWeb.Layouts
