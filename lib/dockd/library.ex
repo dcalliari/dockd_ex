@@ -218,6 +218,22 @@ defmodule Dockd.Library do
           preload: [game: :releases]
       )
 
+  @doc "Appends an ownership insert to a purchase transaction."
+  def append_ownership(multi, %User{id: user_id}, attrs) do
+    Ecto.Multi.run(multi, :ownership, fn repo, %{purchase: purchase} ->
+      changeset = ownership_changeset(%Ownership{user_id: user_id}, Map.merge(attrs, %{user_id: user_id, purchase_id: purchase.id}))
+      repo.insert(changeset)
+    end)
+  end
+
+  @doc "Returns the entry for a game, scoped to a user, or nil when absent."
+  def get_entry_for_game(%User{id: user_id}, game_id),
+    do: Repo.one(from e in Entry, where: e.user_id == ^user_id and e.game_id == ^game_id)
+
+  @doc "Returns a user's veto for a release when it exists."
+  def get_veto_for_release(%User{id: user_id}, release_id),
+    do: Repo.one(from v in ReleaseVeto, where: v.user_id == ^user_id and v.release_id == ^release_id)
+
   defp normalize_filter(value) when value in [nil, ""], do: nil
   defp normalize_filter(value), do: normalize_enum(value)
 

@@ -56,13 +56,17 @@ defmodule DockdWeb.PurchasingController do
   defp release_param(params, key),
     do: Map.get(params, key) || Map.get(params, Atom.to_string(key))
 
-  defp body_attrs(conn),
-    do:
-      Map.get(conn.body_params, "data", conn.body_params)
-      |> Map.reject(fn {_k, v} -> is_nil(v) end)
+  defp body_attrs(conn) do
+    (Map.get(conn.body_params, "data") || Map.get(conn.body_params, :data) || conn.body_params)
+    |> then(fn attrs -> if is_struct(attrs), do: Map.from_struct(attrs), else: attrs end)
+    |> Map.reject(fn {_k, v} -> is_nil(v) end)
+  end
 
   defp respond(conn, {:ok, value}),
-    do: conn |> put_status(:created) |> json(%{data: Map.from_struct(value)})
+    do:
+      conn
+      |> put_status(:created)
+      |> json(%{data: value |> Map.from_struct() |> Map.drop([:__meta__, :user, :release])})
 
   defp respond(conn, {:error, changeset}),
     do:

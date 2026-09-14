@@ -87,6 +87,50 @@ defmodule Dockd.DomainTest do
     refute Enum.any?(Activity.list_events(user), &(&1.type == :vetoed))
   end
 
+  test "queries return game entry, release veto, latest observation, and purchases", %{
+    user: user,
+    game: game,
+    release: release
+  } do
+    assert {:ok, entry} = Library.create_entry(user, %{game_id: game.id})
+    assert Library.get_entry_for_game(user, game.id).id == entry.id
+    assert Library.get_entry_for_game(user, Ecto.UUID.generate()) == nil
+
+    assert {:ok, veto} = Library.create_veto(user, %{release_id: release.id, reason: "PC first"})
+    assert Library.get_veto_for_release(user, release.id).id == veto.id
+
+    old = DateTime.add(DateTime.utc_now(), -1, :hour)
+
+    assert {:ok, first} =
+             Purchasing.create_price_observation(user, %{
+               release_id: release.id,
+               format: :digital,
+               price_cents: 100,
+               observed_at: old,
+               source: "eShop"
+             })
+
+    assert {:ok, second} =
+             Purchasing.create_price_observation(user, %{
+               release_id: release.id,
+               format: :digital,
+               price_cents: 90,
+               observed_at: DateTime.utc_now(),
+               source: "eShop"
+             })
+
+    assert Purchasing.latest_price_observation(user, release.id).id == second.id
+
+    assert Purchasing.list_price_observations(user, release.id) |> Enum.map(& &1.id) == [
+             second.id,
+             first.id
+           ]
+
+    assert {:ok, purchase} = purchase_fixture(user, release)
+    assert [listed] = Purchasing.list_purchases(user, release.id)
+    assert listed.id == purchase.id
+  end
+
   test "default owner is idempotent and stale observations use seven days", %{
     user: user,
     release: release

@@ -32,6 +32,7 @@ defmodule Dockd.Purchasing do
 
   @doc "Creates a purchase and its event atomically."
   def create_purchase(%User{id: user_id}, attrs) do
+    attrs = normalize_attrs(attrs)
     cs = purchase_changeset(%Purchase{user_id: user_id}, Map.put(attrs, :user_id, user_id))
 
     Ecto.Multi.new()
@@ -81,11 +82,13 @@ defmodule Dockd.Purchasing do
     do: if(observation.user_id == id, do: Repo.delete(observation), else: {:error, :not_found})
 
   @doc "Creates a dated price observation."
-  def create_price_observation(%User{id: id}, attrs),
-    do:
-      %PriceObservation{user_id: id}
-      |> price_changeset(Map.put(attrs, :user_id, id))
-      |> Repo.insert()
+  def create_price_observation(%User{id: id}, attrs) do
+    attrs = normalize_attrs(attrs)
+
+    %PriceObservation{user_id: id}
+    |> price_changeset(Map.put(attrs, :user_id, id))
+    |> Repo.insert()
+  end
 
   @doc "Returns whether an observation is older than the threshold, defaulting to seven days."
   def stale?(
@@ -113,6 +116,26 @@ defmodule Dockd.Purchasing do
           where: p.user_id == ^id and p.release_id == ^release_id,
           order_by: [desc: p.purchased_at]
       )
+
+  defp normalize_attrs(attrs) do
+    keys = [
+      :release_id,
+      :format,
+      :price_cents,
+      :currency,
+      :store_credit_used_cents,
+      :purchased_at,
+      :is_preorder,
+      :retailer,
+      :observed_at,
+      :source
+    ]
+
+    Enum.reduce(keys, %{}, fn key, result ->
+      value = Map.get(attrs, key, Map.get(attrs, Atom.to_string(key)))
+      if is_nil(value), do: result, else: Map.put(result, key, value)
+    end)
+  end
 
   defp purchase_changeset(s, a),
     do:

@@ -123,6 +123,7 @@
                 Map.get(@observation_forms, release.id, to_form(%{}, as: :observation))[:format]
               }
               type="select"
+              id={"observation-format-#{release.id}"}
               label="Formato"
               options={[{"Físico", :physical}, {"Digital", :digital}]}
             />
@@ -133,12 +134,14 @@
                 ]
               }
               type="number"
+              id={"observation-price-#{release.id}"}
               label="Preço (centavos)"
             />
             <.input
               field={
                 Map.get(@observation_forms, release.id, to_form(%{}, as: :observation))[:currency]
               }
+              id={"observation-currency-#{release.id}"}
               label="Moeda"
               value="BRL"
             />
@@ -146,6 +149,7 @@
               field={
                 Map.get(@observation_forms, release.id, to_form(%{}, as: :observation))[:source]
               }
+              id={"observation-source-#{release.id}"}
               label="Fonte"
               placeholder="eShop ou loja"
             />
@@ -156,6 +160,7 @@
                 ]
               }
               type="datetime-local"
+              id={"observation-at-#{release.id}"}
               label="Observado em"
               value={
                 DateTime.to_naive(DateTime.utc_now())
@@ -175,6 +180,7 @@
             <.input
               field={Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))[:format]}
               type="select"
+              id={"purchase-format-#{release.id}"}
               label="Compra em"
               options={[{"Físico", :physical}, {"Digital", :digital}]}
             />
@@ -183,10 +189,12 @@
                 Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))[:price_cents]
               }
               type="number"
+              id={"purchase-price-#{release.id}"}
               label="Preço (centavos)"
             />
             <.input
               field={Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))[:retailer]}
+              id={"purchase-retailer-#{release.id}"}
               label="Varejista"
             />
             <.input
@@ -194,6 +202,7 @@
                 Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))[:purchased_at]
               }
               type="datetime-local"
+              id={"purchase-at-#{release.id}"}
               label="Comprado em"
               value={
                 DateTime.to_naive(DateTime.utc_now())
@@ -219,6 +228,7 @@
               <input type="hidden" name="release_id" value={release.id} />
               <.input
                 field={Map.get(@veto_forms, release.id, to_form(%{}, as: :veto))[:reason]}
+                id={"veto-reason-#{release.id}"}
                 label="Motivo do veto"
               />
               <button class="btn btn-outline btn-error self-end" type="submit">Vetar versão</button>

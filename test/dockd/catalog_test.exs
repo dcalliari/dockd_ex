@@ -33,6 +33,16 @@ defmodule Dockd.CatalogTest do
     assert hd(Catalog.list_releases(game.id)).id == release.id
   end
 
+  test "release key card is castable" do
+    changeset =
+      Release.changeset(%Release{game_id: Ecto.UUID.generate()}, %{
+        platform: :switch,
+        physical_is_key_card: true
+      })
+
+    assert Ecto.Changeset.get_change(changeset, :physical_is_key_card) == true
+  end
+
   test "release requires platform and game" do
     errors = Release.changeset(%Release{}, %{})
     assert Keyword.has_key?(errors.errors, :platform)
