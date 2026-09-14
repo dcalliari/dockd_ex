@@ -13,7 +13,7 @@ defmodule DockdWeb.WalletLive do
   @impl true
   def handle_event("save-balance", %{"store_balance" => attrs}, socket) do
     attrs = normalize_money(attrs, "amount_cents")
-    attrs = atomize(attrs) |> Map.put(:store, :eshop)
+    attrs = Map.put(attrs, "store", "eshop")
 
     result =
       case Wallet.get_balance(socket.assigns.owner, :eshop) do
@@ -42,10 +42,10 @@ defmodule DockdWeb.WalletLive do
 
   def handle_event("save-reservation", %{"balance_reservation" => attrs}, socket) do
     attrs = normalize_money(attrs, "amount_cents")
-    attrs = atomize(attrs) |> Map.put(:store, :eshop)
+    attrs = Map.put(attrs, "store", "eshop")
 
     result =
-      case Map.get(attrs, :id) do
+      case Map.get(attrs, "id") do
         nil ->
           Wallet.create_reservation(socket.assigns.owner, attrs)
 
@@ -94,7 +94,4 @@ defmodule DockdWeb.WalletLive do
       :error -> attrs
     end
   end
-
-  defp atomize(attrs),
-    do: Map.new(attrs, fn {key, value} -> {String.to_existing_atom(key), value} end)
 end

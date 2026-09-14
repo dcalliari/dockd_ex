@@ -18,9 +18,11 @@ defmodule Dockd.Planner do
     amount = Enum.reduce(balances, 0, &(&1.amount_cents + &2))
     reserved = Enum.reduce(reservations, 0, &(&1.amount_cents + &2))
 
-    committed =
+    committed = Enum.reduce(purchases, 0, &(&1.price_cents + &2))
+
+    out_of_pocket =
       Enum.reduce(purchases, 0, fn purchase, total ->
-        total + purchase.price_cents + (purchase.store_credit_used_cents || 0)
+        total + purchase.price_cents - (purchase.store_credit_used_cents || 0)
       end)
 
     month_start = Date.beginning_of_month(today)
@@ -30,9 +32,7 @@ defmodule Dockd.Planner do
       |> Enum.filter(
         &(Date.compare(DateTime.to_date(&1.purchased_at), month_start) in [:eq, :gt])
       )
-      |> Enum.reduce(0, fn purchase, total ->
-        total + purchase.price_cents + (purchase.store_credit_used_cents || 0)
-      end)
+      |> Enum.reduce(0, &(&1.price_cents + &2))
 
     %{
       money: %{
@@ -40,6 +40,7 @@ defmodule Dockd.Planner do
         reserved_cents: reserved,
         free_cents: amount - reserved,
         committed_cents: committed,
+        out_of_pocket_cents: out_of_pocket,
         spent_month_cents: spent_month,
         currency: currency
       },

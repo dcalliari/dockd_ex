@@ -43,6 +43,18 @@ defmodule Dockd.PlannerTest do
            ]
   end
 
+  test "credit is not double counted in committed and out of pocket totals", %{user: user} do
+    game = game_fixture()
+    release = release_fixture(game)
+
+    {:ok, _} =
+      purchase_fixture(user, release, %{price_cents: 6_990, store_credit_used_cents: 2_000})
+
+    money = Planner.summary(user).money
+    assert money.committed_cents == 6_990
+    assert money.out_of_pocket_cents == 4_990
+  end
+
   test "calendar excludes vetoed releases and labels availability", %{user: user} do
     exclusive = game_fixture(%{title: "Exclusive"})
     multi = game_fixture(%{title: "Multi", availability: :multiplatform})
