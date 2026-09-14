@@ -1,4 +1,6 @@
 defmodule DockdWeb.DockdComponents do
+  @moduledoc "Reusable visual primitives for Dockd screens."
+
   use Phoenix.Component
   alias Phoenix.LiveView.JS
 
