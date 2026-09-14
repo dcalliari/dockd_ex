@@ -49,8 +49,12 @@ defmodule DockdWeb.LibraryController do
     do:
       json(conn, %{data: Enum.map(Library.list_entries(Accounts.default_owner()), &entry_json/1)})
 
-  def show(conn, %{"id" => id}),
-    do: render_entry(conn, Library.get_entry!(Accounts.default_owner(), id))
+  def show(conn, params),
+    do:
+      render_entry(
+        conn,
+        Library.get_entry!(Accounts.default_owner(), params[:id] || params["id"])
+      )
 
   def create(conn, _) do
     case Library.create_entry(Accounts.default_owner(), attrs(conn, "entry")) do
@@ -64,9 +68,9 @@ defmodule DockdWeb.LibraryController do
     end
   end
 
-  def update(conn, %{"id" => id}) do
+  def update(conn, params) do
     user = Accounts.default_owner()
-    entry = Library.get_entry!(user, id)
+    entry = Library.get_entry!(user, params[:id] || params["id"])
 
     case Library.update_entry(user, entry, attrs(conn, "entry")) do
       {:ok, entry} -> render_entry(conn, entry)
@@ -74,9 +78,13 @@ defmodule DockdWeb.LibraryController do
     end
   end
 
-  def delete(conn, %{"id" => id}) do
+  def delete(conn, params) do
     user = Accounts.default_owner()
-    :ok = Library.delete_entry(user, Library.get_entry!(user, id)) |> normalize_delete()
+
+    :ok =
+      Library.delete_entry(user, Library.get_entry!(user, params[:id] || params["id"]))
+      |> normalize_delete()
+
     send_resp(conn, :no_content, "")
   end
 
@@ -102,8 +110,16 @@ defmodule DockdWeb.LibraryController do
         :notes
       ])
 
-  defp attrs(conn, key),
-    do: Map.get(conn.body_params, key, %{}) |> Map.delete(:user_id) |> Map.delete("user_id")
+  defp attrs(conn, "entry"),
+    do:
+      (Map.get(conn.body_params, "entry") || Map.get(conn.body_params, :entry, %{}))
+      |> maybe_map()
+      |> Map.delete(:user_id)
+      |> Map.delete("user_id")
+      |> Map.reject(fn {_key, value} -> is_nil(value) end)
+
+  defp maybe_map(value) when is_struct(value), do: Map.from_struct(value)
+  defp maybe_map(value), do: value
 
   defp validation_error(conn, changeset),
     do:
@@ -167,19 +183,28 @@ defmodule DockdWeb.OwnershipController do
         data: Enum.map(Library.list_ownerships(Accounts.default_owner()), &ownership_json/1)
       })
 
-  def show(conn, %{"id" => id}),
-    do: render_ownership(conn, Library.get_ownership!(Accounts.default_owner(), id))
+  def show(conn, params),
+    do:
+      render_ownership(
+        conn,
+        Library.get_ownership!(Accounts.default_owner(), params[:id] || params["id"])
+      )
 
   def create(conn, _), do: save(conn, :create, nil)
 
-  def update(conn, %{"id" => id}),
-    do: save(conn, :update, Library.get_ownership!(Accounts.default_owner(), id))
+  def update(conn, params),
+    do:
+      save(
+        conn,
+        :update,
+        Library.get_ownership!(Accounts.default_owner(), params[:id] || params["id"])
+      )
 
-  def delete(conn, %{"id" => id}),
+  def delete(conn, params),
     do:
       Library.delete_ownership(
         Accounts.default_owner(),
-        Library.get_ownership!(Accounts.default_owner(), id)
+        Library.get_ownership!(Accounts.default_owner(), params[:id] || params["id"])
       )
       |> then(fn _ -> send_resp(conn, :no_content, "") end)
 
@@ -197,7 +222,15 @@ defmodule DockdWeb.OwnershipController do
     end
   end
 
-  defp body(conn), do: Map.get(conn.body_params, "ownership", %{})
+  defp body(conn),
+    do:
+      (Map.get(conn.body_params, "ownership") || Map.get(conn.body_params, :ownership, %{}))
+      |> maybe_map()
+      |> Map.reject(fn {_key, value} -> is_nil(value) end)
+
+  defp maybe_map(value) when is_struct(value), do: Map.from_struct(value)
+  defp maybe_map(value), do: value
+
   defp render_ownership(conn, o), do: json(conn, %{data: ownership_json(o)})
 
   defp ownership_json(%Ownership{} = o),

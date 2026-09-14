@@ -16,13 +16,15 @@ defmodule Dockd.Library do
         from e in Entry,
           where: e.user_id == ^id,
           order_by: [asc: e.priority, asc: e.inserted_at],
-          preload: [:game]
+          preload: [game: :releases]
       )
 
   @doc "Gets an entry for a user."
   def get_entry!(%User{id: id}, entry_id),
     do:
-      Repo.one!(from e in Entry, where: e.id == ^entry_id and e.user_id == ^id, preload: [:game])
+      Repo.one!(
+        from e in Entry, where: e.id == ^entry_id and e.user_id == ^id, preload: [game: :releases]
+      )
 
   @doc "Creates an entry and its added event atomically."
   def create_entry(%User{id: user_id}, attrs) do
@@ -211,7 +213,9 @@ defmodule Dockd.Library do
   def get_entry_by_game(%User{id: user_id}, game_id),
     do:
       Repo.one(
-        from e in Entry, where: e.user_id == ^user_id and e.game_id == ^game_id, preload: [:game]
+        from e in Entry,
+          where: e.user_id == ^user_id and e.game_id == ^game_id,
+          preload: [game: :releases]
       )
 
   defp normalize_filter(value) when value in [nil, ""], do: nil
