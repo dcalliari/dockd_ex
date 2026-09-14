@@ -16,7 +16,14 @@ defmodule Dockd.Catalog.Release do
 
   def changeset(release, attrs) do
     release
-    |> cast(attrs, [:platform, :edition, :release_date, :physical_available, :digital_available])
+    |> cast(attrs, [
+      :platform,
+      :edition,
+      :release_date,
+      :physical_available,
+      :digital_available,
+      :physical_is_key_card
+    ])
     |> validate_required([:platform, :game_id])
     |> assoc_constraint(:game)
     |> unique_constraint([:game_id, :platform, :edition])

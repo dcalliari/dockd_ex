@@ -95,6 +95,25 @@ defmodule Dockd.Purchasing do
       ),
       do: DateTime.diff(now, observed_at, :second) > age_days * 86_400
 
+  @doc "Returns the latest observation for a user and release."
+  def latest_price_observation(%User{id: id}, release_id),
+    do:
+      Repo.one(
+        from p in PriceObservation,
+          where: p.user_id == ^id and p.release_id == ^release_id,
+          order_by: [desc: p.observed_at],
+          limit: 1
+      )
+
+  @doc "Returns purchases for a user and release."
+  def list_purchases(%User{id: id}, release_id),
+    do:
+      Repo.all(
+        from p in Purchase,
+          where: p.user_id == ^id and p.release_id == ^release_id,
+          order_by: [desc: p.purchased_at]
+      )
+
   defp purchase_changeset(s, a),
     do:
       s
