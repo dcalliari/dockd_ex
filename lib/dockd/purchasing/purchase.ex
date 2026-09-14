@@ -14,5 +14,28 @@ defmodule Dockd.Purchasing.Purchase do
     belongs_to :release, Dockd.Catalog.Release, type: :binary_id
     timestamps(type: :utc_datetime_usec)
   end
-  def changeset(purchase, attrs), do: purchase |> cast(attrs, [:user_id, :release_id, :format, :price_cents, :currency, :store_credit_used_cents, :purchased_at, :is_preorder, :retailer]) |> validate_required([:user_id, :release_id, :format, :price_cents, :purchased_at, :retailer]) |> validate_number(:price_cents, greater_than_or_equal_to: 0)
+
+  def changeset(purchase, attrs),
+    do:
+      purchase
+      |> cast(attrs, [
+        :user_id,
+        :release_id,
+        :format,
+        :price_cents,
+        :currency,
+        :store_credit_used_cents,
+        :purchased_at,
+        :is_preorder,
+        :retailer
+      ])
+      |> validate_required([
+        :user_id,
+        :release_id,
+        :format,
+        :price_cents,
+        :purchased_at,
+        :retailer
+      ])
+      |> validate_number(:price_cents, greater_than_or_equal_to: 0)
 end

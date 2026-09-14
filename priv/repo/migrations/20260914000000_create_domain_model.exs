@@ -12,12 +12,13 @@ defmodule Dockd.Repo.Migrations.CreateDomainModel do
     purchase_format: ~w(physical digital),
     price_format: ~w(physical digital),
     store: ~w(eshop),
-    event_type: ~w(added intent_changed purchased started paused resumed finished abandoned backlogged activated vetoed)
+    event_type:
+      ~w(added intent_changed purchased started paused resumed finished abandoned backlogged activated vetoed)
   }
 
   def change do
     for {name, values} <- @enums do
-      execute "CREATE TYPE #{name} AS ENUM (#{Enum.map_join(values, ", ", &quote/1)})",
+      execute "CREATE TYPE #{name} AS ENUM (#{Enum.map_join(values, ", ", &sql_quote/1)})",
               "DROP TYPE #{name}"
     end
 
@@ -45,13 +46,17 @@ defmodule Dockd.Repo.Migrations.CreateDomainModel do
       add :notes, :text
       timestamps(type: :utc_datetime_usec)
     end
+
     create unique_index(:entries, [:user_id, :game_id])
     create index(:entries, [:user_id])
 
     create table(:purchases, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
-      add :release_id, references(:releases, type: :binary_id, on_delete: :delete_all), null: false
+
+      add :release_id, references(:releases, type: :binary_id, on_delete: :delete_all),
+        null: false
+
       add :format, :purchase_format, null: false
       add :price_cents, :integer, null: false
       add :currency, :text, null: false, default: "BRL"
@@ -61,32 +66,44 @@ defmodule Dockd.Repo.Migrations.CreateDomainModel do
       add :retailer, :text, null: false
       timestamps(type: :utc_datetime_usec)
     end
+
     create index(:purchases, [:user_id, :release_id])
 
     create table(:ownerships, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
-      add :release_id, references(:releases, type: :binary_id, on_delete: :delete_all), null: false
+
+      add :release_id, references(:releases, type: :binary_id, on_delete: :delete_all),
+        null: false
+
       add :ownership_type, :ownership_type, null: false
       add :acquired_at, :utc_datetime_usec, null: false
       add :purchase_id, references(:purchases, type: :binary_id, on_delete: :nilify_all)
       timestamps(type: :utc_datetime_usec)
     end
+
     create unique_index(:ownerships, [:user_id, :release_id, :ownership_type])
 
     create table(:release_vetoes, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
-      add :release_id, references(:releases, type: :binary_id, on_delete: :delete_all), null: false
+
+      add :release_id, references(:releases, type: :binary_id, on_delete: :delete_all),
+        null: false
+
       add :reason, :text
       timestamps(type: :utc_datetime_usec, updated_at: false)
     end
+
     create unique_index(:release_vetoes, [:user_id, :release_id])
 
     create table(:price_observations, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
-      add :release_id, references(:releases, type: :binary_id, on_delete: :delete_all), null: false
+
+      add :release_id, references(:releases, type: :binary_id, on_delete: :delete_all),
+        null: false
+
       add :format, :price_format, null: false
       add :price_cents, :integer, null: false
       add :currency, :text, null: false, default: "BRL"
@@ -94,6 +111,7 @@ defmodule Dockd.Repo.Migrations.CreateDomainModel do
       add :source, :text, null: false
       timestamps(type: :utc_datetime_usec)
     end
+
     create index(:price_observations, [:user_id, :release_id])
 
     create table(:store_balances, primary_key: false) do
@@ -104,6 +122,7 @@ defmodule Dockd.Repo.Migrations.CreateDomainModel do
       add :currency, :text, null: false, default: "BRL"
       timestamps(type: :utc_datetime_usec)
     end
+
     create unique_index(:store_balances, [:user_id, :store])
 
     create table(:balance_reservations, primary_key: false) do
@@ -125,8 +144,9 @@ defmodule Dockd.Repo.Migrations.CreateDomainModel do
       add :occurred_at, :utc_datetime_usec, null: false
       add :payload, :map, null: false, default: %{}
     end
+
     create index(:events, [:user_id, :occurred_at])
   end
 
-  defp quote(value), do: "'#{value}'"
+  defp sql_quote(value), do: "'#{value}'"
 end

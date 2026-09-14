@@ -3,7 +3,21 @@ defmodule Dockd.Activity.Event do
   import Ecto.Changeset
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "events" do
-    field :type, Ecto.Enum, values: [:added, :intent_changed, :purchased, :started, :paused, :resumed, :finished, :abandoned, :backlogged, :activated, :vetoed]
+    field :type, Ecto.Enum,
+      values: [
+        :added,
+        :intent_changed,
+        :purchased,
+        :started,
+        :paused,
+        :resumed,
+        :finished,
+        :abandoned,
+        :backlogged,
+        :activated,
+        :vetoed
+      ]
+
     field :occurred_at, :utc_datetime_usec
     field :payload, :map, default: %{}
     belongs_to :user, Dockd.Accounts.User, type: :binary_id

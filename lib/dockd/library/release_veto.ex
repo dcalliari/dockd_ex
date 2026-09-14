@@ -8,5 +8,10 @@ defmodule Dockd.Library.ReleaseVeto do
     belongs_to :release, Dockd.Catalog.Release, type: :binary_id
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end
-  def changeset(veto, attrs), do: veto |> cast(attrs, [:user_id, :release_id, :reason]) |> validate_required([:user_id, :release_id])
+
+  def changeset(veto, attrs),
+    do:
+      veto
+      |> cast(attrs, [:user_id, :release_id, :reason])
+      |> validate_required([:user_id, :release_id])
 end

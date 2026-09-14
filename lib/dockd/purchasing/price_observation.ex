@@ -12,5 +12,19 @@ defmodule Dockd.Purchasing.PriceObservation do
     belongs_to :release, Dockd.Catalog.Release, type: :binary_id
     timestamps(type: :utc_datetime_usec)
   end
-  def changeset(observation, attrs), do: observation |> cast(attrs, [:user_id, :release_id, :format, :price_cents, :currency, :observed_at, :source]) |> validate_required([:user_id, :release_id, :format, :price_cents, :observed_at, :source]) |> validate_number(:price_cents, greater_than_or_equal_to: 0)
+
+  def changeset(observation, attrs),
+    do:
+      observation
+      |> cast(attrs, [
+        :user_id,
+        :release_id,
+        :format,
+        :price_cents,
+        :currency,
+        :observed_at,
+        :source
+      ])
+      |> validate_required([:user_id, :release_id, :format, :price_cents, :observed_at, :source])
+      |> validate_number(:price_cents, greater_than_or_equal_to: 0)
 end

@@ -7,7 +7,10 @@ defmodule Dockd.Library.Entry do
     field :play_state, Ecto.Enum, values: [:unplayed, :playing, :paused, :finished, :abandoned]
     field :backlog, Ecto.Enum, values: [:no, :backlog, :active]
     field :priority, Ecto.Enum, values: [:low, :normal, :high]
-    field :media_preference, Ecto.Enum, values: [:physical, :digital, :physical_preferred, :digital_preferred, :either]
+
+    field :media_preference, Ecto.Enum,
+      values: [:physical, :digital, :physical_preferred, :digital_preferred, :either]
+
     field :target_price_cents, :integer
     field :currency, :string, default: "BRL"
     field :owned_elsewhere, :boolean, default: false
@@ -19,5 +22,26 @@ defmodule Dockd.Library.Entry do
     belongs_to :game, Dockd.Catalog.Game, type: :binary_id
     timestamps(type: :utc_datetime_usec)
   end
-  def changeset(entry, attrs), do: entry |> cast(attrs, [:user_id, :game_id, :purchase_intent, :play_state, :backlog, :priority, :media_preference, :target_price_cents, :currency, :owned_elsewhere, :owned_elsewhere_note, :duration_override_minutes, :pace_override, :notes]) |> validate_required([:user_id, :game_id]) |> validate_number(:target_price_cents, greater_than_or_equal_to: 0)
+
+  def changeset(entry, attrs),
+    do:
+      entry
+      |> cast(attrs, [
+        :user_id,
+        :game_id,
+        :purchase_intent,
+        :play_state,
+        :backlog,
+        :priority,
+        :media_preference,
+        :target_price_cents,
+        :currency,
+        :owned_elsewhere,
+        :owned_elsewhere_note,
+        :duration_override_minutes,
+        :pace_override,
+        :notes
+      ])
+      |> validate_required([:user_id, :game_id])
+      |> validate_number(:target_price_cents, greater_than_or_equal_to: 0)
 end
