@@ -11,13 +11,14 @@ defmodule DockdWeb.WalletLive do
   end
 
   @impl true
-  def handle_event("save-balance", %{"balance" => attrs}, socket) do
+  def handle_event("save-balance", %{"store_balance" => attrs}, socket) do
     attrs = normalize_money(attrs, "amount_cents")
+    attrs = atomize(attrs) |> Map.put(:store, :eshop)
 
     result =
       case Wallet.get_balance(socket.assigns.owner, :eshop) do
-        nil -> Wallet.create_balance(socket.assigns.owner, atomize(attrs))
-        balance -> Wallet.update_balance(socket.assigns.owner, balance, atomize(attrs))
+        nil -> Wallet.create_balance(socket.assigns.owner, attrs)
+        balance -> Wallet.update_balance(socket.assigns.owner, balance, attrs)
       end
 
     case result do
@@ -39,7 +40,7 @@ defmodule DockdWeb.WalletLive do
     {:noreply, assign(socket, reservation_form: to_form(Ecto.Changeset.change(reservation)))}
   end
 
-  def handle_event("save-reservation", %{"reservation" => attrs}, socket) do
+  def handle_event("save-reservation", %{"balance_reservation" => attrs}, socket) do
     attrs = normalize_money(attrs, "amount_cents")
     attrs = atomize(attrs) |> Map.put(:store, :eshop)
 
