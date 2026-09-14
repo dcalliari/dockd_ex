@@ -18,10 +18,11 @@ defmodule Dockd.DomainTest do
     game: game
   } do
     {:ok, entry} = Library.create_entry(user, %{game_id: game.id})
-    assert [entry] = Library.list_entries(user)
+    assert [listed] = Library.list_entries(user)
+    assert listed.id == entry.id
     assert Library.list_entries(other) == []
-    assert {:error, :not_found} = Library.update_entry(other, entry, %{backlog: :backlog})
-    assert {:ok, _} = Library.update_entry(user, entry, %{backlog: :backlog})
+    assert {:error, :not_found} = Library.update_entry(other, listed, %{backlog: :backlog})
+    assert {:ok, _} = Library.update_entry(user, listed, %{backlog: :backlog})
 
     assert [%Event{type: :backlogged}] =
              Activity.list_events(user) |> Enum.filter(&(&1.type == :backlogged))
