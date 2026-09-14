@@ -55,7 +55,7 @@ defmodule Dockd.Catalog do
   defp sync_game(game) do
     with {:ok, %{body: [external]}} <- Dockd.IGDB.get_games([game.igdb_id]),
          {:ok, updated} <- Repo.transaction(fn -> apply_external(game, external) end) do
-      {:ok, updated}
+      {:ok, sync_result(updated)}
     else
       {:ok, %{body: []}} -> {:error, {game.id, :not_found}}
       {:error, reason} -> {:error, {game.id, reason}}
@@ -75,8 +75,17 @@ defmodule Dockd.Catalog do
     external_releases(external)
     |> Enum.each(fn {platform, date} -> upsert_release(game, platform, date) end)
 
-    Repo.preload(game, :releases)
+    suggestion = suggested_availability(external)
+
+    %{
+      game: Repo.preload(game, :releases),
+      suggested_availability: suggestion,
+      availability_difference: suggestion != game.availability
+    }
   end
+
+  defp sync_result(%{game: game} = result),
+    do: Map.put(result, :game, %{id: game.id, title: game.title})
 
   defp upsert_release(game, platform, date) do
     case Repo.get_by(Release, game_id: game.id, platform: platform, edition: nil) do
@@ -84,6 +93,19 @@ defmodule Dockd.Catalog do
       release -> Repo.update!(Release.changeset(release, %{release_date: date}))
     end
   end
+
+  defp suggested_availability(%{"platforms" => platforms}) do
+    ids = Enum.map(platforms, & &1["id"])
+
+    cond do
+      ids == [508] -> :switch2_exclusive
+      ids == [130] -> :nintendo_exclusive
+      130 in ids or 508 in ids -> :multiplatform
+      true -> nil
+    end
+  end
+
+  defp suggested_availability(_), do: nil
 
   defp external_releases(%{"release_dates" => dates}) do
     dates
