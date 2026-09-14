@@ -6,7 +6,7 @@
       </:actions>
     </.page_header>
 
-    <section class="grid gap-6 sm:grid-cols-[10rem_1fr]">
+    <section class="grid grid-cols-[5rem_1fr] items-start gap-4 sm:grid-cols-[10rem_1fr] sm:gap-6">
       <.game_cover title={@game.title} cover_url={@game.cover_url} />
       <div class="space-y-3">
         <.status_mark label={enum_label(@game.availability)} tone="primary" />
@@ -116,7 +116,9 @@
           </div>
           <div class="mt-5 flex flex-wrap gap-2">
             <details>
-              <summary class="btn btn-secondary btn-sm cursor-pointer">Registrar preço</summary>
+              <summary class="btn btn-outline btn-primary btn-sm cursor-pointer">
+                Registrar preço
+              </summary>
               <.form
                 for={Map.get(@observation_forms, release.id, to_form(%{}, as: :observation))}
                 id={"observation-form-#{release.id}"}
