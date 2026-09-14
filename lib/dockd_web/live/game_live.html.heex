@@ -11,19 +11,22 @@
     </.page_header>
 
     <div class="flex flex-wrap gap-2">
-      <.status_chip label={@game.availability |> to_string()} tone="primary" />
+      <.status_chip label={enum_label(@game.availability)} tone="primary" />
       <.status_chip
         :if={@game.estimated_duration_minutes}
         label={"#{@game.estimated_duration_minutes} min"}
       />
-      <.status_chip :if={@game.pace} label={@game.pace |> to_string()} />
-      <.status_chip :if={@game.play_mode} label={@game.play_mode |> to_string()} />
+      <.status_chip :if={@game.pace} label={enum_label(@game.pace)} />
+      <.status_chip :if={@game.play_mode} label={enum_label(@game.play_mode)} />
     </div>
 
     <.section_card title="Minha entrada">
       <div :if={@entry} class="mb-5 flex flex-wrap gap-3 text-sm">
-        <.status_chip label={"intenção: #{@entry.purchase_intent || :none}"} tone="secondary" />
-        <.status_chip label={"estado: #{@entry.play_state || :unplayed}"} />
+        <.status_chip
+          label={"intenção: #{enum_label(@entry.purchase_intent || :none)}"}
+          tone="secondary"
+        />
+        <.status_chip label={"estado: #{enum_label(@entry.play_state || :unplayed)}"} />
         <span :if={@entry.target_price_cents} class="font-semibold">Alvo: {money(
           @entry.target_price_cents,
           @entry.currency
@@ -60,11 +63,7 @@
             {"Abandonado", :abandoned}
           ]}
         />
-        <.input
-          field={@entry_form[:target_price_cents]}
-          type="number"
-          label="Preço alvo (centavos)"
-        />
+        <.money_input field={@entry_form[:target_price_cents]} label="Preço alvo (R$)" />
         <button id="save-entry-button" class="btn btn-primary sm:col-span-3" type="submit">Salvar intenção</button>
       </.form>
     </.section_card>
@@ -133,9 +132,11 @@
                   :price_cents
                 ]
               }
-              type="number"
+              type="text"
+              inputmode="decimal"
               id={"observation-price-#{release.id}"}
-              label="Preço (centavos)"
+              label="Preço (R$)"
+              placeholder="199,90"
             />
             <.input
               field={
@@ -188,9 +189,11 @@
               field={
                 Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))[:price_cents]
               }
-              type="number"
+              type="text"
+              inputmode="decimal"
               id={"purchase-price-#{release.id}"}
-              label="Preço (centavos)"
+              label="Preço (R$)"
+              placeholder="199,90"
             />
             <.input
               field={Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))[:retailer]}

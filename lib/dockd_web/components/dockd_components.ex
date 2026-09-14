@@ -2,6 +2,7 @@ defmodule DockdWeb.DockdComponents do
   @moduledoc "Reusable visual primitives for Dockd screens."
 
   use Phoenix.Component
+  import DockdWeb.CoreComponents, only: [input: 1]
   alias Phoenix.LiveView.JS
 
   @doc """
@@ -159,8 +160,7 @@ defmodule DockdWeb.DockdComponents do
     ~H"""
     <article class="rounded-2xl bg-neutral p-5 text-neutral-content shadow-sm sm:p-6">
       <p class="text-sm opacity-70">{@label}</p><p class={[
-        "mt-4 text-3xl font-black tabular-nums",
-        @tone == "primary" && "text-primary-content"
+        "mt-4 text-3xl font-black tabular-nums text-neutral-content"
       ]}>
         {money(@value, @currency)}
       </p><p :if={@detail} class="mt-2 text-sm opacity-70">{@detail}</p>
@@ -181,6 +181,103 @@ defmodule DockdWeb.DockdComponents do
       </p><p :if={@detail} class="mt-2 text-sm text-base-content/60">{@detail}</p>
     </article>
     """
+
+  @doc "Converts domain enum values to Portuguese labels for the interface."
+  def enum_label(value) when is_atom(value), do: enum_label(Atom.to_string(value))
+  def enum_label("nintendo_exclusive"), do: "Exclusivo Nintendo"
+  def enum_label("switch2_exclusive"), do: "Exclusivo Switch 2"
+  def enum_label("multiplatform"), do: "Multiplataforma"
+  def enum_label("switch"), do: "Switch"
+  def enum_label("switch_2"), do: "Switch 2"
+  def enum_label("none"), do: "Sem intenção"
+  def enum_label("interested"), do: "Interessado"
+  def enum_label("want"), do: "Quero comprar"
+  def enum_label("planned"), do: "Planejado"
+  def enum_label("preordered"), do: "Pré-venda"
+  def enum_label("unplayed"), do: "Não jogado"
+  def enum_label("playing"), do: "Jogando"
+  def enum_label("paused"), do: "Pausado"
+  def enum_label("finished"), do: "Terminado"
+  def enum_label("abandoned"), do: "Abandonado"
+  def enum_label("no"), do: "Fora do backlog"
+  def enum_label("backlog"), do: "Backlog"
+  def enum_label("active"), do: "Ativo"
+  def enum_label("low"), do: "Baixa"
+  def enum_label("normal"), do: "Normal"
+  def enum_label("high"), do: "Alta"
+  def enum_label("physical"), do: "Físico"
+  def enum_label("digital"), do: "Digital"
+  def enum_label("physical_preferred"), do: "Prefiro físico"
+  def enum_label("digital_preferred"), do: "Prefiro digital"
+  def enum_label("either"), do: "Qualquer mídia"
+  def enum_label("subscription"), do: "Assinatura"
+  def enum_label("shared"), do: "Compartilhado"
+  def enum_label("borrowed"), do: "Emprestado"
+  def enum_label("reserve"), do: "Reservar"
+  def enum_label("can_wait"), do: "Pode esperar"
+
+  def enum_label(value) when is_binary(value),
+    do: value |> String.replace("_", " ") |> String.capitalize()
+
+  @doc "Parses a Brazilian reais input into integer cents."
+  def parse_money(nil), do: {:ok, nil}
+  def parse_money(value) when is_integer(value), do: {:ok, value}
+
+  def parse_money(value) when is_binary(value) do
+    value = String.trim(value)
+
+    cond do
+      value == "" ->
+        {:ok, nil}
+
+      Regex.match?(~r/^\d{1,3}(\.\d{3})*,\d{2}$/, value) ->
+        parse_digits(String.replace(value, ".", "") |> String.replace(",", "."))
+
+      Regex.match?(~r/^\d+(,\d{1,2})?$/, value) ->
+        parse_digits(String.replace(value, ",", "."))
+
+      Regex.match?(~r/^\d+\.\d{1,2}$/, value) ->
+        parse_digits(value)
+
+      true ->
+        :error
+    end
+  end
+
+  def parse_money(_), do: :error
+
+  defp parse_digits(value) do
+    case Float.parse(value) do
+      {number, ""} -> {:ok, round(number * 100)}
+      _ -> :error
+    end
+  end
+
+  @doc "Renders a reais input while the domain keeps integer cents."
+  attr :field, :any, required: true
+  attr :label, :string, required: true
+  attr :id, :string, default: nil
+
+  def money_input(assigns) do
+    value = assigns.field.value
+
+    display =
+      if is_integer(value), do: money(value, "BRL") |> String.replace("R$ ", ""), else: value
+
+    assigns = assign(assigns, :display, display)
+
+    ~H"""
+    <.input
+      field={@field}
+      type="text"
+      inputmode="decimal"
+      label={@label}
+      id={@id}
+      value={@display}
+      placeholder="199,90"
+    />
+    """
+  end
 
   @doc "Renders a platform badge."
   attr :platform, :atom, required: true

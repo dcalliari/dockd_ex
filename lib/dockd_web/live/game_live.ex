@@ -26,7 +26,11 @@ defmodule DockdWeb.GameLive do
         %{"release_id" => release_id, "observation" => attrs},
         socket
       ) do
-    attrs = normalize_datetime(attrs, "observed_at") |> Map.put("release_id", release_id)
+    attrs =
+      attrs
+      |> normalize_datetime("observed_at")
+      |> normalize_money("price_cents")
+      |> Map.put("release_id", release_id)
 
     case Purchasing.create_price_observation(socket.assigns.user, attrs) do
       {:ok, _} ->
@@ -46,7 +50,11 @@ defmodule DockdWeb.GameLive do
   end
 
   def handle_event("save_purchase", %{"release_id" => release_id, "purchase" => attrs}, socket) do
-    attrs = normalize_datetime(attrs, "purchased_at") |> Map.put("release_id", release_id)
+    attrs =
+      attrs
+      |> normalize_datetime("purchased_at")
+      |> normalize_money("price_cents")
+      |> Map.put("release_id", release_id)
 
     case Purchasing.create_purchase(socket.assigns.user, attrs) do
       {:ok, purchase} ->
@@ -91,6 +99,8 @@ defmodule DockdWeb.GameLive do
   end
 
   def handle_event("save_entry", %{"entry" => attrs}, socket) do
+    attrs = normalize_money(attrs, "target_price_cents")
+
     result =
       case socket.assigns.entry do
         nil ->
@@ -145,6 +155,14 @@ defmodule DockdWeb.GameLive do
          ) do
       {:ok, datetime, _} -> datetime
       _ -> value
+    end
+  end
+
+  defp normalize_money(attrs, key) do
+    case DockdWeb.DockdComponents.parse_money(Map.get(attrs, key)) do
+      {:ok, nil} -> Map.put(attrs, key, nil)
+      {:ok, cents} -> Map.put(attrs, key, cents)
+      :error -> attrs
     end
   end
 end

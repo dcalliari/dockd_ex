@@ -14,26 +14,21 @@ A restrição a Switch e Switch 2 é uma escolha de produto, não uma limitaçã
 
 ## Estado atual
 
-### Disponível hoje
+### Disponível hoje: versão 0.1.0
 
-- Cadastro e edição de obras no catálogo, com título, slug, disponibilidade, desenvolvedora, publicadora e capa.
-- Etiquetas de catálogo para duração estimada, ritmo e modo de jogo.
-- Cadastro e edição das versões de uma obra para Switch ou Switch 2.
-- Indicação de disponibilidade física e digital por versão.
-- API JSON na aplicação, com operações de consulta e escrita para obras e versões.
-- Persistência em PostgreSQL com migração versionada e restrições de unicidade.
+- Planejador em `/`, com saldo, reservas, calendário e pressão do backlog.
+- Biblioteca em `/biblioteca`, com estados pessoais, filtros e registros de posse.
+- Catálogo em `/catalogo` e decisão por jogo em `/jogos/:id`, com versões, preços, compras e vetos.
+- Carteira em `/carteira`, com saldo e reservas editáveis.
+- API JSON versionada em `/api/v1` e especificação em `/api/openapi`.
+- Seeds demonstrativas idempotentes, executadas por `mix ecto.setup`.
+- Interface responsiva com temas `dockd-light` e `dockd-dark`.
 
-A interface atual está concentrada no catálogo. O planejador financeiro, os estados pessoais e a biblioteca ainda estão sendo construídos.
+### Próximos passos
 
-### Planejado
-
-- Home orientada a dinheiro, calendário e próximas decisões de compra.
-- Entradas pessoais com intenção de compra, estado de jogo, backlog, prioridade e preferência de mídia.
-- Posse independente da intenção, incluindo jogos já adquiridos em outra plataforma como informação de decisão.
-- Compras e observações de preço informadas pelo usuário, sempre com data, moeda e origem.
-- Log append-only de transições para gerar sinais de tempo sem transformar o sistema em event sourcing.
-- Saldo reservado no eShop, veto por versão e sinalização de game-key card.
-- Cliente Flutter futuro consumindo a mesma API e a mesma camada de domínio.
+- Melhorar o recomendador com sinais históricos de uso.
+- Cliente Flutter consumindo os contratos estáveis da API.
+- Coleções e feedback explícito de recomendações permanecem fora do MVP.
 
 ## Modelo de domínio
 
@@ -135,6 +130,8 @@ mix setup
 mix phx.server
 ```
 
+Para carregar o cenário de demonstração em um banco descartável, execute `mix run priv/repo/seeds.exs`. O script pode ser executado novamente sem duplicar dados; nunca o use no banco do laboratório.
+
 `mix setup` instala dependências, cria e migra o banco, instala os binários de assets e compila CSS e JavaScript. O [Makefile](Makefile) reúne atalhos para setup, desenvolvimento, testes, lint, formatação, banco e Docker.
 
 Para usar um proxy reverso, copie `.env.example`, preencha `PHX_HOST`, `DATABASE_URL`, `SECRET_KEY_BASE`, `TRAEFIK_NETWORK` e `TRAEFIK_ENTRYPOINT`, e execute `docker compose -f compose.traefik.yml up --build`. Esse compose não cria a rede externa: ela deve existir no ambiente escolhido. O serviço reinicia automaticamente após reinicializações do host ou do Docker.
@@ -152,11 +149,9 @@ mix precommit
 
 ## Roadmap
 
-1. **Catálogo**: consolidar cadastro de obras e versões Nintendo. *(em andamento)*
-2. **Decisão de compra**: adicionar entradas pessoais, preço alvo, observações datadas e compras. *(próximo)*
-3. **Planejador**: transformar dinheiro, calendário, backlog e exclusividade em uma visão de decisão. *(planejado)*
-4. **Sinais de uso**: registrar transições e usar o histórico para mostrar jogos parados e orientar o próximo jogo. *(planejado)*
-5. **Cliente futuro**: estabilizar contratos, testes por rota e especificação OpenAPI antes de um cliente Flutter. *(planejado)*
+1. **0.1.0**: catálogo, biblioteca, compras, carteira, planejador e API entregues.
+2. **Sinais de uso**: usar o log para orientar o próximo jogo.
+3. **Cliente futuro**: consumir a API com Flutter após estabilizar os contratos.
 
 Coleções, feedback explícito de recomendações e histórico completo de preços por loja estão fora do MVP atual.
 

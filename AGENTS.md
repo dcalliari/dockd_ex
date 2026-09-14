@@ -454,6 +454,8 @@ Os caminhos suportados estão documentados no [README](README.md). Use `mix setu
 
 Variáveis relevantes: `DOCKD_DB_PASSWORD`, `DOCKD_DB_USER`, `DOCKD_DB_HOST`, `DOCKD_DB_NAME`, `DATABASE_URL`, `SECRET_KEY_BASE`, `PHX_HOST`, `TRAEFIK_NETWORK` e `TRAEFIK_ENTRYPOINT`. Os nomes e exemplos ficam em [`.env.example`](.env.example); valores locais ficam em `.env`.
 
+Os contextos de domínio estão em `lib/dockd/`, o design system em `DockdWeb.DockdComponents`, as telas em `lib/dockd_web/live/` e a API segue o padrão `/api/v1` com contrato em `lib/dockd_web/api_spec.ex`. O cenário demonstrativo está em `priv/repo/seeds.exs` e é idempotente.
+
 Valide mudanças com `mix precommit`. O [Makefile](Makefile) oferece atalhos equivalentes e o `Dockerfile` define a imagem de release.
 
 ## Maintaining this file

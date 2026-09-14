@@ -8,7 +8,7 @@
     <section id="balance-section" class="max-w-xl">
       <.section_card title="Saldo eShop">
         <.form for={@balance_form} id="balance-form" phx-submit="save-balance" class="space-y-4">
-          <.input field={@balance_form[:amount_cents]} type="number" label="Saldo (centavos)" />
+          <.money_input field={@balance_form[:amount_cents]} label="Saldo (R$)" />
           <.input field={@balance_form[:currency]} label="Moeda" />
           <button id="save-balance-button" class="btn btn-primary" type="submit">Salvar saldo</button>
         </.form>
@@ -27,11 +27,18 @@
                   {money(reservation.amount_cents, "BRL")}
                 </p>
               </div>
-              <button
-                class="btn btn-ghost btn-sm"
-                phx-click="delete-reservation"
-                phx-value-id={reservation.id}
-              >Excluir</button>
+              <div class="flex gap-2">
+                <button
+                  class="btn btn-outline btn-sm"
+                  phx-click="edit-reservation"
+                  phx-value-id={reservation.id}
+                >Editar</button>
+                <button
+                  class="btn btn-ghost btn-sm"
+                  phx-click="delete-reservation"
+                  phx-value-id={reservation.id}
+                >Excluir</button>
+              </div>
             </article>
           <% end %>
           <.empty_state
@@ -51,8 +58,9 @@
           phx-submit="save-reservation"
           class="mt-5 grid gap-4"
         >
+          <input type="hidden" name="reservation[id]" value={@reservation_form.data.id} />
           <.input field={@reservation_form[:game_id]} label="ID do jogo" />
-          <.input field={@reservation_form[:amount_cents]} type="number" label="Valor (centavos)" />
+          <.money_input field={@reservation_form[:amount_cents]} label="Valor (R$)" />
           <.input field={@reservation_form[:note]} label="Observação" />
           <button id="save-reservation-button" class="btn btn-primary" type="submit">Salvar reserva</button>
         </.form>

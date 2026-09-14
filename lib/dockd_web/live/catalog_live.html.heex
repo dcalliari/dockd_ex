@@ -21,7 +21,9 @@
                 phx-click="edit_game"
                 phx-value-id={game.id}
               >
-                <span class="min-w-0"><strong class="block truncate">{game.title}</strong><span class="mt-1 block text-sm text-base-content/60">{game.availability}</span></span>
+                <span class="min-w-0"><strong class="block truncate">{game.title}</strong><span class="mt-1 block text-sm text-base-content/60">{enum_label(
+                  game.availability
+                )}</span></span>
                 <span class="badge badge-ghost shrink-0">{length(game.releases)} versões</span>
               </button>
               <button
@@ -112,7 +114,9 @@
                 phx-value-id={release.id}
                 phx-value-game-id={@game.id}
               >
-                <span>{release.edition || "Edição padrão"}</span><span class="badge badge-neutral">{release.platform}</span>
+                <span>{release.edition || "Edição padrão"}</span><span class="badge badge-neutral">{enum_label(
+                  release.platform
+                )}</span>
               </button>
             <% end %>
           </div>

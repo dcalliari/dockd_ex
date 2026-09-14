@@ -16,6 +16,14 @@ defmodule DockdWeb.DockdComponentsTest do
     assert html =~ "tabular-nums"
   end
 
+  test "parses Brazilian money inputs" do
+    assert DockdWeb.DockdComponents.parse_money("199,90") == {:ok, 19_990}
+    assert DockdWeb.DockdComponents.parse_money("199.90") == {:ok, 19_990}
+    assert DockdWeb.DockdComponents.parse_money("1.234,56") == {:ok, 123_456}
+    assert DockdWeb.DockdComponents.parse_money("") == {:ok, nil}
+    assert DockdWeb.DockdComponents.parse_money("abc") == :error
+  end
+
   test "status and platform badges preserve their labels" do
     html =
       render_component(&DockdWeb.DockdComponents.status_chip/1, %{

@@ -24,6 +24,19 @@ defmodule DockdWeb.LibraryLiveTest do
     refute has_element?(view, "#entry-#{entry.id}")
   end
 
+  test "shows ownership records separately from entries", %{conn: conn, game: game} do
+    user = Accounts.default_owner()
+    release = release_fixture(game)
+    {:ok, _purchase} = purchase_fixture(user, release)
+    [ownership | _] = Library.list_ownerships(user)
+
+    {:ok, view, _html} = live(conn, "/biblioteca")
+
+    assert has_element?(view, "#ownership-#{ownership.id}")
+    view |> element("#remove-ownership-#{ownership.id}") |> render_click()
+    refute has_element?(view, "#ownership-#{ownership.id}")
+  end
+
   test "adds a game from the library", %{conn: conn, game: game} do
     {:ok, view, _html} = live(conn, "/biblioteca")
     view |> element("#add-game-#{game.id} button") |> render_click()

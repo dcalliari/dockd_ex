@@ -64,9 +64,9 @@
                   <div class="min-w-0">
                     <h3 class="truncate text-lg font-bold">{entry.game.title}</h3>
                     <div class="mt-2 flex flex-wrap gap-2">
-                      <.status_chip label={label(entry.purchase_intent)} tone="primary" />
-                      <.status_chip label={label(entry.play_state)} tone="neutral" />
-                      <.status_chip label={label(entry.priority)} tone="secondary" />
+                      <.status_chip label={enum_label(entry.purchase_intent)} tone="primary" />
+                      <.status_chip label={enum_label(entry.play_state)} tone="neutral" />
+                      <.status_chip label={enum_label(entry.priority)} tone="secondary" />
                       <%= for release <- entry.game.releases do %>
                         <.platform_badge platform={release.platform} />
                       <% end %>
@@ -107,6 +107,35 @@
         </.section_card>
       <% end %>
     </div>
+
+    <.section_card title="Posse registrada" class="bg-base-200">
+      <div id="ownerships-list" class="space-y-3">
+        <%= for ownership <- @ownerships do %>
+          <article
+            id={"ownership-#{ownership.id}"}
+            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-base-content/10 bg-base-100 p-4"
+          >
+            <div>
+              <p class="font-bold">{ownership.release.game.title}</p>
+              <p class="text-sm text-base-content/60">
+                {enum_label(ownership.ownership_type)} · {enum_label(ownership.release.platform)}
+              </p>
+            </div>
+            <button
+              id={"remove-ownership-#{ownership.id}"}
+              class="btn btn-sm btn-ghost text-error"
+              phx-click="remove_ownership"
+              phx-value-id={ownership.id}
+            >Remover</button>
+          </article>
+        <% end %>
+        <.empty_state
+          :if={@ownerships == []}
+          title="Nenhuma posse registrada"
+          description="Compras e acessos aparecem aqui para separar posse de intenção."
+        />
+      </div>
+    </.section_card>
 
     <div id="add-game">
       <.section_card title="Adicionar um jogo" class="bg-base-200">
@@ -178,7 +207,7 @@
             {"Prefiro digital", :digital_preferred}
           ]}
         />
-        <.input field={@form[:target_price_cents]} type="number" label="Preço alvo (centavos)" />
+        <.money_input field={@form[:target_price_cents]} label="Preço alvo (R$)" />
         <.input field={@form[:currency]} label="Moeda" />
         <.input
           field={@form[:owned_elsewhere]}

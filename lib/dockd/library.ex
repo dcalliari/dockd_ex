@@ -66,7 +66,12 @@ defmodule Dockd.Library do
 
   @doc "Lists a user's ownership records."
   def list_ownerships(%User{id: id}),
-    do: Repo.all(from o in Ownership, where: o.user_id == ^id, preload: [:release])
+    do:
+      Repo.all(
+        from o in Ownership,
+          where: o.user_id == ^id,
+          preload: [release: :game]
+      )
 
   @doc "Creates an ownership record."
   def create_ownership(%User{id: id}, attrs),

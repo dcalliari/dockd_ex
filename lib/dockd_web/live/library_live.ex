@@ -51,6 +51,18 @@ defmodule DockdWeb.LibraryLive do
     end
   end
 
+  def handle_event("remove_ownership", %{"id" => id}, socket) do
+    ownership = Library.get_ownership!(socket.assigns.user, id)
+
+    case Library.delete_ownership(socket.assigns.user, ownership) do
+      {:ok, _} ->
+        {:noreply, load(socket, socket.assigns.user, %{})}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, "Não foi possível remover: #{inspect(reason)}")}
+    end
+  end
+
   def handle_event("remove_entry", %{"id" => id}, socket) do
     entry = Library.get_entry!(socket.assigns.user, id)
 
@@ -72,6 +84,7 @@ defmodule DockdWeb.LibraryLive do
     assign(socket,
       user: user,
       entries: entries,
+      ownerships: Library.list_ownerships(user),
       games: games,
       editing: nil,
       form: to_form(Entry.changeset(%Entry{}, %{})),
@@ -90,13 +103,6 @@ defmodule DockdWeb.LibraryLive do
     do: "Terminados / abandonados"
 
   defp group_for(_), do: "Outros"
-
-  defp label(:none), do: "Sem intenção"
-  defp label(:interested), do: "Interessado"
-  defp label(:want), do: "Quero"
-  defp label(:planned), do: "Planejado"
-  defp label(:preordered), do: "Pré-venda"
-  defp label(value), do: value |> to_string() |> String.replace("_", " ") |> String.capitalize()
 
   defp target_price(nil, _), do: "Sem preço alvo"
   defp target_price(cents, currency), do: DockdComponents.money(cents, currency)
