@@ -119,6 +119,7 @@ defmodule DockdWeb.IGDBController do
         %{"date" => date} ->
           Catalog.create_release(game.id, %{
             platform: platform,
+            edition: "Edição padrão",
             release_date: DateTime.from_unix!(date) |> DateTime.to_date()
           })
 

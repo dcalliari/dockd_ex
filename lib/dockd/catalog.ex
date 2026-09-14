@@ -73,7 +73,16 @@ defmodule Dockd.Catalog do
     {:ok, game} = game |> Game.changeset(attrs) |> Repo.update()
 
     external_releases(external)
-    |> Enum.each(fn {platform, date} -> upsert_release(game, platform, date) end)
+    |> Enum.reduce_while(:ok, fn {platform, date}, :ok ->
+      case upsert_release(game, platform, date) do
+        {:ok, _release} -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:error, reason} -> Repo.rollback({:release_sync_failed, reason})
+      :ok -> :ok
+    end
 
     suggestion = suggested_availability(external)
 
@@ -88,9 +97,20 @@ defmodule Dockd.Catalog do
     do: Map.put(result, :game, %{id: game.id, title: game.title})
 
   defp upsert_release(game, platform, date) do
-    case Repo.get_by(Release, game_id: game.id, platform: platform, edition: nil) do
-      nil -> Repo.insert!(%Release{game_id: game.id, platform: platform, release_date: date})
-      release -> Repo.update!(Release.changeset(release, %{release_date: date}))
+    case Repo.one(
+           from release in Release,
+             where: release.game_id == ^game.id and release.platform == ^platform,
+             limit: 1
+         ) do
+      nil ->
+        %Release{game_id: game.id}
+        |> Release.changeset(%{platform: platform, edition: "Edição padrão", release_date: date})
+        |> Repo.insert()
+
+      release ->
+        release
+        |> Release.changeset(%{release_date: date})
+        |> Repo.update()
     end
   end
 
@@ -186,10 +206,9 @@ defmodule Dockd.Catalog do
   defp switch_candidate?(candidate),
     do: Enum.any?(candidate["platforms"] || [], &(&1["id"] in [130, 508]))
 
-  defp select_candidate([one], _switch), do: {:matched, one}
-  defp select_candidate(many, _switch) when many != [], do: {:ambiguous, many}
-  defp select_candidate(_, [one]), do: {:matched, one}
-  defp select_candidate(_, switch), do: {:ambiguous, switch}
+  defp select_candidate(_exact, []), do: {:ambiguous, []}
+  defp select_candidate(_exact, [one]), do: {:matched, one}
+  defp select_candidate(_exact, switch), do: {:ambiguous, switch}
 
   defp match_result(%{game: game, candidate: candidate}),
     do: %{game_id: game.id, title: game.title, candidate: candidate}
