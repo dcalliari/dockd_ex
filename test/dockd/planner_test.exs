@@ -22,6 +22,27 @@ defmodule Dockd.PlannerTest do
     assert money.currency == "BRL"
   end
 
+  test "calendar recommends reserving exclusives and waiting on multiplatform games", %{
+    user: user
+  } do
+    exclusive = game_fixture(%{title: "Exclusive recommendation"})
+    multi = game_fixture(%{title: "Multiplatform recommendation", availability: :multiplatform})
+
+    {:ok, _} =
+      Catalog.create_release(exclusive.id, %{platform: :switch, release_date: ~D[2026-12-01]})
+
+    {:ok, _} =
+      Catalog.create_release(multi.id, %{platform: :switch, release_date: ~D[2026-12-02]})
+
+    {:ok, _} = Library.create_entry(user, %{game_id: exclusive.id, purchase_intent: :want})
+    {:ok, _} = Library.create_entry(user, %{game_id: multi.id, purchase_intent: :want})
+
+    assert Enum.map(Planner.upcoming_releases(user, ~D[2026-01-01]), & &1.recommendation) == [
+             "reserve",
+             "can_wait"
+           ]
+  end
+
   test "calendar excludes vetoed releases and labels availability", %{user: user} do
     exclusive = game_fixture(%{title: "Exclusive"})
     multi = game_fixture(%{title: "Multi", availability: :multiplatform})

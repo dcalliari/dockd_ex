@@ -58,7 +58,7 @@
           phx-submit="save-reservation"
           class="mt-5 grid gap-4"
         >
-          <input type="hidden" name="reservation[id]" value={@reservation_form.data.id} />
+          <input type="hidden" name="balance_reservation[id]" value={@reservation_form.data.id} />
           <.input field={@reservation_form[:game_id]} label="ID do jogo" />
           <.money_input field={@reservation_form[:amount_cents]} label="Valor (R$)" />
           <.input field={@reservation_form[:note]} label="Observação" />

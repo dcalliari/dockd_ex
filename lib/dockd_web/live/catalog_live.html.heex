@@ -1,4 +1,4 @@
-<Layouts.app flash={@flash}>
+<Layouts.app flash={@flash} current="Catálogo">
   <div class="mx-auto max-w-6xl space-y-8">
     <.page_header
       eyebrow="Biblioteca pessoal"
@@ -14,10 +14,10 @@
       <.section_card title="Obras cadastradas" class="h-fit">
         <div id="games-list" class="space-y-2">
           <%= for game <- @games do %>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
               <button
                 id={"game-#{game.id}"}
-                class="flex min-h-16 min-w-0 flex-1 items-center justify-between gap-4 rounded-xl border border-base-content/10 p-4 text-left transition hover:border-primary hover:bg-base-200"
+                class="flex min-h-16 min-w-0 basis-full items-center justify-between gap-4 rounded-xl border border-base-content/10 p-4 text-left transition hover:border-primary hover:bg-base-200"
                 phx-click="edit_game"
                 phx-value-id={game.id}
               >
