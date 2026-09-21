@@ -63,7 +63,7 @@ defmodule Dockd.MixProject do
        depth: 1},
       {:daisyui,
        github: "saadeghi/daisyui",
-       tag: "v5.5.20",
+       tag: "v5.7.42",
        sparse: "packages/bundle",
        app: false,
        compile: false,
