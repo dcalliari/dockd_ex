@@ -21,7 +21,7 @@ test("a new game moves from Discover to List and can be removed", async ({ page 
 
   await listEntry.getByRole("link", { name: "Discovery Candidate" }).click();
   await expect(page.getByRole("heading", { name: "Discovery Candidate" })).toBeVisible();
-  await page.getByRole("link", { name: "Lista" }).click();
+  await page.locator("#game-back").click();
   await expect(page).toHaveURL("http://localhost:4460/");
 
   const listEntryAfterReturn = page
