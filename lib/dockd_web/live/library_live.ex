@@ -121,8 +121,7 @@ defmodule DockdWeb.LibraryLive do
 
   defp normalize_params(params) do
     nested = Map.get(params, "filters", %{})
-    params = Map.merge(Map.drop(params, ["filters"]), nested)
-    Map.put_new(params, "tab", "all")
+    Map.merge(Map.drop(params, ["filters"]), nested)
   end
 
   defp filter_entries(entries, filters, owned_game_ids) do
@@ -136,7 +135,7 @@ defmodule DockdWeb.LibraryLive do
           "playing" -> entry.play_state == :playing
           "backlog" -> entry.backlog == :backlog
           "want" -> entry.purchase_intent in [:want, :planned, :preordered]
-          "all" -> MapSet.member?(owned_game_ids, entry.game_id)
+          "collection" -> MapSet.member?(owned_game_ids, entry.game_id)
           "finished" -> entry.play_state == :finished
           _ -> true
         end

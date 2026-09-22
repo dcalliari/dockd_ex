@@ -11,11 +11,11 @@
         {"Jogando", "playing", @counts.playing},
         {"Backlog", "backlog", @counts.backlog},
         {"Quero", "want", @counts.want},
-        {"Coleção", "all", @counts.collection},
+        {"Coleção", "collection", @counts.collection},
         {"Terminados", "finished", @counts.finished}
       ] do %>
         <button
-          id={"library-tab-#{key}"}
+          id={"library-tab-#{if key == "collection", do: "all", else: key}"}
           class="dockd-tab"
           data-active={to_string(@filters["tab"] == key)}
           phx-click="filter"
@@ -159,7 +159,7 @@
       :if={@editing}
       id="entry-editor"
       tabindex="-1"
-      phx-mounted={JS.focus("#entry-editor")}
+      phx-mounted={JS.focus(to: "#entry-editor")}
       class="dockd-panel outline-none"
     >
       <div class="flex items-center justify-between gap-4">
