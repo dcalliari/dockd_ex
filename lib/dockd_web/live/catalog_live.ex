@@ -7,7 +7,7 @@ defmodule DockdWeb.CatalogLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, games: Catalog.list_games())}
+    {:ok, assign(socket, page_title: "Catálogo", games: Catalog.list_games())}
   end
 
   @impl true

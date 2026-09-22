@@ -80,6 +80,7 @@ defmodule DockdWeb.WalletLive do
     balance = Wallet.get_balance(owner, :eshop) || %StoreBalance{store: :eshop, currency: "BRL"}
 
     assign(socket,
+      page_title: "Carteira",
       owner: owner,
       balance: balance,
       reservations: Wallet.list_reservations(owner),

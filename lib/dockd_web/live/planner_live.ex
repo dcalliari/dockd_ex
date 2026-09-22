@@ -5,6 +5,6 @@ defmodule DockdWeb.PlannerLive do
   @impl true
   def mount(_params, _session, socket) do
     owner = Accounts.default_owner()
-    {:ok, assign(socket, owner: owner, summary: Planner.summary(owner))}
+    {:ok, assign(socket, page_title: "Planejador", owner: owner, summary: Planner.summary(owner))}
   end
 end

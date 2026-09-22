@@ -90,6 +90,7 @@ defmodule DockdWeb.LibraryLive do
     games = Catalog.list_games()
 
     assign(socket,
+      page_title: "Biblioteca",
       user: user,
       entries: entries,
       ownerships: ownerships,

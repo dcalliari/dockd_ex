@@ -10,6 +10,7 @@ defmodule DockdWeb.GameLive do
 
     {:ok,
      assign(socket,
+       page_title: game.title,
        game: game,
        user: user,
        entry: Library.get_entry_for_game(user, game.id),
