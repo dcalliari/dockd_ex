@@ -1,5 +1,12 @@
 defmodule Dockd.Catalog do
-  @moduledoc false
+  @moduledoc """
+  Catalog synchronization and Nintendo release data.
+
+  A release synchronized from IGDB is an eShop release, so it is always marked
+  as digitally available. Physical availability remains false unless it was
+  already known locally; IGDB does not provide a reliable physical inventory
+  signal for the catalog.
+  """
   import Ecto.Query
   alias Dockd.Catalog.{Game, Release}
   alias Dockd.Repo
@@ -73,8 +80,8 @@ defmodule Dockd.Catalog do
     {:ok, game} = game |> Game.changeset(attrs) |> Repo.update()
 
     external_releases(external)
-    |> Enum.reduce_while(:ok, fn {platform, date}, :ok ->
-      case upsert_release(game, platform, date) do
+    |> Enum.reduce_while(:ok, fn {platform, date, precision}, :ok ->
+      case upsert_release(game, platform, date, precision) do
         {:ok, _release} -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, reason}}
       end
@@ -87,7 +94,7 @@ defmodule Dockd.Catalog do
     suggestion = suggested_availability(external)
 
     %{
-      game: Repo.preload(game, :releases),
+      game: Repo.preload(game, :releases, force: true),
       suggested_availability: suggestion,
       availability_difference: suggestion != game.availability
     }
@@ -96,7 +103,13 @@ defmodule Dockd.Catalog do
   defp sync_result(%{game: game} = result),
     do: Map.put(result, :game, %{id: game.id, title: game.title})
 
-  defp upsert_release(game, platform, date) do
+  defp upsert_release(game, platform, date, precision) do
+    attrs = %{
+      release_date: date,
+      release_date_precision: precision,
+      digital_available: true
+    }
+
     case Repo.one(
            from release in Release,
              where: release.game_id == ^game.id and release.platform == ^platform,
@@ -104,45 +117,140 @@ defmodule Dockd.Catalog do
          ) do
       nil ->
         %Release{game_id: game.id}
-        |> Release.changeset(%{platform: platform, edition: "Edição padrão", release_date: date})
+        |> Release.changeset(Map.merge(%{platform: platform, edition: "Edição padrão"}, attrs))
         |> Repo.insert()
 
       release ->
         release
-        |> Release.changeset(%{release_date: date})
+        |> Release.changeset(attrs)
         |> Repo.update()
     end
   end
 
-  defp suggested_availability(%{"platforms" => platforms}) do
-    ids = Enum.map(platforms, & &1["id"])
+  def suggested_availability(%{"platforms" => platforms}) do
+    ids = platforms |> Enum.map(& &1["id"]) |> Enum.uniq()
+    nintendo_ids = [Dockd.IGDB.switch_platform_id(), Dockd.IGDB.switch_2_platform_id()]
 
     cond do
-      ids == [508] -> :switch2_exclusive
-      ids == [130] -> :nintendo_exclusive
-      130 in ids or 508 in ids -> :multiplatform
-      true -> nil
+      ids == [Dockd.IGDB.switch_2_platform_id()] ->
+        :switch2_exclusive
+
+      ids != [] and Enum.sort(ids) == Enum.sort(nintendo_ids) ->
+        :nintendo_exclusive
+
+      ids == [Dockd.IGDB.switch_platform_id()] ->
+        :nintendo_exclusive
+
+      Enum.any?(ids, &(&1 in nintendo_ids)) and Enum.any?(ids, &(&1 not in nintendo_ids)) ->
+        :multiplatform
+
+      true ->
+        nil
     end
   end
 
-  defp suggested_availability(_), do: nil
+  def suggested_availability(_), do: nil
 
-  defp external_releases(%{"release_dates" => dates}) do
-    dates
-    |> Enum.filter(
-      &(&1["platform"] in [Dockd.IGDB.switch_platform_id(), Dockd.IGDB.switch_2_platform_id()])
-    )
-    |> Enum.reduce(%{}, fn item, acc ->
-      Map.put(acc, platform(item["platform"]), unix_date(item["date"]))
+  def release_attributes(external) do
+    Enum.map(external_releases(external), fn {platform, date, precision} ->
+      %{
+        platform: platform,
+        edition: "Edição padrão",
+        release_date: date,
+        release_date_precision: precision,
+        digital_available: true
+      }
     end)
-    |> Map.to_list()
   end
 
-  defp external_releases(_), do: []
+  defp external_releases(external) do
+    platform_ids =
+      (external["platforms"] || [])
+      |> Enum.map(& &1["id"])
+      |> Kernel.++(Enum.map(external["release_dates"] || [], & &1["platform"]))
+      |> Enum.filter(
+        &(&1 in [Dockd.IGDB.switch_platform_id(), Dockd.IGDB.switch_2_platform_id()])
+      )
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    dates = external["release_dates"] || []
+
+    Enum.map(platform_ids, fn platform_id ->
+      release_date =
+        dates
+        |> Enum.filter(&(&1["platform"] == platform_id))
+        |> select_release_date()
+
+      {platform(platform_id), release_date.date, release_date.precision}
+    end)
+  end
+
+  defp select_release_date([]), do: %{date: nil, precision: :tbd}
+
+  defp select_release_date(dates) do
+    dates
+    |> Enum.map(fn date ->
+      {normalized_date, precision} = normalize_release_date(date)
+
+      %{
+        date: normalized_date,
+        precision: precision,
+        region: date["region"],
+        raw_date: date["date"]
+      }
+    end)
+    |> Enum.min_by(fn date ->
+      {region_priority(date.region), if(is_nil(date.date), do: 1, else: 0),
+       date.date || ~D[9999-12-31], date.raw_date || 9_223_372_036_854_775_807}
+    end)
+  end
+
+  defp normalize_release_date(%{"date" => date} = release) when is_integer(date) do
+    precision = release_precision(release)
+
+    case precision do
+      :tbd -> {nil, :tbd}
+      _ -> {truncate_date(DateTime.from_unix!(date) |> DateTime.to_date(), precision), precision}
+    end
+  end
+
+  defp normalize_release_date(_), do: {nil, :tbd}
+
+  defp release_precision(%{"category" => category}) when not is_nil(category),
+    do: precision_from_format(category)
+
+  defp release_precision(%{"date_format" => format}), do: precision_from_format(format)
+  defp release_precision(_), do: :day
+
+  defp precision_from_format(value) when value in [0, "0", "day", "YYYYMMMMDD"], do: :day
+  defp precision_from_format(value) when value in [1, "1", "month", "YYYYMMMM"], do: :month
+  defp precision_from_format(value) when value in [2, "2", "year", "YYYY"], do: :year
+
+  defp precision_from_format(value) when value in [3, 4, 5, 6, "3", "4", "5", "6", "quarter"],
+    do: :quarter
+
+  defp precision_from_format(value) when value in [7, "7", "tbd", "TBD"], do: :tbd
+  defp precision_from_format(_), do: :day
+
+  defp truncate_date(date, :day), do: date
+  defp truncate_date(%Date{year: year}, :year), do: Date.new!(year, 1, 1)
+  defp truncate_date(%Date{year: year, month: month}, :month), do: Date.new!(year, month, 1)
+
+  defp truncate_date(%Date{year: year, month: month}, :quarter) do
+    quarter_month = div(month - 1, 3) * 3 + 1
+    Date.new!(year, quarter_month, 1)
+  end
+
+  defp truncate_date(date, :tbd), do: date
+
+  defp region_priority(8), do: 0
+  defp region_priority(10), do: 1
+  defp region_priority(1), do: 2
+  defp region_priority(_), do: 3
+
   defp platform(130), do: :switch
   defp platform(508), do: :switch_2
-  defp unix_date(nil), do: nil
-  defp unix_date(seconds), do: DateTime.from_unix!(seconds) |> DateTime.to_date()
 
   defp cover_url(%{"cover" => %{"image_id" => id}}) when is_binary(id),
     do: "https://images.igdb.com/igdb/image/upload/t_cover_big/#{id}.jpg"
@@ -161,7 +269,7 @@ defmodule Dockd.Catalog do
   def match_igdb(opts \\ []) do
     if Dockd.IGDB.configured?() do
       dry_run = Keyword.get(opts, :dry_run, false)
-      games = Repo.all(Game)
+      games = Repo.all(from game in Game, where: is_nil(game.igdb_id))
       classified = Enum.map(games, &classify_match/1)
       matches = Enum.filter(classified, &(&1.status == :matched))
 
@@ -187,12 +295,12 @@ defmodule Dockd.Catalog do
 
   defp classify_match(game) do
     candidates = search_candidates(game.title)
-    switch = Enum.filter(candidates, &switch_candidate?/1)
+    switch = candidates |> Enum.filter(&switch_candidate?/1) |> Enum.uniq_by(& &1["id"])
 
-    exact =
-      Enum.filter(switch, &(String.downcase(&1["name"] || "") == String.downcase(game.title)))
+    exact = Enum.filter(switch, &exact_title?(game.title, &1))
+    variants = Enum.filter(switch, &obvious_variant?(game.title, &1))
 
-    {status, candidate} = select_candidate(exact, switch)
+    {status, candidate} = select_candidate(exact, variants)
     %{game: game, status: if(candidate == [], do: :not_found, else: status), candidate: candidate}
   end
 
@@ -206,9 +314,43 @@ defmodule Dockd.Catalog do
   defp switch_candidate?(candidate),
     do: Enum.any?(candidate["platforms"] || [], &(&1["id"] in [130, 508]))
 
-  defp select_candidate(_exact, []), do: {:ambiguous, []}
-  defp select_candidate(_exact, [one]), do: {:matched, one}
-  defp select_candidate(_exact, switch), do: {:ambiguous, switch}
+  defp exact_title?(title, candidate),
+    do: Enum.any?(candidate_titles(candidate), &(normalize_title(&1) == normalize_title(title)))
+
+  defp obvious_variant?(title, candidate) do
+    normalized_title = normalize_title(title)
+
+    Enum.any?(candidate_titles(candidate), fn name ->
+      normalized_name = normalize_title(name)
+
+      normalized_title != normalized_name and
+        String.starts_with?(normalized_name, normalized_title <> " ")
+    end)
+  end
+
+  defp candidate_titles(candidate) do
+    [candidate["name"] | Enum.map(candidate["alternative_names"] || [], & &1["name"])]
+    |> Enum.filter(&is_binary/1)
+  end
+
+  defp normalize_title(title) do
+    title
+    |> String.replace("&", " and ")
+    |> String.normalize(:nfd)
+    |> String.replace(~r/[\p{Mn}]/u, "")
+    |> String.downcase()
+    |> String.replace(~r/[^\p{L}\p{N}]+/u, " ")
+    |> String.trim()
+    |> String.replace(~r/\s+/u, " ")
+    |> String.replace(~r/\b(?:iii|3)\b/u, "3")
+    |> String.replace(~r/\b(?:ii|2)\b/u, "2")
+    |> String.replace(~r/\b(?:iv|4)\b/u, "4")
+  end
+
+  defp select_candidate([one], _switch), do: {:matched, one}
+  defp select_candidate(exact, _switch) when exact != [], do: {:ambiguous, exact}
+  defp select_candidate([], [one]), do: {:matched, one}
+  defp select_candidate([], switch), do: {:ambiguous, switch}
 
   defp match_result(%{game: game, candidate: candidate}),
     do: %{game_id: game.id, title: game.title, candidate: candidate}

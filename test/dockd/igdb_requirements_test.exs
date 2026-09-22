@@ -119,6 +119,95 @@ defmodule Dockd.IGDBRequirementsTest do
     assert Repo.get!(Game, clean.id).igdb_id == 14
   end
 
+  test "matches normalized exact names and rejects misleading unique results" do
+    Req.Test.stub("igdb-requirements", fn conn ->
+      case conn.request_path do
+        "/oauth2/token" ->
+          Req.Test.json(conn, %{access_token: "token", expires_in: 3600})
+
+        "/v4/games" ->
+          body = conn.adapter |> elem(1) |> Map.get(:raw_body)
+
+          response =
+            cond do
+              String.contains?(body, "Donkey Kong Bananza") ->
+                [candidate(10, "Donkey Kong: Bananza", 130)]
+
+              String.contains?(body, "Hollow Knight") ->
+                [
+                  candidate(11, "Different Name", 130)
+                  |> Map.put("alternative_names", [%{"name" => "Hollow Knight"}]),
+                  candidate(12, "Hollow Knight", 130)
+                ]
+
+              String.contains?(body, "Out of Words") ->
+                [candidate(13, "Words in Word", 130)]
+
+              String.contains?(body, "Pokemon Epee") ->
+                [candidate(14, "Pokémon Épée", 130)]
+
+              true ->
+                []
+            end
+
+          Req.Test.json(conn, response)
+      end
+    end)
+
+    {:ok, exact} =
+      Catalog.create_game(%{title: "Donkey Kong Bananza", availability: :multiplatform})
+
+    {:ok, ambiguous} =
+      Catalog.create_game(%{title: "Hollow Knight", availability: :multiplatform})
+
+    {:ok, wrong} = Catalog.create_game(%{title: "Out of Words", availability: :multiplatform})
+
+    {:ok, normalized} =
+      Catalog.create_game(%{title: "Pokemon Epee", availability: :multiplatform})
+
+    result = Catalog.match_igdb()
+
+    assert Enum.any?(result.matched, &(&1.title == exact.title and &1.candidate["id"] == 10))
+    assert Enum.any?(result.matched, &(&1.title == normalized.title and &1.candidate["id"] == 14))
+    assert Enum.any?(result.ambiguous, &(&1.title == ambiguous.title))
+    assert Enum.any?(result.not_found, &(&1.title == wrong.title))
+    assert Repo.get!(Game, wrong.id).igdb_id == nil
+  end
+
+  test "scheduler runs matching before the initial synchronization" do
+    Req.Test.stub("igdb-requirements", fn conn ->
+      case conn.request_path do
+        "/oauth2/token" ->
+          Req.Test.json(conn, %{access_token: "token", expires_in: 3600})
+
+        "/v4/games" ->
+          body = conn.adapter |> elem(1) |> Map.get(:raw_body)
+
+          if String.contains?(body, "where id") do
+            Req.Test.json(conn, [game_response(88, "Scheduled")])
+          else
+            Req.Test.json(conn, [candidate(88, "Scheduled", 130)])
+          end
+      end
+    end)
+
+    Application.put_env(:dockd, :igdb,
+      client_id: "test-id",
+      client_secret: "test-secret",
+      sync_initial_delay: 60_000,
+      sync_interval: 60_000,
+      req_options: [plug: {Req.Test, "igdb-requirements"}]
+    )
+
+    {:ok, game} = Catalog.create_game(%{title: "Scheduled", availability: :multiplatform})
+    scheduler = start_supervised!(Dockd.IGDB.SyncScheduler)
+    send(scheduler, :initial_sync)
+    _ = :sys.get_state(scheduler)
+
+    assert Repo.get!(Game, game.id).igdb_id == 88
+    assert [%{digital_available: true}] = Catalog.list_releases(game.id)
+  end
+
   test "sync and import leave personal records and events untouched" do
     Req.Test.stub("igdb-requirements", fn conn ->
       case conn.request_path do

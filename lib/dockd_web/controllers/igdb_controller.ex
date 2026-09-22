@@ -106,7 +106,7 @@ defmodule DockdWeb.IGDBController do
     %{
       title: data["name"],
       igdb_id: data["id"],
-      availability: :multiplatform,
+      availability: Catalog.suggested_availability(data) || :multiplatform,
       cover_url: cover_url(data),
       developer: company(data, "developer"),
       publisher: company(data, "publisher")
@@ -114,20 +114,7 @@ defmodule DockdWeb.IGDBController do
   end
 
   defp import_releases(game, data) do
-    Enum.each([{:switch, 130}, {:switch_2, 508}], fn {platform, id} ->
-      case Enum.find(data["release_dates"] || [], &(&1["platform"] == id)) do
-        %{"date" => date} ->
-          Catalog.create_release(game.id, %{
-            platform: platform,
-            edition: "Edição padrão",
-            release_date: DateTime.from_unix!(date) |> DateTime.to_date()
-          })
-
-        _ ->
-          :ok
-      end
-    end)
-
+    Enum.each(Catalog.release_attributes(data), &Catalog.create_release(game.id, &1))
     :ok
   end
 
@@ -162,6 +149,7 @@ defmodule DockdWeb.IGDBController do
       platform: release.platform,
       edition: release.edition,
       release_date: release.release_date,
+      release_date_precision: release.release_date_precision,
       physical_available: release.physical_available,
       digital_available: release.digital_available
     }

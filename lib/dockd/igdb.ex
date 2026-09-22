@@ -19,7 +19,7 @@ defmodule Dockd.IGDB do
       do:
         post(
           "games",
-          "search \"#{escape(title)}\"; fields id,name,cover.image_id,summary,platforms.id,platforms.name,release_dates.date,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher; limit 10;"
+          "search \"#{escape(title)}\"; fields id,name,alternative_names.name,cover.image_id,summary,platforms.id,platforms.name,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher; limit 10;"
         ),
       else: {:error, :not_configured}
   end
@@ -29,7 +29,7 @@ defmodule Dockd.IGDB do
       do:
         post(
           "games",
-          "where id = (#{Enum.join(ids, ",")}); fields id,name,cover.image_id,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.id,platforms.name,release_dates.date,release_dates.platform; limit #{length(ids)};"
+          "where id = (#{Enum.join(ids, ",")}); fields id,name,alternative_names.name,cover.image_id,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.id,platforms.name,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform; limit #{length(ids)};"
         ),
       else: {:error, :not_configured}
   end
@@ -116,26 +116,39 @@ defmodule Dockd.IGDB do
 end
 
 defmodule Dockd.IGDB.SyncScheduler do
-  @moduledoc "Supervised daily synchronization timer for linked catalog games."
+  @moduledoc "Supervised scheduler that matches and synchronizes the catalog on boot and daily."
   use GenServer
 
   def start_link(_), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
+
   @impl true
   def init(_) do
-    interval =
-      Application.get_env(:dockd, :igdb, []) |> Keyword.get(:sync_interval, :timer.hours(24))
+    config = Application.get_env(:dockd, :igdb, [])
+    interval = Keyword.get(config, :sync_interval, :timer.hours(24))
+    initial_delay = Keyword.get(config, :sync_initial_delay, 1_000)
 
-    schedule(interval)
+    Process.send_after(self(), :initial_sync, initial_delay)
     {:ok, interval}
   end
 
   @impl true
-  def handle_info(:sync, interval) do
-    _ = Dockd.Catalog.sync_igdb()
+  def handle_info(:initial_sync, interval) do
+    run_sync()
     schedule(interval)
     {:noreply, interval}
   end
 
-  defp schedule(interval),
-    do: if(Dockd.IGDB.configured?(), do: Process.send_after(self(), :sync, interval))
+  @impl true
+  def handle_info(:sync, interval) do
+    run_sync()
+    schedule(interval)
+    {:noreply, interval}
+  end
+
+  defp run_sync do
+    _ = Dockd.Catalog.match_igdb()
+    _ = Dockd.Catalog.sync_igdb()
+  end
+
+  defp schedule(interval), do: Process.send_after(self(), :sync, interval)
 end

@@ -33,6 +33,8 @@ defmodule Dockd.IGDBSyncTest do
              {:switch, ~D[2024-01-01]},
              {:switch_2, ~D[2025-01-01]}
            ]
+
+    assert Enum.all?(game.releases, & &1.digital_available)
   end
 
   test "sync is idempotent and does not duplicate releases" do
@@ -47,6 +49,48 @@ defmodule Dockd.IGDBSyncTest do
     second = Repo.preload(Repo.get!(Game, game.id), :releases)
     assert length(second.releases) == 2
     assert Enum.map(first.releases, & &1.id) == Enum.map(second.releases, & &1.id)
+    assert Enum.map(first.releases, & &1.updated_at) == Enum.map(second.releases, & &1.updated_at)
+  end
+
+  test "stores the preferred regional date with its precision" do
+    external = %{
+      "id" => 42,
+      "name" => "Local",
+      "platforms" => [%{"id" => 130}, %{"id" => 508}],
+      "release_dates" => [
+        %{"platform" => 130, "region" => 1, "category" => 0, "date" => 1_704_067_200},
+        %{"platform" => 130, "region" => 10, "category" => 0, "date" => 1_672_531_200},
+        %{"platform" => 130, "region" => 8, "category" => 1, "date" => 1_735_689_600},
+        %{"platform" => 508, "region" => 8, "category" => 7, "date" => 1_830_297_600}
+      ]
+    }
+
+    stub_igdb(external)
+
+    {:ok, game} =
+      Catalog.create_game(%{title: "Local", availability: :multiplatform, igdb_id: 42})
+
+    assert {:ok, _} = Catalog.sync_igdb()
+    releases = Catalog.list_releases(game.id)
+    switch = Enum.find(releases, &(&1.platform == :switch))
+    switch_2 = Enum.find(releases, &(&1.platform == :switch_2))
+
+    assert switch.release_date == ~D[2025-01-01]
+    assert switch.release_date_precision == :month
+    assert switch.digital_available
+    assert switch_2.release_date == nil
+    assert switch_2.release_date_precision == :tbd
+    assert switch_2.digital_available
+  end
+
+  test "suggests Nintendo exclusivity for both Nintendo platforms only" do
+    assert Catalog.suggested_availability(%{"platforms" => [%{"id" => 130}, %{"id" => 508}]}) ==
+             :nintendo_exclusive
+
+    assert Catalog.suggested_availability(%{
+             "platforms" => [%{"id" => 130}, %{"id" => 508}, %{"id" => 6}]
+           }) ==
+             :multiplatform
   end
 
   test "a non Switch search result is never auto matched" do

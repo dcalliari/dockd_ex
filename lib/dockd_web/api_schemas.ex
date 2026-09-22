@@ -37,10 +37,21 @@ defmodule DockdWeb.ApiSchemas.Release do
       platform: %Schema{type: :string, enum: ["switch", "switch_2"]},
       edition: %Schema{type: :string, nullable: true},
       release_date: %Schema{type: :string, format: :date, nullable: true},
+      release_date_precision: %Schema{
+        type: :string,
+        enum: ["day", "month", "quarter", "year", "tbd"]
+      },
       physical_available: %Schema{type: :boolean},
       digital_available: %Schema{type: :boolean}
     },
-    required: [:id, :game_id, :platform, :physical_available, :digital_available]
+    required: [
+      :id,
+      :game_id,
+      :platform,
+      :release_date_precision,
+      :physical_available,
+      :digital_available
+    ]
   })
 end
 
@@ -113,6 +124,10 @@ defmodule DockdWeb.ApiSchemas.ReleaseAttributes do
       platform: %Schema{type: :string, enum: ["switch", "switch_2"]},
       edition: %Schema{type: :string},
       release_date: %Schema{type: :string, format: :date},
+      release_date_precision: %Schema{
+        type: :string,
+        enum: ["day", "month", "quarter", "year", "tbd"]
+      },
       physical_available: %Schema{type: :boolean},
       digital_available: %Schema{type: :boolean}
     }

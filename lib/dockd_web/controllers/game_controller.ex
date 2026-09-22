@@ -100,6 +100,7 @@ defmodule DockdWeb.GameController do
       platform: release.platform,
       edition: release.edition,
       release_date: release.release_date,
+      release_date_precision: release.release_date_precision,
       physical_available: release.physical_available,
       digital_available: release.digital_available
     }
