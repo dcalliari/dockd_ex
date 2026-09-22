@@ -24,7 +24,12 @@ defmodule DockdWeb.CatalogLibraryTest do
     game = game_fixture(%{title: "Pikmin 4"})
     {:ok, view, _html} = live(conn, "/catalogo")
     view |> element("#add-library-#{game.id}") |> render_click()
-    assert %{game_id: game_id} = Library.get_entry_by_game(Accounts.default_owner(), game.id)
+
+    assert %{game_id: game_id, purchase_intent: :want} =
+             Library.get_entry_by_game(Accounts.default_owner(), game.id)
+
     assert game_id == game.id
+    assert has_element?(view, "#game-#{game.id}", "Na lista")
+    refute has_element?(view, "#add-library-#{game.id}")
   end
 end

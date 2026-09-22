@@ -20,9 +20,9 @@ defmodule DockdWeb.CatalogLive do
   end
 
   def handle_event("add_to_library", %{"id" => id}, socket) do
-    case Library.create_entry(Accounts.default_owner(), %{game_id: id}) do
+    case Library.create_entry(Accounts.default_owner(), %{game_id: id, purchase_intent: :want}) do
       {:ok, _entry} -> {:noreply, load(socket, socket.assigns.params)}
-      {:error, _changeset} -> {:noreply, put_flash(socket, :error, "Jogo já está na lista.")}
+      {:error, _changeset} -> {:noreply, load(socket, socket.assigns.params)}
     end
   end
 
