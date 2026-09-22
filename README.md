@@ -14,7 +14,7 @@ A restrição a Switch e Switch 2 é uma escolha de produto, não uma limitaçã
 
 ## Estado atual
 
-### Disponível hoje: versão 0.1.0
+### Disponível hoje: versão 0.2.0
 
 - Planejador em `/`, com saldo, reservas, calendário e pressão do backlog.
 - Biblioteca em `/biblioteca`, com estados pessoais, filtros e registros de posse.
@@ -23,7 +23,7 @@ A restrição a Switch e Switch 2 é uma escolha de produto, não uma limitaçã
 - API JSON versionada em `/api/v1` e especificação em `/api/openapi`.
 - Seeds demonstrativas idempotentes, executadas por `mix ecto.setup`.
 - Interface responsiva com temas `dockd-light` e `dockd-dark`.
-- Integração opcional com IGDB para sincronizar dados de jogos. O uso não comercial exige atribuição visível à fonte, disponível no rodapé da aplicação.
+- Integração opcional com IGDB para sincronizar dados de jogos. O uso não comercial exige atribuição visível à fonte, disponível no rodapé da aplicação. No deploy por compose, as variáveis do IGDB são fornecidas pelo `.env`.
 
 ### Próximos passos
 

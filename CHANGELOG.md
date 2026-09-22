@@ -2,6 +2,17 @@
 
 Todas as mudanças relevantes do Dockd são documentadas neste arquivo.
 
+## [0.2.0] 2026-09-22
+
+### Adicionado
+
+- Telas refeitas no formato de biblioteca de mídia, sem slogans, subtítulos e cartões genéricos.
+- Administração do catálogo somente pela API.
+- Sincronização do catálogo com o IGDB.
+- Crédito ao IGDB no rodapé.
+- Variáveis do IGDB no compose do lab.
+- Títulos de página.
+
 ## [0.1.0] 2026-09-14
 
 ### Adicionado
