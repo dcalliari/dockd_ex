@@ -84,7 +84,12 @@ defmodule DockdWeb.WalletLive do
       owner: owner,
       balance: balance,
       reservations: Wallet.list_reservations(owner),
-      games: owner |> Library.list_entries() |> Enum.map(& &1.game),
+      games:
+        owner
+        |> Library.list_entries()
+        |> Enum.map(& &1.game)
+        |> Enum.uniq_by(& &1.id)
+        |> Enum.sort_by(&String.downcase(&1.title)),
       balance_form: to_form(Ecto.Changeset.change(balance)),
       reservation_form: to_form(Ecto.Changeset.change(%BalanceReservation{}))
     )

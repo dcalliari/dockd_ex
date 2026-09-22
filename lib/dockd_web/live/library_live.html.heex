@@ -6,21 +6,6 @@
       </:actions>
     </.page_header>
 
-<<<<<<< HEAD
-    <nav
-      id="library-tabs"
-      class="flex gap-1 overflow-x-auto border-b border-base-content/10"
-      aria-label="Seções da biblioteca"
-    >
-      <%= for {label, key, count} <- [{"Jogando", "playing", @tab_counts.playing}, {"Backlog", "backlog", @tab_counts.backlog}, {"Quero", "want", @tab_counts.want}, {"Coleção", "all", @tab_counts.all}, {"Terminados", "finished", @tab_counts.finished}] do %>
-        <button
-          id={"library-tab-#{key}"}
-          class={[
-            "whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold",
-            @filters["tab"] == key && "border-primary text-primary",
-            @filters["tab"] != key && "border-transparent text-base-content/70"
-          ]}
-=======
     <nav id="library-tabs" class="dockd-tabs" aria-label="Seções da biblioteca">
       <%= for {label, key, count} <- [
         {"Jogando", "playing", @counts.playing},
@@ -33,7 +18,6 @@
           id={"library-tab-#{key}"}
           class="dockd-tab"
           data-active={to_string(@filters["tab"] == key)}
->>>>>>> 2d44cc4 (feat(ui): make catalog and library personal)
           phx-click="filter"
           phx-value-tab={key}
         >
