@@ -34,6 +34,7 @@ defmodule DockdWeb.GameLiveTest do
     {:ok, view, _html} = live(conn, ~p"/jogos/#{game.id}")
     assert has_element?(view, "#igdb-attribution a[href='https://www.igdb.com']")
     assert has_element?(view, "#observation-form-#{release.id}")
+
     assert html_response(get(conn, ~p"/jogos/#{game.id}"), 200) =~
              "<title>Metroid Prime 4 · Dockd</title>"
 
