@@ -28,6 +28,6 @@ test("a new game moves from Discover to List and can be removed", async ({ page 
     .getByTestId("list-items")
     .getByRole("article")
     .filter({ hasText: "Discovery Candidate" });
-  await listEntryAfterReturn.getByRole("button", { name: /Tirar da lista/i }).click();
+  await listEntryAfterReturn.getByRole("button", { name: "Tirar" }).click();
   await expect(page.getByTestId("list-items")).not.toContainText("Discovery Candidate");
 });
