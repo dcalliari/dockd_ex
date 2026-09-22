@@ -143,5 +143,4 @@ defmodule DockdWeb.CatalogApiTest do
       delete(conn, ~p"/api/v1/games/#{game.id}/releases/#{release.id}")
     end
   end
-  end
 end
