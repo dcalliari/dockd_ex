@@ -138,15 +138,34 @@ defmodule DockdWeb.GameLive do
       else: "#{enum_label(platform)} · #{edition}"
   end
 
-  defp release_status(%{release_date: date}) when not is_nil(date) do
+  defp release_status(%{release_date: date} = release) when not is_nil(date) do
     if Date.compare(date, Date.utc_today()) == :gt,
-      do: "Lançamento em #{date_pt_br(date)}",
-      else: "Data de lançamento #{date_pt_br(date)}"
+      do: "Lançamento em #{release_date_label(release)}",
+      else: "Data de lançamento #{release_date_label(release)}"
   end
 
   defp release_status(%{physical_available: true}), do: "Disponível em físico"
   defp release_status(%{digital_available: true}), do: "Disponível em digital"
   defp release_status(_), do: "Disponibilidade não informada"
+
+  defp release_date_label(%{release_date: date, release_date_precision: :day}),
+    do: date_pt_br(date)
+
+  defp release_date_label(%{release_date: date, release_date_precision: :month}),
+    do: Calendar.strftime(date, "%m/%Y")
+
+  defp release_date_label(%{release_date: date, release_date_precision: :quarter}) do
+    quarter = div(date.month - 1, 3) + 1
+    "#{quarter}º tri. de #{date.year}"
+  end
+
+  defp release_date_label(%{release_date: date, release_date_precision: :year}),
+    do: Integer.to_string(date.year)
+
+  defp release_date_label(%{release_date: date, release_date_precision: :tbd}),
+    do: "#{date.year}, a definir"
+
+  defp release_date_label(%{release_date: date}), do: date_pt_br(date)
 
   defp ownership_label(ownerships_by_release, release_id) do
     ownerships_by_release

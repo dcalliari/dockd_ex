@@ -68,8 +68,11 @@ defmodule DockdWeb.LibraryLive do
     ownership = Library.get_ownership!(socket.assigns.user, id)
 
     case Library.delete_ownership(socket.assigns.user, ownership) do
-      {:ok, _} -> {:noreply, load(socket, socket.assigns.user, socket.assigns.filters)}
-      {:error, reason} -> {:noreply, put_flash(socket, :error, "Não foi possível remover: #{inspect(reason)}")}
+      {:ok, _} ->
+        {:noreply, load(socket, socket.assigns.user, socket.assigns.filters)}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, "Não foi possível remover: #{inspect(reason)}")}
     end
   end
 
@@ -103,7 +106,8 @@ defmodule DockdWeb.LibraryLive do
       entries: entries,
       all_entries: all_entries,
       ownerships: ownerships,
-      orphan_ownerships: Enum.reject(ownerships, &MapSet.member?(entry_game_ids, &1.release.game_id)),
+      orphan_ownerships:
+        Enum.reject(ownerships, &MapSet.member?(entry_game_ids, &1.release.game_id)),
       ownerships_by_game: Enum.group_by(ownerships, & &1.release.game_id),
       owned_game_ids: owned_game_ids,
       games: games,

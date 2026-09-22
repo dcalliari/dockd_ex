@@ -237,6 +237,31 @@ button, a, input, select {
   border-top: 1px solid color-mix(in srgb, var(--color-base-content) 14%, transparent);
   padding-top: 1rem;
 }
+.dockd-money-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 0.7fr));
+  gap: 1.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-base-content) 14%, transparent);
+  padding: 1.5rem 0;
+}
+.dockd-money-primary {
+  border-left: 3px solid var(--color-primary);
+  padding-left: 1rem;
+}
+.dockd-recommendation {
+  border-left: 3px solid var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-base-100));
+  padding: 1.2rem;
+}
+@media (max-width: 767px) {
+  .dockd-money-hero {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .dockd-money-primary {
+    grid-column: 1 / -1;
+  }
+}
 .dockd-section-title {
   font-size: 0.78rem;
   font-weight: 900;
@@ -440,8 +465,13 @@ button, a, input, select {
     min-height: auto;
     padding: 0.85rem 1rem 0;
   }
+  .dockd-topbar-inner > .dockd-theme-toggle {
+    grid-column: 2;
+    grid-row: 1;
+  }
   .dockd-nav {
     grid-column: 1 / -1;
+    grid-row: 2;
     justify-content: flex-start;
     margin: 0 -1rem;
     overflow-x: auto;
