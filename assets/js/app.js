@@ -25,6 +25,28 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/dockd"
 import topbar from "../vendor/topbar"
 
+const systemTheme = () => matchMedia("(prefers-color-scheme: dark)").matches ? "dockd-dark" : "dockd-light"
+const setTheme = theme => {
+  if (theme === "system") {
+    localStorage.removeItem("phx:theme")
+    document.documentElement.dataset.theme = systemTheme()
+    document.documentElement.dataset.themeSource = "system"
+  } else {
+    localStorage.setItem("phx:theme", theme)
+    document.documentElement.dataset.theme = theme
+    document.documentElement.dataset.themeSource = "user"
+  }
+}
+
+setTheme(localStorage.getItem("phx:theme") || "system")
+window.addEventListener("storage", event => {
+  if (event.key === "phx:theme") setTheme(event.newValue || "system")
+})
+window.addEventListener("phx:set-theme", event => setTheme(event.target.dataset.phxTheme))
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (document.documentElement.dataset.themeSource === "system") setTheme("system")
+})
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,

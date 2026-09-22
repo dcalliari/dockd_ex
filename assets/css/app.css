@@ -1,113 +1,477 @@
-/* See the Tailwind configuration guide for advanced usage
-   https://tailwindcss.com/docs/configuration */
-
 @import "tailwindcss" source(none);
 @import "phoenix-colocated/dockd/colocated.css";
 @source "../css";
 @source "../js";
 @source "../../lib/dockd_web";
-/* Required for Tailwind to automatically pick up changes in colocated CSS files in dev */
 @source "../../_build/dev/phoenix-colocated/dockd/*/";
-
-/* A Tailwind plugin that makes "hero-#{ICON}" classes available.
-   The heroicons installation itself is managed by your mix.exs */
 @plugin "../vendor/heroicons";
-
-/* daisyUI Tailwind Plugin. */
 @plugin "daisyui/packages/bundle/daisyui" {
   themes: false;
 }
-
-/* daisyUI theme plugin.
-  We ship with two themes, a light one inspired on Phoenix colors and a dark one inspired
-  on Elixir colors. Build your own at: https://daisyui.com/theme-generator/ */
-@plugin "daisyui/packages/bundle/daisyui-theme" {
-  name: "dockd-dark";
-  default: false;
-  prefersdark: true;
-  color-scheme: "dark";
-  --color-base-100: oklch(22% 0.01 25);
-  --color-base-200: oklch(16% 0 0);
-  --color-base-300: oklch(30% 0.01 25);
-  --color-base-content: oklch(94% 0 0);
-  --color-primary: oklch(70% 0.19 25);
-  --color-primary-content: oklch(18% 0 0);
-  --color-secondary: oklch(72% 0.01 25);
-  --color-secondary-content: oklch(98% 0 0);
-  --color-accent: oklch(72% 0.16 145);
-  --color-accent-content: oklch(18% 0.04 145);
-  --color-neutral: oklch(12% 0 0);
-  --color-neutral-content: oklch(94% 0 0);
-  --color-info: oklch(72% 0.12 230);
-  --color-info-content: oklch(18% 0.03 230);
-  --color-success: oklch(72% 0.15 145);
-  --color-success-content: oklch(18% 0.04 145);
-  --color-warning: oklch(82% 0.14 82);
-  --color-warning-content: oklch(22% 0.04 82);
-  --color-error: oklch(72% 0.16 25);
-  --color-error-content: oklch(18% 0.03 25);
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
-  --size-selector: 0.21875rem;
-  --size-field: 0.21875rem;
-  --border: 1.5px;
-  --depth: 1;
-  --noise: 0;
-}
-
 @plugin "daisyui/packages/bundle/daisyui-theme" {
   name: "dockd-light";
   default: true;
   prefersdark: false;
   color-scheme: "light";
-  --color-base-100: oklch(98% 0 0);
-  --color-base-200: oklch(94% 0.01 25);
-  --color-base-300: oklch(88% 0.02 25);
-  --color-base-content: oklch(20% 0 0);
-  --color-primary: oklch(55% 0.22 25);
-  --color-primary-content: oklch(98% 0 0);
-  --color-secondary: oklch(55% 0.027 264.364);
-  --color-secondary-content: oklch(98% 0.002 247.839);
-  --color-accent: oklch(0% 0 0);
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(44% 0.017 285.786);
-  --color-neutral-content: oklch(98% 0 0);
-  --color-info: oklch(60% 0.15 230);
-  --color-info-content: oklch(18% 0 0);
-  --color-success: oklch(62% 0.17 145);
-  --color-success-content: oklch(18% 0.04 145);
-  --color-warning: oklch(78% 0.16 82);
-  --color-warning-content: oklch(25% 0.05 82);
-  --color-error: oklch(55% 0.18 25);
-  --color-error-content: oklch(98% 0 0);
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
-  --size-selector: 0.21875rem;
-  --size-field: 0.21875rem;
-  --border: 1.5px;
-  --depth: 1;
+  --color-base-100: #ffffff;
+  --color-base-200: #f3f2ef;
+  --color-base-300: #e4e1dc;
+  --color-base-content: #121212;
+  --color-primary: #e40016;
+  --color-primary-content: #ffffff;
+  --color-secondary: #514f4c;
+  --color-secondary-content: #ffffff;
+  --color-accent: #121212;
+  --color-accent-content: #ffffff;
+  --color-neutral: #121212;
+  --color-neutral-content: #ffffff;
+  --color-info: #1d5b78;
+  --color-info-content: #ffffff;
+  --color-success: #247047;
+  --color-success-content: #ffffff;
+  --color-warning: #9b5b00;
+  --color-warning-content: #ffffff;
+  --color-error: #b50019;
+  --color-error-content: #ffffff;
+  --radius-selector: 0.35rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
   --noise: 0;
 }
-
-/* Add variants based on LiveView classes */
+@plugin "daisyui/packages/bundle/daisyui-theme" {
+  name: "dockd-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: "dark";
+  --color-base-100: #111113;
+  --color-base-200: #080809;
+  --color-base-300: #242428;
+  --color-base-content: #f7f7f5;
+  --color-primary: #ff3348;
+  --color-primary-content: #190004;
+  --color-secondary: #b9b7b2;
+  --color-secondary-content: #111113;
+  --color-accent: #f7f7f5;
+  --color-accent-content: #111113;
+  --color-neutral: #f7f7f5;
+  --color-neutral-content: #111113;
+  --color-info: #74c4e8;
+  --color-info-content: #071116;
+  --color-success: #7ed39a;
+  --color-success-content: #07140c;
+  --color-warning: #f4c66d;
+  --color-warning-content: #191004;
+  --color-error: #ff6c7d;
+  --color-error-content: #210006;
+  --radius-selector: 0.35rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+@theme {
+  --font-sans: "Dockd Sans", sans-serif;
+  --font-display: "Dockd Sans", sans-serif;
+  --font-mono: "Dockd Mono", monospace;
+}
 @custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);
 @custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
 @custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
-
-/* Use the data attribute for dark mode  */
 @custom-variant dark (&:where([data-theme=dockd-dark], [data-theme=dockd-dark] *));
 
-:root { font-family: ui-rounded, ui-sans-serif, system-ui, sans-serif; }
-.display { letter-spacing: -0.04em; }
-.eyebrow { letter-spacing: 0.16em; }
-:where(p, h1, h2, h3, h4, li, button, a) { overflow-wrap: anywhere; }
-:where(.grid, .flex) > * { min-width: 0; }
-button, a, input, select { touch-action: manipulation; }
+@font-face {
+  font-family: "Dockd Sans";
+  src: url("/fonts/dockd-sans-regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dockd Sans";
+  src: url("/fonts/dockd-sans-bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dockd Sans";
+  src: url("/fonts/dockd-sans-black.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dockd Mono";
+  src: url("/fonts/dockd-mono-regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dockd Mono";
+  src: url("/fonts/dockd-mono-bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
 
+:root {
+  font-family: "Dockd Sans", sans-serif;
+  font-synthesis: none;
+  color-scheme: light;
+}
+[data-theme="dockd-dark"] {
+  color-scheme: dark;
+}
+:where(p, h1, h2, h3, h4, li, button, a) {
+  overflow-wrap: anywhere;
+}
+:where(.grid, .flex) > * {
+  min-width: 0;
+}
+button, a, input, select {
+  touch-action: manipulation;
+}
 
-/* Make LiveView wrapper divs transparent for layout */
-[data-phx-session], [data-phx-teleported-src] { display: contents }
+[data-phx-session], [data-phx-teleported-src] {
+  display: contents;
+}
 
-/* This file is for your main application CSS */
+.dockd-shell {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 4%, transparent) 1px, transparent 1px) 0 0 / 32px 32px,
+    var(--color-base-200);
+}
+.dockd-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-base-content) 12%, transparent);
+  background: color-mix(in srgb, var(--color-base-100) 92%, transparent);
+  backdrop-filter: blur(18px);
+}
+.dockd-topbar-inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 2rem;
+  max-width: 1440px;
+  min-height: 4.5rem;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+.dockd-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--color-base-content);
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  text-transform: lowercase;
+}
+.dockd-brand-mark {
+  display: inline-block;
+  width: 0.68rem;
+  height: 0.68rem;
+  background: var(--color-primary);
+  transform: rotate(45deg);
+}
+.dockd-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+}
+.dockd-nav-link {
+  position: relative;
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  padding: 0 0.8rem;
+  color: color-mix(in srgb, var(--color-base-content) 64%, transparent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: color 160ms ease, background-color 160ms ease;
+}
+.dockd-nav-link:hover,
+.dockd-nav-link[data-active="true"] {
+  color: var(--color-base-content);
+}
+.dockd-nav-link[data-active="true"]::after {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.45rem;
+  left: 0.8rem;
+  height: 2px;
+  background: var(--color-primary);
+  content: "";
+}
+.dockd-main {
+  width: min(100% - 2rem, 1240px);
+  margin: 0 auto;
+  padding: 3.25rem 0 5rem;
+}
+.dockd-page-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-base-content) 14%, transparent);
+  padding-bottom: 1rem;
+}
+.dockd-page-title {
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  font-weight: 900;
+  letter-spacing: -0.075em;
+  line-height: 0.98;
+}
+.dockd-section {
+  border-top: 1px solid color-mix(in srgb, var(--color-base-content) 14%, transparent);
+  padding-top: 1rem;
+}
+.dockd-section-title {
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.dockd-panel {
+  border: 1px solid color-mix(in srgb, var(--color-base-content) 13%, transparent);
+  background: var(--color-base-100);
+  padding: 1.15rem;
+}
+.dockd-button {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid transparent;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+.dockd-button:hover {
+  transform: translateY(-1px);
+}
+.dockd-button-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+}
+.dockd-button-quiet {
+  border-color: color-mix(in srgb, var(--color-base-content) 16%, transparent);
+  color: var(--color-base-content);
+}
+.dockd-button-quiet:hover {
+  background: color-mix(in srgb, var(--color-base-content) 7%, transparent);
+}
+.dockd-button-danger {
+  color: var(--color-error);
+}
+.dockd-cover {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: var(--color-base-300);
+}
+.dockd-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 280ms ease;
+}
+.dockd-cover-placeholder {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: flex-end;
+  padding: 0.85rem;
+  background: var(--color-base-300);
+  color: color-mix(in srgb, var(--color-base-content) 70%, transparent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.group:hover .dockd-cover img,
+.group:hover .dockd-cover {
+  transform: translateY(-0.2rem);
+}
+.dockd-game-title {
+  display: block;
+  margin-top: 0.7rem;
+  overflow: hidden;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dockd-meta {
+  color: color-mix(in srgb, var(--color-base-content) 58%, transparent);
+  font-size: 0.72rem;
+}
+.dockd-note {
+  color: color-mix(in srgb, var(--color-base-content) 62%, transparent);
+  font-size: 0.82rem;
+}
+.dockd-empty {
+  color: color-mix(in srgb, var(--color-base-content) 56%, transparent);
+  font-size: 0.84rem;
+}
+.dockd-tabs {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-base-content) 12%, transparent);
+}
+.dockd-tab {
+  position: relative;
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--color-base-content) 58%, transparent);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.dockd-tab[data-active="true"] {
+  color: var(--color-base-content);
+}
+.dockd-tab[data-active="true"]::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: var(--color-primary);
+  content: "";
+}
+.dockd-count {
+  color: color-mix(in srgb, var(--color-base-content) 50%, transparent);
+  font-family: "Dockd Mono", monospace;
+  font-size: 0.68rem;
+}
+.dockd-form-label {
+  color: color-mix(in srgb, var(--color-base-content) 58%, transparent);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.dockd-shell .input,
+.dockd-shell .select,
+.dockd-shell .textarea {
+  min-height: 2.65rem;
+  border: 1px solid color-mix(in srgb, var(--color-base-content) 17%, transparent);
+  border-radius: 0;
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  box-shadow: none;
+  font-size: 0.84rem;
+}
+.dockd-shell .input:focus,
+.dockd-shell .select:focus,
+.dockd-shell .textarea:focus {
+  border-color: var(--color-primary);
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 24%, transparent);
+  outline-offset: 1px;
+}
+.dockd-release {
+  border-top: 1px solid color-mix(in srgb, var(--color-base-content) 13%, transparent);
+  padding: 1.2rem 0;
+}
+.dockd-release:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.dockd-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  border: 1px solid color-mix(in srgb, var(--color-base-content) 15%, transparent);
+  padding: 0.2rem 0.45rem;
+  color: color-mix(in srgb, var(--color-base-content) 70%, transparent);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.dockd-tag-primary {
+  border-color: color-mix(in srgb, var(--color-primary) 38%, transparent);
+  color: var(--color-primary);
+}
+.dockd-value {
+  font-family: "Dockd Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+.dockd-theme-toggle {
+  display: inline-flex;
+  border: 1px solid color-mix(in srgb, var(--color-base-content) 14%, transparent);
+  padding: 0.18rem;
+}
+.dockd-theme-toggle button {
+  min-height: 2.15rem;
+  padding: 0 0.55rem;
+  color: color-mix(in srgb, var(--color-base-content) 58%, transparent);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.dockd-theme-toggle button:hover {
+  color: var(--color-base-content);
+  background: color-mix(in srgb, var(--color-base-content) 8%, transparent);
+}
+.dockd-footer {
+  width: min(100% - 2rem, 1240px);
+  margin: 0 auto;
+  padding: 0 0 2rem;
+}
+
+@media (max-width: 767px) {
+  .dockd-topbar-inner {
+    grid-template-columns: 1fr auto;
+    gap: 0.65rem;
+    min-height: auto;
+    padding: 0.85rem 1rem 0;
+  }
+  .dockd-nav {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    margin: 0 -1rem;
+    overflow-x: auto;
+    padding: 0 1rem;
+  }
+  .dockd-nav-link {
+    min-height: 2.5rem;
+    padding: 0 0.65rem;
+  }
+  .dockd-nav-link[data-active="true"]::after {
+    right: 0.65rem;
+    left: 0.65rem;
+    bottom: 0.2rem;
+  }
+  .dockd-main {
+    width: min(100% - 1.5rem, 1240px);
+    padding-top: 2rem;
+  }
+  .dockd-footer {
+    width: min(100% - 1.5rem, 1240px);
+  }
+  .dockd-theme-toggle button {
+    min-height: 2rem;
+    padding: 0 0.4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
