@@ -1,65 +1,36 @@
 defmodule DockdWeb.LibraryLiveTest do
   use DockdWeb.ConnCase, async: false
+
   import Phoenix.LiveViewTest
   import Dockd.DomainFixtures
+
   alias Dockd.Accounts
   alias Dockd.Library
 
   setup do
     game = game_fixture(%{title: "Kirby and the Forgotten Land"})
-    %{game: game}
+    %{game: game, user: Accounts.default_owner()}
   end
 
-  test "lists entries and supports editing and removing", %{conn: conn, game: game} do
-    user = Accounts.default_owner()
-    {:ok, entry} = entry_fixture(user, game)
-    {:ok, view, _html} = live(conn, "/biblioteca")
+  test "lists only games marked Quero jogar", %{conn: conn, game: game, user: user} do
+    {:ok, entry} = entry_fixture(user, game, %{purchase_intent: :want})
+    other = game_fixture(%{title: "Not on the list"})
 
-    assert has_element?(view, "#entry-#{entry.id}")
-    view |> element("#edit-entry-#{entry.id}") |> render_click()
-    assert has_element?(view, "#entry-form")
-    view |> form("#entry-form", entry: %{backlog: "backlog", priority: "high"}) |> render_submit()
-    assert Library.get_entry!(user, entry.id).backlog == :backlog
-    view |> element("#remove-entry-#{entry.id}") |> render_click()
-    refute has_element?(view, "#entry-#{entry.id}")
+    {:ok, view, _html} = live(conn, "/")
+
+    assert has_element?(view, "#list-entry-#{entry.id}")
+    assert has_element?(view, "#list-game-#{game.id}", "Kirby and the Forgotten Land")
+    refute has_element?(view, "#list-game-#{other.id}")
+    refute has_element?(view, "#library-tabs")
   end
 
-  test "changes play state from the cover menu", %{conn: conn, game: game} do
-    user = Accounts.default_owner()
-    {:ok, entry} = entry_fixture(user, game)
-    {:ok, view, _html} = live(conn, "/biblioteca")
+  test "takes a game out of the list in place", %{conn: conn, game: game, user: user} do
+    {:ok, entry} = entry_fixture(user, game, %{purchase_intent: :want})
+    {:ok, view, _html} = live(conn, "/lista")
 
-    view |> element("#state-cover-#{entry.id}") |> render_click()
-    assert has_element?(view, "#state-menu-#{entry.id}")
+    view |> element("#remove-list-#{entry.id}") |> render_click()
 
-    view
-    |> element("#state-menu-#{entry.id} button[phx-value-state='playing']")
-    |> render_click()
-
-    assert Library.get_entry!(user, entry.id).play_state == :playing
-  end
-
-  test "shows ownership records separately from entries", %{conn: conn, game: game} do
-    user = Accounts.default_owner()
-    release = release_fixture(game)
-    {:ok, _purchase} = purchase_fixture(user, release)
-    [ownership | _] = Library.list_ownerships(user)
-
-    {:ok, view, _html} = live(conn, "/biblioteca")
-
-    assert has_element?(view, "#ownership-#{ownership.id}")
-    view |> element("#remove-ownership-#{ownership.id}") |> render_click()
-    refute has_element?(view, "#ownership-#{ownership.id}")
-  end
-
-  test "adds a game from the library", %{conn: conn, game: game} do
-    {:ok, view, _html} = live(conn, "/biblioteca")
-    view |> element("#add-game-#{game.id} button") |> render_click()
-
-    assert has_element?(
-             view,
-             "#entry-" <>
-               (Library.get_entry_by_game(Accounts.default_owner(), game.id) |> Map.fetch!(:id))
-           )
+    refute has_element?(view, "#list-entry-#{entry.id}")
+    assert Library.get_entry!(user, entry.id).purchase_intent == :none
   end
 end

@@ -214,7 +214,7 @@ img { display: block; max-width: 100%; }
 .library-tabs button { flex: 0 0 auto; border: 0; border-bottom: 2px solid transparent; padding: 0.65rem 0.55rem; background: transparent; color: var(--dockd-muted); font-size: 0.7rem; font-weight: 900; }
 .library-tabs button:hover, .library-tabs button.active { border-bottom-color: var(--color-primary); color: var(--color-primary); }
 .library-tabs b { margin-left: 0.15rem; font-size: 0.62rem; }
-.library-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; margin: 1rem 0; }
+.library-toolbar, .list-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; margin: 1rem 0; }
 .search-field { width: min(18rem, 100%); border: 1px solid var(--dockd-line); border-radius: var(--dockd-radius); padding: 0.52rem 0.65rem; background: var(--color-base-100); color: var(--color-base-content); font-size: 0.72rem; }
 .search-field:focus { border-color: var(--color-primary); outline: 2px solid color-mix(in oklch, var(--color-primary) 22%, transparent); outline-offset: 1px; }
 .library-grid, .catalog-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.2rem 0.75rem; }
@@ -229,6 +229,9 @@ img { display: block; max-width: 100%; }
 .quick-state { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-top: 0.4rem; }
 .quick-state span { color: var(--dockd-muted); font-size: 0.61rem; }
 .quick-state button { border: 0; padding: 0; background: transparent; color: var(--color-primary); font-size: 0.61rem; font-weight: 900; }
+.list-relation { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-top: 0.4rem; color: var(--color-primary); font-size: 0.61rem; font-weight: 900; }
+.list-relation button, .catalog-card button { border: 0; padding: 0; background: transparent; color: var(--color-primary); font-size: 0.64rem; font-weight: 900; }
+.catalog-relation { display: block; margin-top: 0.4rem; color: var(--color-primary); font-size: 0.64rem; font-weight: 900; }
 .state-menu { position: absolute; inset-inline: 0.25rem; top: 0.25rem; z-index: 10; display: grid; gap: 0.15rem; border: 1px solid var(--dockd-line); border-radius: var(--dockd-radius); padding: 0.4rem; background: color-mix(in oklch, var(--color-base-100) 95%, transparent); box-shadow: 0 1rem 2rem color-mix(in oklch, var(--color-base-content) 12%, transparent); }
 .state-menu span { padding: 0.3rem 0.4rem; color: var(--dockd-muted); font-size: 0.57rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
 .state-menu button { border: 0; border-radius: var(--dockd-radius); padding: 0.4rem; background: transparent; color: var(--color-base-content); font-size: 0.65rem; font-weight: 700; text-align: left; }
@@ -241,11 +244,15 @@ img { display: block; max-width: 100%; }
 .catalog-filter { display: flex; gap: 0.3rem; }
 .catalog-filter button { border: 1px solid var(--dockd-line); border-radius: var(--dockd-radius); padding: 0.45rem 0.6rem; background: var(--color-base-100); color: var(--dockd-muted); font-size: 0.65rem; font-weight: 900; }
 .catalog-filter button:hover, .catalog-filter button.active { border-color: var(--color-primary); color: var(--color-primary); }
-.catalog-card button { margin-top: 0.4rem; border: 0; padding: 0; background: transparent; color: var(--color-primary); font-size: 0.64rem; font-weight: 900; }
+.catalog-card button { margin-top: 0.4rem; }
 
 .game-hero { display: grid; grid-template-columns: 9.25rem minmax(0, 1fr); gap: 1.25rem; align-items: start; }
 .game-cover { width: 9.25rem; }
 .game-hero h1 { margin: 0; font-size: clamp(1.55rem, 4vw, 2.8rem); line-height: 0.98; letter-spacing: -0.06em; }
+.game-platform { margin: 0.45rem 0 0; color: var(--dockd-muted); font-size: 0.72rem; font-weight: 800; }
+.game-releases { margin-top: 2rem; border-top: 1px solid var(--dockd-line); }
+.game-release { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--dockd-line); padding: 0.85rem 0; font-size: 0.74rem; font-weight: 850; }
+.game-release time, .game-release > span:last-child { color: var(--dockd-muted); font-size: 0.7rem; font-weight: 700; }
 .relation-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.85rem; }
 .relation { border: 1px solid var(--dockd-line); border-radius: 0.2rem; padding: 0.34rem 0.48rem; color: var(--dockd-muted); font-size: 0.63rem; font-weight: 900; }
 .relation.active { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-primary-content); }
@@ -289,7 +296,7 @@ img { display: block; max-width: 100%; }
   .dockd-sidebar { display: none; }
   .dockd-content { padding-bottom: 4.6rem; }
   .dockd-main { padding-bottom: 1.5rem; }
-  .dockd-mobile-nav { position: fixed; inset-inline: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--dockd-line); background: var(--color-base-100); }
+  .dockd-mobile-nav { position: fixed; inset-inline: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--dockd-line); background: var(--color-base-100); }
   .dockd-mobile-nav a { display: flex; min-height: 3.8rem; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; color: var(--dockd-muted); font-size: 0.63rem; font-weight: 850; text-decoration: none; }
   .dockd-mobile-nav a.active { color: var(--color-primary); }
   .dockd-mobile-nav .icon { width: 0.85rem; height: 0.85rem; }
@@ -314,7 +321,7 @@ img { display: block; max-width: 100%; }
 @media (max-width: 420px) {
   .screen-header { align-items: start; flex-direction: column; gap: 0.45rem; }
   .wallet-empty { align-items: flex-start; flex-direction: column; }
-  .library-toolbar, .catalog-toolbar { align-items: stretch; flex-direction: column; }
+  .library-toolbar, .list-toolbar, .catalog-toolbar { align-items: stretch; flex-direction: column; }
   .search-field { width: 100%; }
   .game-hero h1 { font-size: 1.4rem; }
   .game-action-row .dockd-button { flex: 1 1 auto; text-align: center; }

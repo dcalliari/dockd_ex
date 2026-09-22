@@ -1,191 +1,52 @@
-<Layouts.app flash={@flash} current="Biblioteca">
-  <div id="library">
-    <.page_header title="Biblioteca" subtitle="Seus jogos e estados.">
+<Layouts.app flash={@flash} current="Lista">
+  <div id="list">
+    <.page_header title="Lista">
       <:actions>
         <.link navigate="/catalogo" class="dockd-button dockd-button-primary">Descobrir</.link>
       </:actions>
     </.page_header>
 
-    <nav id="library-tabs" class="library-tabs" aria-label="Seções da biblioteca">
-      <%= for {label, key, count} <- [{"Jogando", "playing", @tab_counts.playing}, {"Backlog", "backlog", @tab_counts.backlog}, {"Quero", "want", @tab_counts.want}, {"Coleção", "all", @tab_counts.all}, {"Terminados", "finished", @tab_counts.finished}] do %>
-        <button
-          id={"library-tab-#{key}"}
-          class={@filters["tab"] == key && "active"}
-          phx-click="filter"
-          phx-value-tab={key}
-        >
-          {label}<b>{count}</b>
-        </button>
-      <% end %>
-    </nav>
-
-    <div class="library-toolbar">
-      <.form
-        for={to_form(@filters, as: :filters)}
-        id="library-filter-form"
-        phx-change="filter"
-        class="w-full max-w-sm"
-      >
+    <div class="list-toolbar">
+      <.form for={@search_form} id="list-search-form" phx-change="filter">
         <.input
-          field={to_form(@filters, as: :filters)[:search]}
-          name="search"
+          field={@search_form[:search]}
+          id="list-search"
           label="Buscar"
-          value={@filters["search"] || ""}
+          placeholder="Título"
+          value={@search}
           class="search-field"
+          phx-debounce="250"
         />
       </.form>
-      <span class="text-xs text-base-content/60">{tab_count(@tab_counts, @filters["tab"])} jogos</span>
+      <span id="list-count" class="text-xs text-base-content/60">{length(@entries)}</span>
     </div>
 
-    <div id="library-groups" class="library-grid">
+    <div id="list-games" class="library-grid">
       <%= for entry <- @entries do %>
-        <article id={"entry-#{entry.id}"} class="library-item group">
-          <button
-            id={"state-cover-#{entry.id}"}
-            class="library-cover-button"
-            phx-click="toggle_state_menu"
-            phx-value-id={entry.id}
-            aria-label={"Alterar estado de #{entry.game.title}"}
+        <article id={"list-entry-#{entry.id}"} class="library-item group">
+          <.link
+            navigate={"/jogos/#{entry.game.id}?from=list"}
+            id={"list-game-#{entry.game.id}"}
+            class="block"
           >
             <.game_cover title={entry.game.title} cover_url={entry.game.cover_url} />
-            <span :if={status_label(entry)} class="status-chip">{status_label(entry)}</span>
-          </button>
-          <div
-            :if={@state_menu_id == to_string(entry.id)}
-            id={"state-menu-#{entry.id}"}
-            class="state-menu"
-          >
-            <span>Estado</span>
+            <h2>{entry.game.title}</h2>
+            <p>{platform_label(entry.game)}</p>
+          </.link>
+          <div class="list-relation">
+            <span>Na lista</span>
             <button
-              :for={
-                {label, state} <- [
-                  {"Jogando", "playing"},
-                  {"Terminado", "finished"},
-                  {"Abandonado", "abandoned"},
-                  {"Backlog", "backlog"}
-                ]
-              }
-              phx-click="set_state"
+              id={"remove-list-#{entry.id}"}
+              phx-click="remove_from_list"
               phx-value-id={entry.id}
-              phx-value-state={state}
-            >{label}</button>
-          </div>
-          <button
-            id={"edit-entry-#{entry.id}"}
-            class="mt-3 block max-w-full truncate text-left font-bold hover:text-primary"
-            phx-click="edit_entry"
-            phx-value-id={entry.id}
-          >{entry.game.title}</button>
-          <p>{ownership_label(entry.game_id, @ownerships)} · {platform_label(entry.game)}</p>
-          <div class="quick-state">
-            <span>{status_label(entry) || "Coleção"}</span>
-            <%= if entry.play_state == :playing do %>
-              <button
-                id={"quick-state-#{entry.id}"}
-                phx-click="toggle_state_menu"
-                phx-value-id={entry.id}
-              >Alterar</button>
-            <% else %>
-              <button
-                id={"quick-state-#{entry.id}"}
-                phx-click="set_state"
-                phx-value-id={entry.id}
-                phx-value-state="playing"
-              >Começar</button>
-            <% end %>
+            >Tirar</button>
           </div>
         </article>
       <% end %>
-      <div :if={@entries == []} class="col-span-full library-empty">
-        <strong>Nenhum jogo</strong>
-        <p>Escolha um jogo da Coleção para começar.</p>
-        <.link navigate="/catalogo" class="dockd-button dockd-button-primary mt-3">Ver coleção</.link>
+      <div :if={@entries == []} id="list-empty" class="library-empty">
+        <strong>Lista vazia</strong>
+        <.link navigate="/catalogo" class="link-action">Descobrir jogos</.link>
       </div>
     </div>
-
-    <section
-      :if={@editing}
-      id="entry-editor"
-      class="mt-8 max-w-3xl border-t border-base-content/10 pt-5"
-    >
-      <div class="mb-5 flex items-center justify-between gap-3">
-        <h2 class="text-lg font-bold">{@editing.game.title}</h2>
-        <button class="dockd-button dockd-button-secondary" phx-click="filter">Fechar</button>
-      </div>
-      <.form for={@form} id="entry-form" phx-submit="save_entry" class="grid gap-3 sm:grid-cols-2">
-        <.input
-          field={@form[:purchase_intent]}
-          type="select"
-          label="Intenção"
-          options={[
-            {"Nenhuma", :none},
-            {"Interessado", :interested},
-            {"Quero", :want},
-            {"Planejado", :planned},
-            {"Pré-venda", :preordered}
-          ]}
-        />
-        <.input
-          field={@form[:play_state]}
-          type="select"
-          label="Estado"
-          options={[
-            {"Não iniciado", :unplayed},
-            {"Jogando", :playing},
-            {"Pausado", :paused},
-            {"Terminado", :finished},
-            {"Abandonado", :abandoned}
-          ]}
-        />
-        <.input
-          field={@form[:backlog]}
-          type="select"
-          label="Backlog"
-          options={[{"Fora", :no}, {"Backlog", :backlog}, {"Ativo", :active}]}
-        />
-        <.input
-          field={@form[:priority]}
-          type="select"
-          label="Prioridade"
-          options={[{"Baixa", :low}, {"Normal", :normal}, {"Alta", :high}]}
-        />
-        <.money_input field={@form[:target_price_cents]} label="Preço alvo (R$)" />
-        <.dockd_button
-          id="save-entry-button"
-          variant="primary"
-          class="sm:col-span-2"
-          type="submit"
-        >
-          Salvar
-        </.dockd_button>
-      </.form>
-      <button
-        id={"remove-entry-#{@editing.id}"}
-        class="mt-5 text-sm font-semibold text-error"
-        phx-click="remove_entry"
-        phx-value-id={@editing.id}
-        data-confirm="Remover este jogo?"
-      >Remover</button>
-    </section>
-
-    <section id="ownerships-list" class="hidden" aria-hidden="true">
-      <%= for ownership <- @ownerships do %>
-        <div id={"ownership-#{ownership.id}"}>
-          <button
-            id={"remove-ownership-#{ownership.id}"}
-            phx-click="remove_ownership"
-            phx-value-id={ownership.id}
-          >Remover</button>
-        </div>
-      <% end %>
-    </section>
-
-    <section id="add-game" class="hidden" aria-hidden="true">
-      <%= for game <- @games do %>
-        <div id={"add-game-#{game.id}"}>
-          <button phx-click="new_entry" phx-value-game_id={game.id}>Adicionar</button>
-        </div>
-      <% end %>
-    </section>
   </div>
 </Layouts.app>

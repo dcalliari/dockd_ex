@@ -8,6 +8,7 @@ defmodule DockdWeb.Router do
     plug :put_root_layout, html: {DockdWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :enabled_flow
   end
 
   pipeline :api do
@@ -18,9 +19,10 @@ defmodule DockdWeb.Router do
   scope "/", DockdWeb do
     pipe_through :browser
 
-    live "/", PlannerLive, :index
-    live "/carteira", WalletLive, :index
+    live "/", LibraryLive, :index
+    live "/lista", LibraryLive, :index
     live "/biblioteca", LibraryLive, :index
+    live "/carteira", WalletLive, :index
     live "/catalogo", CatalogLive, :index
     live "/jogos/:id", GameLive, :show
   end
@@ -65,6 +67,21 @@ defmodule DockdWeb.Router do
       resources "/releases", ReleaseController, only: [:index, :show, :create, :update, :delete]
     end
   end
+
+  defp enabled_flow(conn, _opts) do
+    if :lista in Application.get_env(:dockd, :flows, []) and list_flow_path?(conn.path_info) do
+      conn
+    else
+      conn |> Plug.Conn.send_resp(:not_found, "") |> Plug.Conn.halt()
+    end
+  end
+
+  defp list_flow_path?([]), do: true
+  defp list_flow_path?(["lista"]), do: true
+  defp list_flow_path?(["biblioteca"]), do: true
+  defp list_flow_path?(["catalogo"]), do: true
+  defp list_flow_path?(["jogos", _id]), do: true
+  defp list_flow_path?(_), do: false
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:dockd, :dev_routes) do

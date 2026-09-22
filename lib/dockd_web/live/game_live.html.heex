@@ -1,320 +1,49 @@
 <Layouts.app flash={@flash} current={@return_label}>
-  <div id="game" class="space-y-6">
+  <div id="game">
     <div class="screen-header">
-      <div>
-        <.link
-          id="game-back"
-          navigate={@return_to}
-          class="link-action inline-flex items-center gap-2"
-        >
-          <.icon name="hero-arrow-left" class="size-4" /> {@return_label}
-        </.link>
-      </div>
-      <.link navigate={@return_to} class="link-action">Voltar à origem</.link>
+      <.link
+        id="game-back"
+        navigate={@return_to}
+        class="link-action inline-flex items-center gap-2"
+      >
+        <.icon name="hero-arrow-left" class="size-4" /> {@return_label}
+      </.link>
     </div>
 
     <section id="game-hero" class="game-hero">
       <.game_cover title={@game.title} cover_url={@game.cover_url} class="game-cover" />
       <div class="min-w-0">
         <h1>{@game.title}</h1>
-        <div class="relation-row" aria-label="Relação com o jogo">
-          <span :if={@owned?} class="relation active">Tem</span>
-          <span
-            :if={@entry && @entry.purchase_intent in [:want, :planned, :preordered]}
-            class="relation active"
-          >Quer</span>
-          <span :if={@entry && @entry.play_state == :playing} class="relation active">Jogando</span>
-          <span :if={!@owned? && is_nil(@entry)} class="relation">Catálogo</span>
-        </div>
-        <p class="game-note">Relação, preços e versões do jogo.</p>
-        <div class="game-action-row">
-          <%= if @entry do %>
-            <details id="entry-editor">
-              <summary class="dockd-button dockd-button-primary">Estado</summary>
-              <.form
-                for={@entry_form}
-                id="entry-form"
-                phx-submit="save_entry"
-                class="mt-3 grid gap-3 rounded border border-base-content/10 bg-base-100 p-3 sm:grid-cols-2"
-              >
-                <.input
-                  field={@entry_form[:purchase_intent]}
-                  type="select"
-                  label="Intenção"
-                  options={[{"Quero", :want}, {"Interessado", :interested}, {"Nenhuma", :none}]}
-                />
-                <.input
-                  field={@entry_form[:play_state]}
-                  type="select"
-                  label="Estado"
-                  options={[
-                    {"Não jogado", :unplayed},
-                    {"Jogando", :playing},
-                    {"Terminado", :finished},
-                    {"Abandonado", :abandoned}
-                  ]}
-                />
-                <.money_input field={@entry_form[:target_price_cents]} label="Preço alvo (R$)" />
-                <.dockd_button
-                  id="save-entry-button"
-                  variant="primary"
-                  class="sm:col-span-2"
-                  type="submit"
-                >
-                  Salvar
-                </.dockd_button>
-              </.form>
-            </details>
+        <p id="game-platform" class="game-platform">{platform_label(@game)}</p>
+        <div id="game-relation" class="game-action-row">
+          <%= if relation?(@entry) do %>
+            <span class="relation active">Na lista</span>
+            <button
+              id="remove-from-list"
+              class="dockd-button dockd-button-secondary"
+              phx-click="remove_from_list"
+            >Tirar da lista</button>
           <% else %>
-            <details>
-              <summary class="dockd-button dockd-button-primary">Adicionar</summary>
-              <.form
-                for={@entry_form}
-                id="entry-form"
-                phx-submit="save_entry"
-                class="mt-3 grid gap-3 rounded border border-base-content/10 bg-base-100 p-3 sm:grid-cols-2"
-              >
-                <.input
-                  field={@entry_form[:purchase_intent]}
-                  type="select"
-                  label="Intenção"
-                  options={[{"Quero", :want}, {"Interessado", :interested}, {"Nenhuma", :none}]}
-                />
-                <.input
-                  field={@entry_form[:play_state]}
-                  type="select"
-                  label="Estado"
-                  options={[
-                    {"Não jogado", :unplayed},
-                    {"Jogando", :playing},
-                    {"Terminado", :finished},
-                    {"Abandonado", :abandoned}
-                  ]}
-                />
-                <.money_input field={@entry_form[:target_price_cents]} label="Preço alvo (R$)" />
-                <.dockd_button
-                  id="save-entry-button"
-                  variant="primary"
-                  class="sm:col-span-2"
-                  type="submit"
-                >
-                  Salvar
-                </.dockd_button>
-              </.form>
-            </details>
+            <button
+              id="add-to-list"
+              class="dockd-button dockd-button-primary"
+              phx-click="add_to_list"
+            >Quero jogar</button>
           <% end %>
         </div>
       </div>
     </section>
 
-    <dl id="game-data" class="game-data">
-      <div>
-        <dt>Plataforma</dt><dd>{game_platform(@game)}</dd>
-      </div>
-      <div>
-        <dt>Preço observado</dt>
-        <dd>
-          <%= if data = first_observation(@release_data) do %>
-            {money(data.price_cents, data.currency)} · {date_pt_br(
-              DateTime.to_date(data.observed_at)
-            )}
-          <% else %>
-            Sem observação
-          <% end %>
-        </dd>
-      </div>
-      <div>
-        <dt>Preço alvo</dt>
-        <dd>
-          {if(@entry && @entry.target_price_cents,
-            do: money(@entry.target_price_cents, @entry.currency),
-            else: "Não definido"
-          )}
-        </dd>
-      </div>
-    </dl>
-
-    <section id="releases" class="release-table">
-      <%= for data <- @release_data do %>
-        <% release = data.release %>
-        <article
-          id={"release-#{release.id}"}
-          class={(data.veto && "release-row release-vetoed") || "release-row"}
-        >
-          <div>
-            <strong>{release.edition || "Edição padrão"}</strong>
-            <span>
-              {enum_label(release.platform)} · {if(release.release_date,
-                do: date_pt_br(release.release_date),
-                else: "Sem data"
-              )} · {availability_label(release)}
-            </span>
-          </div>
+    <section id="game-releases" class="game-releases">
+      <%= for release <- @game.releases do %>
+        <div id={"game-release-#{release.id}"} class="game-release">
           <span>{enum_label(release.platform)}</span>
-          <span class="release-price">
-            <%= if data.observation do %>
-              {money(data.observation.price_cents, data.observation.currency)}
-            <% else %>
-              Sem preço
-            <% end %>
-          </span>
-          <%= if data.veto do %>
-            <.verdict_mark label="Vetada" tone="record" />
-          <% else %>
-            <.verdict_mark label={data.verdict} tone={release_verdict_tone(data.verdict)} />
-          <% end %>
-
-          <div class="release-details">
-            <div class="flex flex-wrap gap-2">
-              <details>
-                <summary class="dockd-button dockd-button-secondary">Registrar preço</summary>
-                <.form
-                  for={Map.get(@observation_forms, release.id, to_form(%{}, as: :observation))}
-                  id={"observation-form-#{release.id}"}
-                  phx-submit="save_observation"
-                  class="release-form sm:grid-cols-2"
-                >
-                  <input type="hidden" name="release_id" value={release.id} />
-                  <input type="hidden" name="observation[currency]" value="BRL" />
-                  <.input
-                    field={
-                      Map.get(@observation_forms, release.id, to_form(%{}, as: :observation))[
-                        :format
-                      ]
-                    }
-                    type="select"
-                    id={"observation-format-#{release.id}"}
-                    label="Formato"
-                    options={[{"Físico", :physical}, {"Digital", :digital}]}
-                  />
-                  <.input
-                    field={
-                      Map.get(@observation_forms, release.id, to_form(%{}, as: :observation))[
-                        :price_cents
-                      ]
-                    }
-                    type="text"
-                    inputmode="decimal"
-                    id={"observation-price-#{release.id}"}
-                    label="Preço (R$)"
-                    placeholder="199,90"
-                  />
-                  <.input
-                    field={
-                      Map.get(@observation_forms, release.id, to_form(%{}, as: :observation))[
-                        :source
-                      ]
-                    }
-                    id={"observation-source-#{release.id}"}
-                    label="Fonte"
-                    placeholder="eShop ou loja"
-                  />
-                  <.input
-                    field={
-                      Map.get(@observation_forms, release.id, to_form(%{}, as: :observation))[
-                        :observed_at
-                      ]
-                    }
-                    type="datetime-local"
-                    id={"observation-at-#{release.id}"}
-                    label="Data"
-                  />
-                  <.dockd_button variant="primary" class="sm:col-span-2" type="submit">Salvar</.dockd_button>
-                </.form>
-              </details>
-              <details>
-                <summary class="dockd-button dockd-button-primary">Comprar</summary>
-                <.form
-                  for={Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))}
-                  id={"purchase-form-#{release.id}"}
-                  phx-submit="save_purchase"
-                  class="release-form sm:grid-cols-2"
-                >
-                  <input type="hidden" name="release_id" value={release.id} />
-                  <.input
-                    field={
-                      Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))[:format]
-                    }
-                    type="select"
-                    id={"purchase-format-#{release.id}"}
-                    label="Compra em"
-                    options={[{"Físico", :physical}, {"Digital", :digital}]}
-                  />
-                  <.input
-                    field={
-                      Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))[
-                        :price_cents
-                      ]
-                    }
-                    type="text"
-                    inputmode="decimal"
-                    id={"purchase-price-#{release.id}"}
-                    label="Preço (R$)"
-                    placeholder="199,90"
-                  />
-                  <.input
-                    field={
-                      Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))[:retailer]
-                    }
-                    id={"purchase-retailer-#{release.id}"}
-                    label="Loja"
-                  />
-                  <.input
-                    field={
-                      Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))[
-                        :purchased_at
-                      ]
-                    }
-                    type="datetime-local"
-                    id={"purchase-at-#{release.id}"}
-                    label="Data"
-                  />
-                  <.dockd_button variant="primary" class="sm:col-span-2" type="submit">Salvar</.dockd_button>
-                </.form>
-              </details>
-              <%= if data.veto do %>
-                <button
-                  class="dockd-button dockd-button-danger"
-                  phx-click="undo_veto"
-                  phx-value-id={data.veto.id}
-                >Desfazer veto</button>
-              <% else %>
-                <details>
-                  <summary class="dockd-button dockd-button-danger">Vetar versão</summary>
-                  <.form
-                    for={Map.get(@veto_forms, release.id, to_form(%{}, as: :veto))}
-                    id={"veto-form-#{release.id}"}
-                    phx-submit="save_veto"
-                    class="release-form"
-                  >
-                    <input type="hidden" name="release_id" value={release.id} />
-                    <.input
-                      field={Map.get(@veto_forms, release.id, to_form(%{}, as: :veto))[:reason]}
-                      id={"veto-reason-#{release.id}"}
-                      label="Motivo"
-                    />
-                    <.dockd_button variant="secondary" type="submit">Confirmar</.dockd_button>
-                  </.form>
-                </details>
-              <% end %>
-            </div>
-            <div :if={data.observations != []} class="mt-3 space-y-2">
-              <%= for observation <- data.observations do %>
-                <.dated_value
-                  value={observation.price_cents}
-                  currency={observation.currency}
-                  observed_at={DateTime.to_date(observation.observed_at)}
-                  stale={Purchasing.stale?(observation, DateTime.utc_now())}
-                />
-              <% end %>
-            </div>
-            <p :if={data.veto && data.veto.reason} class="mt-3 text-sm text-error">
-              {data.veto.reason}
-            </p>
-          </div>
-        </article>
+          <time :if={release.release_date} datetime={Date.to_iso8601(release.release_date)}>
+            {release_date_label(release)}
+          </time>
+          <span :if={is_nil(release.release_date)}>{release_date_label(release)}</span>
+        </div>
       <% end %>
-      <div :if={@release_data == []} class="empty-row">Sem versões</div>
     </section>
   </div>
 </Layouts.app>

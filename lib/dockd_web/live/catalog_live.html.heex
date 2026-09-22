@@ -1,7 +1,7 @@
 <Layouts.app flash={@flash} current="Descobrir">
   <div id="catalog">
-    <.page_header title="Descobrir" subtitle="Encontre seu próximo jogo.">
-      <:actions><.link navigate="/biblioteca" class="link-action">Biblioteca</.link></:actions>
+    <.page_header title="Descobrir">
+      <:actions><.link navigate="/" class="link-action">Lista</.link></:actions>
     </.page_header>
 
     <div class="catalog-toolbar">
@@ -21,11 +21,6 @@
           phx-debounce="250"
         />
       </.form>
-      <div class="catalog-filter" aria-label="Plataforma">
-        <button class="active" type="button">Todos</button>
-        <button type="button">Switch</button>
-        <button type="button">Switch 2</button>
-      </div>
     </div>
 
     <div id="games-list" class="catalog-grid">
@@ -36,10 +31,8 @@
             <h2>{game.title}</h2>
             <p>{platform_label(game)}</p>
           </.link>
-          <%= if relation_label(game, @entries_by_game, @owned_game_ids) do %>
-            <span class="mt-2 block text-xs font-semibold text-base-content/55">
-              {relation_label(game, @entries_by_game, @owned_game_ids)}
-            </span>
+          <%= if relation_label(game, @entries_by_game) do %>
+            <span class="catalog-relation">Na lista</span>
           <% else %>
             <button
               id={"add-library-#{game.id}"}

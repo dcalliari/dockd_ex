@@ -4,6 +4,7 @@ defmodule DockdWeb.CatalogLive do
   alias Dockd.Accounts
   alias Dockd.Catalog
   alias Dockd.Library
+  alias Dockd.Library.Entry
 
   @impl true
   def mount(params, _session, socket) do
@@ -20,7 +21,15 @@ defmodule DockdWeb.CatalogLive do
   end
 
   def handle_event("add_to_library", %{"id" => id}, socket) do
-    case Library.create_entry(Accounts.default_owner(), %{game_id: id, purchase_intent: :want}) do
+    user = Accounts.default_owner()
+
+    result =
+      case Library.get_entry_for_game(user, id) do
+        nil -> Library.create_entry(user, %{game_id: id, purchase_intent: :want})
+        entry -> Library.update_entry(user, entry, %{purchase_intent: :want})
+      end
+
+    case result do
       {:ok, _entry} -> {:noreply, load(socket, socket.assigns.params)}
       {:error, _changeset} -> {:noreply, load(socket, socket.assigns.params)}
     end
@@ -31,7 +40,6 @@ defmodule DockdWeb.CatalogLive do
     search = params |> Map.get("search", "") |> to_string() |> String.trim()
     games = Catalog.list_games()
     entries = Library.list_entries(user)
-    owned_game_ids = MapSet.new(Library.owned_game_ids(user))
 
     filtered_games =
       Enum.filter(games, fn game ->
@@ -42,7 +50,6 @@ defmodule DockdWeb.CatalogLive do
       page_title: "Descobrir",
       games: filtered_games,
       entries_by_game: Map.new(entries, &{&1.game_id, &1}),
-      owned_game_ids: owned_game_ids,
       search: search,
       params: %{"search" => search},
       search_form: to_form(%{"search" => search}, as: :catalog)
@@ -56,11 +63,10 @@ defmodule DockdWeb.CatalogLive do
     |> Enum.join(" · ")
   end
 
-  defp relation_label(game, entries_by_game, owned_game_ids) do
-    cond do
-      MapSet.member?(owned_game_ids, game.id) -> "Na coleção"
-      Map.get(entries_by_game, game.id) -> "Na lista"
-      true -> nil
+  defp relation_label(game, entries_by_game) do
+    case Map.get(entries_by_game, game.id) do
+      %Entry{purchase_intent: intent} when intent in [:want, :planned, :preordered] -> "Na lista"
+      _ -> nil
     end
   end
 end

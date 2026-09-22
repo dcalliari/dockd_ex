@@ -86,11 +86,6 @@ defmodule DockdWeb.DockdComponents do
               </.link>
             <% end %>
           </nav>
-          <div class="dockd-sidebar-note">
-            <strong>Carteira</strong>
-            <span>Switch · Switch 2</span>
-            <.link navigate="/carteira">Ver carteira</.link>
-          </div>
         </aside>
         <div class="dockd-content">
           <header class="dockd-topbar">
@@ -463,10 +458,8 @@ defmodule DockdWeb.DockdComponents do
 
   defp navigation,
     do: [
-      %{label: "Planejador", short: "Hoje", path: "/", icon: "hero-home"},
-      %{label: "Biblioteca", short: "Jogos", path: "/biblioteca", icon: "hero-book-open"},
-      %{label: "Descobrir", short: "Descobrir", path: "/catalogo", icon: "hero-sparkles"},
-      %{label: "Carteira", short: "Carteira", path: "/carteira", icon: "hero-wallet"}
+      %{label: "Lista", short: "Lista", path: "/", icon: "hero-bookmark"},
+      %{label: "Descobrir", short: "Descobrir", path: "/catalogo", icon: "hero-sparkles"}
     ]
 
   defp format_integer(value) do

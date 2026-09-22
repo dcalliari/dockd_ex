@@ -9,7 +9,8 @@ import Config
 
 config :dockd,
   ecto_repos: [Dockd.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  flows: [:lista]
 
 # Configure the endpoint
 config :dockd, DockdWeb.Endpoint,
