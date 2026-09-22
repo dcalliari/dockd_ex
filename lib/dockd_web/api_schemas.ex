@@ -97,7 +97,8 @@ defmodule DockdWeb.ApiSchemas.GameAttributes do
     properties: %{
       title: %Schema{type: :string},
       slug: %Schema{type: :string},
-      cover_url: %Schema{type: :string},
+      cover_url: %Schema{type: :string, nullable: true},
+      igdb_id: %Schema{type: :integer, nullable: true},
       developer: %Schema{type: :string},
       publisher: %Schema{type: :string},
       availability: %Schema{

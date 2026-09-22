@@ -15,12 +15,25 @@ defmodule DockdWeb.CatalogApiTest do
 
     updated =
       put(conn, ~p"/api/v1/games/#{id}", %{
-        game: %{title: "Splatoon 3", availability: "multiplatform"}
+        game: %{title: "Splatoon 3", availability: "multiplatform", igdb_id: 27_239}
       })
       |> json_response(200)
 
     assert_schema(updated, "GameResponse", DockdWeb.ApiSpec.spec())
-    assert %{"data" => %{"id" => ^id}} = updated
+    assert %{"data" => %{"id" => ^id, "igdb_id" => 27_239}} = updated
+
+    duplicate =
+      post(conn, ~p"/api/v1/games", %{
+        game: %{
+          title: "Duplicate IGDB",
+          availability: "multiplatform",
+          igdb_id: 27_239
+        }
+      })
+      |> json_response(422)
+
+    assert_schema(duplicate, "ValidationError", DockdWeb.ApiSpec.spec())
+    assert %{"error" => %{"details" => %{"igdb_id" => [_]}}} = duplicate
 
     shown = get(conn, ~p"/api/v1/games/#{id}") |> json_response(200)
     assert_schema(shown, "GameResponse", DockdWeb.ApiSpec.spec())
@@ -57,6 +70,7 @@ defmodule DockdWeb.CatalogApiTest do
     assert %{"data" => %{"id" => ^release_id, "edition" => "Deluxe"}} = updated
 
     shown = get(conn, ~p"/api/v1/games/#{game.id}/releases/#{release_id}") |> json_response(200)
+    assert shown["data"]["release_date_precision"] == "tbd"
     assert_schema(shown, "ReleaseResponse", DockdWeb.ApiSpec.spec())
     listed = get(build_conn(), ~p"/api/v1/games/#{game.id}/releases") |> json_response(200)
     assert_schema(listed, "ReleaseListResponse", DockdWeb.ApiSpec.spec())
@@ -68,5 +82,24 @@ defmodule DockdWeb.CatalogApiTest do
 
     assert_schema(invalid, "ValidationError", DockdWeb.ApiSpec.spec())
     assert %{"error" => %{"type" => "validation"}} = invalid
+  end
+
+  test "generated OpenAPI schemas expose catalog fields", %{conn: conn} do
+    spec = DockdWeb.ApiSpec.spec()
+    game_attributes = spec.components.schemas["GameAttributes"]
+    game = spec.components.schemas["Game"]
+    release = spec.components.schemas["Release"]
+
+    assert Map.has_key?(game_attributes.properties, :igdb_id)
+    assert game_attributes.properties[:igdb_id].type == :integer
+    assert game_attributes.properties[:igdb_id].nullable
+    assert Map.has_key?(game_attributes.properties, :cover_url)
+    refute Map.has_key?(game_attributes.properties, :synced_at)
+    assert Map.has_key?(game.properties, :igdb_id)
+    assert Map.has_key?(release.properties, :release_date_precision)
+
+    response = get(conn, "/api/openapi") |> json_response(200)
+    assert response["components"]["schemas"]["GameAttributes"]["properties"]["igdb_id"]
+    assert response["components"]["schemas"]["Release"]["properties"]["release_date_precision"]
   end
 end
