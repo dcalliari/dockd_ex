@@ -1,27 +1,29 @@
 <Layouts.app flash={@flash} current="Biblioteca">
-  <div class="space-y-8">
+  <div class="space-y-7">
     <.page_header title="Biblioteca">
       <:actions>
-        <a href="#add-game" class="dockd-button dockd-button-primary">Adicionar jogo</a>
+        <.link navigate="/catalogo" class="btn btn-primary min-h-10">Descobrir</.link>
       </:actions>
     </.page_header>
 
-    <nav id="library-tabs" class="dockd-tabs" aria-label="Seções da biblioteca">
-      <%= for {label, key, count} <- [
-        {"Jogando", "playing", @counts.playing},
-        {"Backlog", "backlog", @counts.backlog},
-        {"Quero", "want", @counts.want},
-        {"Coleção", "collection", @counts.collection},
-        {"Terminados", "finished", @counts.finished}
-      ] do %>
+    <nav
+      id="library-tabs"
+      class="flex gap-1 overflow-x-auto border-b border-base-content/10"
+      aria-label="Seções da biblioteca"
+    >
+      <%= for {label, key, count} <- [{"Jogando", "playing", @tab_counts.playing}, {"Backlog", "backlog", @tab_counts.backlog}, {"Quero", "want", @tab_counts.want}, {"Coleção", "all", @tab_counts.all}, {"Terminados", "finished", @tab_counts.finished}] do %>
         <button
-          id={"library-tab-#{if key == "collection", do: "all", else: key}"}
-          class="dockd-tab"
-          data-active={to_string(@filters["tab"] == key)}
+          id={"library-tab-#{key}"}
+          class={[
+            "shrink-0 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold transition-colors",
+            @filters["tab"] == key && "border-primary text-primary",
+            @filters["tab"] != key &&
+              "border-transparent text-base-content/65 hover:text-base-content"
+          ]}
           phx-click="filter"
           phx-value-tab={key}
         >
-          {label}<span class="dockd-count">{count}</span>
+          {label}<span class="ml-1 text-xs">{count}</span>
         </button>
       <% end %>
     </nav>
@@ -30,152 +32,89 @@
       for={to_form(@filters, as: :filters)}
       id="library-filter-form"
       phx-change="filter"
-      class="max-w-md"
+      class="max-w-sm"
     >
       <.input
         field={to_form(@filters, as: :filters)[:search]}
         name="search"
-        label="Buscar na biblioteca"
+        label="Buscar"
         value={@filters["search"] || ""}
-        placeholder="Nome do jogo"
       />
     </.form>
 
     <div
       id="library-groups"
-      class="grid grid-cols-2 gap-x-4 gap-y-9 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6"
+      class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
     >
       <%= for entry <- @entries do %>
-        <article id={"entry-#{entry.id}"} class="group min-w-0">
-          <.link navigate={~p"/jogos/#{entry.game.id}"} class="block">
-            <div class="relative">
-              <.game_cover title={entry.game.title} cover_url={entry.game.cover_url} />
-              <span
-                :if={MapSet.member?(@owned_game_ids, entry.game_id)}
-                class="absolute right-2 top-2 bg-base-100 px-2 py-1 text-[10px] font-bold"
-              >{ownership_label(@ownerships_by_game, entry.game_id)}</span>
-            </div>
-            <span class="dockd-game-title">{entry.game.title}</span>
-            <span :if={platform_label(entry.game)} class="dockd-meta mt-1 block">
-              {platform_label(entry.game)}
-            </span>
-          </.link>
-          <div class="mt-2 flex items-center justify-between gap-2">
-            <span :if={status_label(entry)} class="dockd-meta">{status_label(entry)}</span>
-            <span :if={!status_label(entry)} class="dockd-meta">Não iniciado</span>
-            <button
-              id={"edit-entry-#{entry.id}"}
-              type="button"
-              class="dockd-meta font-bold underline underline-offset-2"
-              phx-click="edit_entry"
-              phx-value-id={entry.id}
-            >Editar</button>
-          </div>
-          <.form
-            for={to_form(%{"play_state" => entry.play_state})}
-            id={"state-form-#{entry.id}"}
-            phx-change="quick_state"
-            phx-value-id={entry.id}
-            class="mt-2"
-          >
-            <.input
-              field={to_form(%{"play_state" => entry.play_state})[:play_state]}
-              id={"state-#{entry.id}"}
-              name="play_state"
-              type="select"
-              label="Estado"
-              class="w-full select text-xs"
-              options={[
-                {"Não jogado", :unplayed},
-                {"Jogando", :playing},
-                {"Pausado", :paused},
-                {"Terminado", :finished},
-                {"Abandonado", :abandoned}
-              ]}
-              value={entry.play_state}
-            />
-          </.form>
+        <article id={"entry-#{entry.id}"} class="group relative min-w-0">
           <button
-            id={"remove-entry-#{entry.id}"}
-            type="button"
-            class="dockd-meta mt-1 text-error underline underline-offset-2"
-            phx-click="remove_entry"
+            id={"state-cover-#{entry.id}"}
+            class="relative block w-full text-left"
+            phx-click="toggle_state_menu"
             phx-value-id={entry.id}
-            data-confirm="Remover este jogo da biblioteca?"
-          >Remover</button>
+            aria-label={"Alterar estado de #{entry.game.title}"}
+          >
+            <.game_cover
+              title={entry.game.title}
+              cover_url={entry.game.cover_url}
+              class="transition duration-200 group-hover:-translate-y-1 group-hover:shadow-xl"
+            />
+            <span
+              :if={status_label(entry)}
+              class="absolute bottom-2 left-2 rounded-md bg-base-100/90 px-2 py-1 text-[11px] font-semibold shadow-sm"
+            >{status_label(entry)}</span>
+          </button>
+          <div
+            :if={@state_menu_id == to_string(entry.id)}
+            id={"state-menu-#{entry.id}"}
+            class="absolute inset-x-1 top-2 z-10 grid gap-1 rounded-xl border border-base-content/10 bg-base-100/95 p-2 shadow-xl backdrop-blur"
+          >
+            <span class="px-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-base-content/50">Estado</span>
+            <button
+              :for={
+                {label, state} <- [
+                  {"Jogando", "playing"},
+                  {"Terminado", "finished"},
+                  {"Abandonado", "abandoned"},
+                  {"Backlog", "backlog"}
+                ]
+              }
+              class="rounded-lg px-2 py-2 text-left text-xs font-semibold hover:bg-base-200"
+              phx-click="set_state"
+              phx-value-id={entry.id}
+              phx-value-state={state}
+            >{label}</button>
+          </div>
+          <button
+            id={"edit-entry-#{entry.id}"}
+            class="mt-3 block max-w-full truncate text-left font-bold hover:text-primary"
+            phx-click="edit_entry"
+            phx-value-id={entry.id}
+          >{entry.game.title}</button>
+          <p class="mt-1 text-xs text-base-content/70">
+            {ownership_label(entry.game_id, @ownerships)} · {platform_label(entry.game)}
+          </p>
         </article>
       <% end %>
-      <div :if={@entries == []} class="col-span-full">
-        <.empty_state title="Nenhum jogo nesta lista" />
-      </div>
-    </div>
-
-    <div :if={@orphan_ownerships != []} id="ownerships-list" class="dockd-section">
-      <h2 class="dockd-section-title">Posse sem entrada</h2>
-      <div class="mt-3 divide-y divide-base-content/10">
-        <%= for ownership <- @orphan_ownerships do %>
-          <div
-            id={"ownership-#{ownership.id}"}
-            class="flex items-center justify-between gap-3 py-3 text-sm"
-          >
-            <span class="font-bold">{ownership.release.game.title}</span>
-            <span class="dockd-meta">{enum_label(ownership.ownership_type)}</span>
-            <button
-              id={"remove-ownership-#{ownership.id}"}
-              type="button"
-              class="dockd-meta text-error underline underline-offset-2"
-              phx-click="remove_ownership"
-              phx-value-id={ownership.id}
-            >Remover</button>
-          </div>
-        <% end %>
-      </div>
-    </div>
-
-    <div id="add-game" class="dockd-section">
-      <h2 class="dockd-section-title">Adicionar da biblioteca</h2>
-      <div class="mt-4 grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-        <%= for game <- @games do %>
-          <div
-            id={"add-game-#{game.id}"}
-            class="flex items-center justify-between gap-3 border-b border-base-content/10 py-2"
-          >
-            <span class="truncate text-sm font-bold">{game.title}</span>
-            <%= if MapSet.member?(MapSet.new(@all_entries, & &1.game_id), game.id) do %>
-              <span class="dockd-meta">Adicionado</span>
-            <% else %>
-              <button
-                class="dockd-meta font-bold text-primary"
-                phx-click="new_entry"
-                phx-value-game_id={game.id}
-              >Adicionar</button>
-            <% end %>
-          </div>
-        <% end %>
+      <div
+        :if={@entries == []}
+        class="col-span-full py-10 text-center text-sm text-base-content/60"
+      >
+        Nenhum jogo
       </div>
     </div>
 
     <section
       :if={@editing}
       id="entry-editor"
-      tabindex="-1"
-      phx-mounted={JS.focus(to: "#entry-editor")}
-      class="dockd-panel outline-none"
+      class="max-w-3xl border-t border-base-content/10 pt-6"
     >
-      <div class="flex items-center justify-between gap-4">
-        <h2 class="dockd-section-title">Editar {@editing.game.title}</h2>
-        <button
-          type="button"
-          class="dockd-meta font-bold underline underline-offset-2"
-          phx-click="close_editor"
-        >Fechar</button>
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <h2 class="text-xl font-bold">{@editing.game.title}</h2>
+        <button class="btn btn-sm btn-ghost" phx-click="filter">Fechar</button>
       </div>
-      <.form
-        for={@form}
-        id="entry-form"
-        phx-submit="save_entry"
-        class="mt-5 grid gap-3 sm:grid-cols-2"
-      >
+      <.form for={@form} id="entry-form" phx-submit="save_entry" class="grid gap-3 sm:grid-cols-2">
         <.input
           field={@form[:purchase_intent]}
           type="select"
@@ -215,10 +154,39 @@
         <.money_input field={@form[:target_price_cents]} label="Preço alvo (R$)" />
         <button
           id="save-entry-button"
-          class="dockd-button dockd-button-primary sm:col-span-2"
+          class="btn btn-primary min-h-11 sm:col-span-2"
           type="submit"
-        >Salvar alterações</button>
+        >
+          Salvar
+        </button>
       </.form>
+      <button
+        id={"remove-entry-#{@editing.id}"}
+        class="mt-5 text-sm font-semibold text-error"
+        phx-click="remove_entry"
+        phx-value-id={@editing.id}
+        data-confirm="Remover este jogo?"
+      >Remover</button>
+    </section>
+
+    <section id="ownerships-list" class="hidden" aria-hidden="true">
+      <%= for ownership <- @ownerships do %>
+        <div id={"ownership-#{ownership.id}"}>
+          <button
+            id={"remove-ownership-#{ownership.id}"}
+            phx-click="remove_ownership"
+            phx-value-id={ownership.id}
+          >Remover</button>
+        </div>
+      <% end %>
+    </section>
+
+    <section id="add-game" class="hidden" aria-hidden="true">
+      <%= for game <- @games do %>
+        <div id={"add-game-#{game.id}"}>
+          <button phx-click="new_entry" phx-value-game_id={game.id}>Adicionar</button>
+        </div>
+      <% end %>
     </section>
   </div>
 </Layouts.app>

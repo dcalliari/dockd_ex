@@ -23,7 +23,7 @@ defmodule DockdWeb.PlannerWalletLiveTest do
     {:ok, view, _html} = live(conn, "/")
 
     assert has_element?(view, "#planner-recommendation")
-    assert has_element?(view, "#recommendation-game[href='/jogos/#{game.id}']")
+    assert has_element?(view, "#recommendation-game[href='/jogos/#{game.id}?from=planner']")
   end
 
   test "wallet ignores unknown fields in balance and reservation forms", %{conn: conn} do

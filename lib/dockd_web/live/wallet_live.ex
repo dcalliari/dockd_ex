@@ -1,5 +1,6 @@
 defmodule DockdWeb.WalletLive do
   use DockdWeb, :live_view
+
   alias Dockd.Accounts
   alias Dockd.Library
   alias Dockd.Wallet
@@ -13,8 +14,7 @@ defmodule DockdWeb.WalletLive do
 
   @impl true
   def handle_event("save-balance", %{"store_balance" => attrs}, socket) do
-    attrs = normalize_money(attrs, "amount_cents")
-    attrs = Map.put(attrs, "store", "eshop")
+    attrs = attrs |> normalize_money("amount_cents") |> Map.put("store", "eshop")
 
     result =
       case Wallet.get_balance(socket.assigns.owner, :eshop) do
@@ -42,8 +42,7 @@ defmodule DockdWeb.WalletLive do
   end
 
   def handle_event("save-reservation", %{"balance_reservation" => attrs}, socket) do
-    attrs = normalize_money(attrs, "amount_cents")
-    attrs = Map.put(attrs, "store", "eshop")
+    attrs = attrs |> normalize_money("amount_cents") |> Map.put("store", "eshop")
 
     result =
       case Map.get(attrs, "id") do
@@ -77,19 +76,18 @@ defmodule DockdWeb.WalletLive do
   end
 
   defp refresh(socket, owner) do
-    balance = Wallet.get_balance(owner, :eshop) || %StoreBalance{store: :eshop, currency: "BRL"}
+    stored_balance = Wallet.get_balance(owner, :eshop)
+    balance = stored_balance || %StoreBalance{store: :eshop, currency: "BRL"}
+    reservations = Wallet.list_reservations(owner)
 
     assign(socket,
       page_title: "Carteira",
       owner: owner,
       balance: balance,
-      reservations: Wallet.list_reservations(owner),
-      games:
-        owner
-        |> Library.list_entries()
-        |> Enum.map(& &1.game)
-        |> Enum.uniq_by(& &1.id)
-        |> Enum.sort_by(&String.downcase(&1.title)),
+      balance_exists?: stored_balance != nil,
+      reservations: reservations,
+      reserved_cents: Enum.reduce(reservations, 0, &(&1.amount_cents + &2)),
+      games: owner |> Library.list_entries() |> Enum.map(& &1.game),
       balance_form: to_form(Ecto.Changeset.change(balance)),
       reservation_form: to_form(Ecto.Changeset.change(%BalanceReservation{}))
     )

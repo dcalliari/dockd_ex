@@ -4,10 +4,27 @@ defmodule DockdWeb.GameLive do
   alias Dockd.{Accounts, Catalog, Library, Purchasing}
 
   @impl true
-  def mount(%{"id" => id}, _session, socket) do
-    user = Accounts.default_owner()
+  def mount(%{"id" => id} = params, _session, socket) do
     game = Catalog.get_game!(id)
-    {:ok, assign_game(socket, user, game)}
+    user = Accounts.default_owner()
+    entry = Library.get_entry_for_game(user, game.id)
+    return_context = return_context(Map.get(params, "from"))
+
+    {:ok,
+     assign(socket,
+       page_title: game.title,
+       game: game,
+       user: user,
+       entry: entry,
+       owned?: game.id in Library.owned_game_ids(user),
+       return_to: return_context.path,
+       return_label: return_context.label,
+       entry_form: entry_form(entry, game.id),
+       release_data: release_data(game, user, entry),
+       observation_forms: %{},
+       purchase_forms: %{},
+       veto_forms: %{}
+     )}
   end
 
   @impl true
@@ -47,7 +64,16 @@ defmodule DockdWeb.GameLive do
       |> Map.put("release_id", release_id)
 
     case Purchasing.create_purchase(socket.assigns.user, attrs) do
-      {:ok, _purchase} ->
+      {:ok, purchase} ->
+        ownership_type = if attrs["format"] == "physical", do: :physical, else: :digital
+
+        Library.create_ownership(socket.assigns.user, %{
+          release_id: release_id,
+          ownership_type: ownership_type,
+          acquired_at: purchase.purchased_at,
+          purchase_id: purchase.id
+        })
+
         {:noreply, refresh(socket) |> put_flash(:info, "Compra registrada e posse atualizada.")}
 
       {:error, changeset} ->
@@ -103,75 +129,56 @@ defmodule DockdWeb.GameLive do
     end
   end
 
-  defp assign_game(socket, user, game) do
-    ownerships = Library.list_ownerships(user) |> Enum.filter(&(&1.release.game_id == game.id))
-    purchases = Purchasing.list_purchases(user) |> Enum.filter(&(&1.release.game_id == game.id))
-    entry = Library.get_entry_for_game(user, game.id)
+  defp refresh(socket) do
+    game = Catalog.get_game!(socket.assigns.game.id)
+    entry = Library.get_entry_for_game(socket.assigns.user, game.id)
 
     assign(socket,
-      page_title: game.title,
       game: game,
-      user: user,
       entry: entry,
+      owned?: game.id in Library.owned_game_ids(socket.assigns.user),
       entry_form: entry_form(entry, game.id),
-      ownerships: ownerships,
-      purchases: purchases,
-      ownerships_by_release: Enum.group_by(ownerships, & &1.release_id),
-      purchases_by_release: Enum.group_by(purchases, & &1.release_id),
+      release_data: release_data(game, socket.assigns.user, entry),
       observation_forms: %{},
       purchase_forms: %{},
       veto_forms: %{}
     )
   end
 
-  defp refresh(socket) do
-    game = Catalog.get_game!(socket.assigns.game.id)
-    assign_game(socket, socket.assigns.user, game)
+  defp release_data(game, user, entry) do
+    Enum.map(game.releases, fn release ->
+      observations = Purchasing.list_price_observations(user, release.id)
+      observation = List.first(observations)
+      veto = Library.get_veto_for_release(user, release.id)
+
+      %{
+        release: release,
+        observations: observations,
+        observation: observation,
+        veto: veto,
+        verdict: release_verdict(observation, veto, entry)
+      }
+    end)
   end
+
+  defp release_verdict(_observation, veto, _entry) when not is_nil(veto), do: "Vetada"
+  defp release_verdict(nil, _veto, _entry), do: "Sem preço"
+
+  defp release_verdict(observation, _veto, entry) do
+    cond do
+      Purchasing.stale?(observation, DateTime.utc_now()) -> "Desatualizado"
+      is_nil(entry) or is_nil(entry.target_price_cents) -> "Sem alvo"
+      observation.price_cents <= entry.target_price_cents -> "Abaixo do alvo"
+      true -> "Esperar"
+    end
+  end
+
+  defp return_context("planner"), do: %{path: "/", label: "Planejador"}
+  defp return_context("library"), do: %{path: "/biblioteca", label: "Biblioteca"}
+  defp return_context(_), do: %{path: "/catalogo", label: "Descobrir"}
 
   defp entry_form(nil, game_id), do: to_form(%{"game_id" => game_id}, as: :entry)
   defp entry_form(entry, _game_id), do: to_form(Ecto.Changeset.change(entry), as: :entry)
-
-  defp release_title(%{platform: platform, edition: edition}) do
-    if edition in [nil, "", "Edição padrão"],
-      do: enum_label(platform),
-      else: "#{enum_label(platform)} · #{edition}"
-  end
-
-  defp release_status(%{release_date: date} = release) when not is_nil(date) do
-    if Date.compare(date, Date.utc_today()) == :gt,
-      do: "Lançamento em #{release_date_label(release)}",
-      else: "Data de lançamento #{release_date_label(release)}"
-  end
-
-  defp release_status(%{physical_available: true}), do: "Disponível em físico"
-  defp release_status(%{digital_available: true}), do: "Disponível em digital"
-  defp release_status(_), do: "Disponibilidade não informada"
-
-  defp release_date_label(%{release_date: date, release_date_precision: :day}),
-    do: date_pt_br(date)
-
-  defp release_date_label(%{release_date: date, release_date_precision: :month}),
-    do: Calendar.strftime(date, "%m/%Y")
-
-  defp release_date_label(%{release_date: date, release_date_precision: :quarter}) do
-    quarter = div(date.month - 1, 3) + 1
-    "#{quarter}º tri. de #{date.year}"
-  end
-
-  defp release_date_label(%{release_date: date, release_date_precision: :year}),
-    do: Integer.to_string(date.year)
-
-  defp release_date_label(%{release_date: date, release_date_precision: :tbd}),
-    do: "#{date.year}, a definir"
-
-  defp release_date_label(%{release_date: date}), do: date_pt_br(date)
-
-  defp ownership_label(ownerships_by_release, release_id) do
-    ownerships_by_release
-    |> Map.get(release_id, [])
-    |> Enum.map_join(" e ", &enum_label(&1.ownership_type))
-  end
 
   defp normalize_datetime(attrs, key) do
     case attrs[key] do

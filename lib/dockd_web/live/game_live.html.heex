@@ -1,178 +1,175 @@
-<Layouts.app flash={@flash} current="Catálogo">
-  <div class="mx-auto max-w-6xl space-y-10">
-    <div class="flex items-center justify-between gap-4">
-      <.link navigate={~p"/catalogo"} class="dockd-meta font-bold underline underline-offset-2">← Catálogo</.link>
-      <.link navigate={~p"/biblioteca"} class="dockd-meta font-bold underline underline-offset-2">Biblioteca</.link>
-    </div>
+<Layouts.app flash={@flash} current={@return_label}>
+  <div class="space-y-8">
+    <.link
+      id="game-back"
+      navigate={@return_to}
+      class="inline-flex items-center gap-2 text-sm font-semibold text-primary"
+    >
+      <.icon name="hero-arrow-left" class="size-4" /> {@return_label}
+    </.link>
 
-    <section class="grid items-start gap-6 sm:grid-cols-[12rem_1fr] lg:grid-cols-[15rem_1fr]">
-      <.game_cover title={@game.title} cover_url={@game.cover_url} />
+    <section
+      id="game-hero"
+      class="grid grid-cols-[6rem_1fr] items-start gap-5 sm:grid-cols-[11rem_1fr] sm:gap-7"
+    >
+      <.game_cover title={@game.title} cover_url={@game.cover_url} class="w-full" />
       <div class="min-w-0">
-        <h1 class="dockd-page-title max-w-3xl">{@game.title}</h1>
-        <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-          <span>{enum_label(@game.availability)}</span>
-          <span :if={@game.pace} class="dockd-meta">{enum_label(@game.pace)}</span>
-          <span :if={@game.play_mode} class="dockd-meta">{enum_label(@game.play_mode)}</span>
-          <span :if={@game.estimated_duration_minutes} class="dockd-meta">{@game.estimated_duration_minutes} min</span>
+        <h1 class="display text-3xl font-black leading-none tracking-tight sm:text-5xl">
+          {@game.title}
+        </h1>
+        <div class="mt-5 flex flex-wrap gap-2" aria-label="Relação com o jogo">
+          <span :if={@owned?} class="game-relation game-relation-active">Tem</span>
+          <span
+            :if={@entry && @entry.purchase_intent in [:want, :planned, :preordered]}
+            class="game-relation game-relation-active"
+          >Quer</span>
+          <span
+            :if={@entry && @entry.play_state == :playing}
+            class="game-relation game-relation-active"
+          >Jogando</span>
+          <span :if={!@owned? && is_nil(@entry)} class="game-relation">Catálogo</span>
         </div>
-        <p :if={@ownerships != []} class="mt-6 text-sm font-bold text-primary">
-          Você possui este jogo
-        </p>
+        <div class="mt-6 flex flex-wrap gap-2">
+          <details :if={@entry} id="entry-editor">
+            <summary class="btn btn-primary btn-sm cursor-pointer">Estado</summary>
+            <.form
+              for={@entry_form}
+              id="entry-form"
+              phx-submit="save_entry"
+              class="mt-4 grid gap-3 rounded-xl border border-base-content/10 bg-base-100 p-4 sm:grid-cols-2"
+            >
+              <.input
+                field={@entry_form[:purchase_intent]}
+                type="select"
+                label="Intenção"
+                options={[{"Quero", :want}, {"Interessado", :interested}, {"Nenhuma", :none}]}
+              />
+              <.input
+                field={@entry_form[:play_state]}
+                type="select"
+                label="Estado"
+                options={[
+                  {"Não jogado", :unplayed},
+                  {"Jogando", :playing},
+                  {"Terminado", :finished},
+                  {"Abandonado", :abandoned}
+                ]}
+              />
+              <.money_input field={@entry_form[:target_price_cents]} label="Preço alvo (R$)" />
+              <button id="save-entry-button" class="btn btn-primary sm:col-span-2" type="submit">Salvar</button>
+            </.form>
+          </details>
+          <details :if={is_nil(@entry)}>
+            <summary class="btn btn-primary btn-sm cursor-pointer">Adicionar</summary>
+            <.form
+              for={@entry_form}
+              id="entry-form"
+              phx-submit="save_entry"
+              class="mt-4 grid gap-3 rounded-xl border border-base-content/10 bg-base-100 p-4 sm:grid-cols-2"
+            >
+              <.input
+                field={@entry_form[:purchase_intent]}
+                type="select"
+                label="Intenção"
+                options={[{"Quero", :want}, {"Interessado", :interested}, {"Nenhuma", :none}]}
+              />
+              <.input
+                field={@entry_form[:play_state]}
+                type="select"
+                label="Estado"
+                options={[
+                  {"Não jogado", :unplayed},
+                  {"Jogando", :playing},
+                  {"Terminado", :finished},
+                  {"Abandonado", :abandoned}
+                ]}
+              />
+              <.money_input field={@entry_form[:target_price_cents]} label="Preço alvo (R$)" />
+              <button id="save-entry-button" class="btn btn-primary sm:col-span-2" type="submit">Salvar</button>
+            </.form>
+          </details>
+        </div>
       </div>
     </section>
 
-    <section id="game-history" class="dockd-section">
-      <h2 class="dockd-section-title">Meu histórico</h2>
-      <div class="mt-4 grid gap-3 sm:grid-cols-2">
-        <%= for ownership <- @ownerships do %>
-          <div
-            id={"ownership-#{ownership.id}"}
-            class="flex justify-between gap-4 border-b border-base-content/10 py-2 text-sm"
-          >
-            <span>Posse {enum_label(ownership.ownership_type)}</span>
-            <span class="dockd-meta">{enum_label(ownership.release.platform)}</span>
-          </div>
-        <% end %>
-        <%= for purchase <- @purchases do %>
-          <div
-            id={"purchase-#{purchase.id}"}
-            class="flex justify-between gap-4 border-b border-base-content/10 py-2 text-sm"
-          >
-            <span>Compra em {date_pt_br(DateTime.to_date(purchase.purchased_at))}</span>
-            <span class="dockd-value">{money(purchase.price_cents, purchase.currency)}</span>
-          </div>
-        <% end %>
-      </div>
-      <.empty_state
-        :if={@ownerships == [] and @purchases == []}
-        title="Nenhum registro pessoal ainda"
-      />
-    </section>
-
-    <.section_card title="Minha entrada">
-      <div :if={@entry} class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-        <.status_mark
-          :if={@entry.purchase_intent not in [nil, :none]}
-          label={enum_label(@entry.purchase_intent)}
-          tone="secondary"
-        />
-        <.status_mark
-          :if={@entry.play_state not in [nil, :unplayed]}
-          label={enum_label(@entry.play_state)}
-        />
-        <span :if={@entry.target_price_cents} class="dockd-value font-bold">Alvo: {money(
-          @entry.target_price_cents,
-          @entry.currency
-        )}</span>
-      </div>
-      <p :if={!@entry} class="dockd-note">Este jogo ainda não está na sua biblioteca.</p>
-      <details id="entry-editor" class="mt-4">
-        <summary class="dockd-button dockd-button-quiet inline-flex cursor-pointer">
-          {if @entry, do: "Editar entrada", else: "Adicionar à biblioteca"}
-        </summary>
-        <.form
-          for={@entry_form}
-          id="entry-form"
-          phx-submit="save_entry"
-          class="mt-5 grid gap-4 sm:grid-cols-3"
+    <section id="releases" class="space-y-4">
+      <%= for data <- @release_data do %>
+        <% release = data.release %>
+        <article
+          id={"release-#{release.id}"}
+          class={["game-release", data.veto && "game-release-vetoed"]}
         >
-          <.input
-            field={@entry_form[:purchase_intent]}
-            type="select"
-            label="Intenção"
-            options={[
-              {"Nenhuma", :none},
-              {"Interessado", :interested},
-              {"Quero", :want},
-              {"Planejado", :planned},
-              {"Pré-venda", :preordered}
-            ]}
-          />
-          <.input
-            field={@entry_form[:play_state]}
-            type="select"
-            label="Estado"
-            options={[
-              {"Não jogado", :unplayed},
-              {"Jogando", :playing},
-              {"Pausado", :paused},
-              {"Terminado", :finished},
-              {"Abandonado", :abandoned}
-            ]}
-          />
-          <.money_input field={@entry_form[:target_price_cents]} label="Preço alvo (R$)" />
-          <button
-            id="save-entry-button"
-            class="dockd-button dockd-button-primary sm:col-span-3"
-            type="submit"
-          >Salvar entrada</button>
-        </.form>
-      </details>
-    </.section_card>
-
-    <section id="releases" class="grid gap-8 lg:grid-cols-2">
-      <%= for release <- @game.releases do %>
-        <% veto = Library.get_veto_for_release(@user, release.id) %>
-        <% observations = Purchasing.list_price_observations(@user, release.id) %>
-        <% purchases = Map.get(@purchases_by_release, release.id, []) %>
-        <article id={"release-#{release.id}"} class={["dockd-release", veto && "border-error/50"]}>
-          <div class="flex flex-wrap items-baseline justify-between gap-3">
-            <h2 class="text-lg font-black">{release_title(release)}</h2>
-            <span class="dockd-meta">{release_status(release)}</span>
-          </div>
-          <div class="mt-2 flex flex-wrap gap-2">
-            <.platform_badge platform={release.platform} />
-            <.media_badge :if={release.physical_available} media={:physical} />
-            <.media_badge :if={release.digital_available} media={:digital} />
-            <.status_mark :if={veto} label="vetada" tone="error" />
-            <span
-              :if={ownership_label(@ownerships_by_release, release.id) != ""}
-              class="dockd-tag dockd-tag-primary"
-            >{ownership_label(@ownerships_by_release, release.id)}</span>
-          </div>
-          <p :if={veto} class="mt-3 text-sm text-error">
-            {veto.reason || "Sem motivo informado"}
-          </p>
-
-          <div class="mt-6">
-            <h3 class="dockd-section-title">Preços observados</h3>
-            <.empty_state :if={observations == []} title="Nenhuma observação" />
-            <div :if={observations != []} class="mt-3 space-y-3">
-              <%= for observation <- observations do %>
-                <.dated_value
-                  value={observation.price_cents}
-                  currency={observation.currency}
-                  observed_at={DateTime.to_date(observation.observed_at)}
-                  stale={Purchasing.stale?(observation, DateTime.utc_now())}
-                />
+          <header class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 class="font-bold">{release.edition || "Edição padrão"}</h2>
+              <p class="mt-1 text-xs text-base-content/60">
+                {enum_label(release.platform)} · {if(release.release_date,
+                  do: date_pt_br(release.release_date),
+                  else: "Sem data"
+                )}
+              </p>
+            </div>
+            <span class={[
+              "game-verdict",
+              data.verdict == "Abaixo do alvo" && "text-success",
+              data.verdict in ["Esperar", "Desatualizado"] && "text-warning",
+              data.verdict == "Vetada" && "text-error"
+            ]}>{data.verdict}</span>
+          </header>
+          <div class="mt-5 grid gap-3 border-y border-base-content/10 py-4 text-sm sm:grid-cols-3">
+            <div>
+              <span class="block text-xs text-base-content/55">Disponibilidade</span>
+              <strong class="mt-1 block">{if(release.digital_available, do: "Digital", else: "")}{if(
+                release.digital_available and release.physical_available,
+                do: " · ",
+                else: ""
+              )}{if(release.physical_available, do: "Físico", else: "")}</strong>
+            </div>
+            <div>
+              <span class="block text-xs text-base-content/55">Observado</span>
+              <%= if data.observation do %>
+                <strong class="mt-1 block">{money(
+                  data.observation.price_cents,
+                  data.observation.currency
+                )}</strong>
+                <span class="block text-xs text-base-content/55">{date_pt_br(
+                  DateTime.to_date(data.observation.observed_at)
+                )}</span>
+              <% else %>
+                <strong class="mt-1 block">Sem preço</strong>
               <% end %>
             </div>
-          </div>
-
-          <div :if={purchases != []} class="mt-6">
-            <h3 class="dockd-section-title">Compras</h3>
-            <div class="mt-3 space-y-2 text-sm">
-              <%= for purchase <- purchases do %>
-                <div class="flex justify-between gap-3">
-                  <span>{date_pt_br(DateTime.to_date(purchase.purchased_at))} · {enum_label(
-                    purchase.format
-                  )}</span>
-                  <span class="dockd-value">{money(purchase.price_cents, purchase.currency)}</span>
-                </div>
-              <% end %>
+            <div>
+              <span class="block text-xs text-base-content/55">Alvo</span>
+              <strong class="mt-1 block">{if(@entry && @entry.target_price_cents,
+                do: money(@entry.target_price_cents, @entry.currency),
+                else: "Sem alvo"
+              )}</strong>
             </div>
           </div>
-
-          <div class="mt-6 flex flex-wrap gap-2">
+          <div :if={data.observations != []} class="space-y-3">
+            <%= for observation <- data.observations do %>
+              <.dated_value
+                value={observation.price_cents}
+                currency={observation.currency}
+                observed_at={DateTime.to_date(observation.observed_at)}
+                stale={Purchasing.stale?(observation, DateTime.utc_now())}
+              />
+            <% end %>
+          </div>
+          <div :if={data.veto} class="mt-4 text-sm text-error">
+            Vetada{if data.veto.reason, do: " · #{data.veto.reason}", else: ""}
+          </div>
+          <div class="mt-5 flex flex-wrap gap-2">
             <details>
-              <summary class="dockd-button dockd-button-quiet cursor-pointer">
+              <summary class="btn btn-outline btn-primary btn-sm cursor-pointer">
                 Registrar preço
               </summary>
               <.form
                 for={Map.get(@observation_forms, release.id, to_form(%{}, as: :observation))}
                 id={"observation-form-#{release.id}"}
                 phx-submit="save_observation"
-                class="mt-4 grid gap-3 sm:grid-cols-2"
+                class="mt-4 grid gap-3 rounded-xl border border-base-content/10 bg-base-200 p-4 sm:grid-cols-2"
               >
                 <input type="hidden" name="release_id" value={release.id} />
                 <input type="hidden" name="observation[currency]" value="BRL" />
@@ -219,18 +216,16 @@
                   id={"observation-at-#{release.id}"}
                   label="Observado em"
                 />
-                <button class="dockd-button dockd-button-primary sm:col-span-2" type="submit">Salvar observação</button>
+                <button class="btn btn-secondary sm:col-span-2" type="submit">Salvar</button>
               </.form>
             </details>
             <details>
-              <summary class="dockd-button dockd-button-primary cursor-pointer">
-                Registrar compra
-              </summary>
+              <summary class="btn btn-primary btn-sm cursor-pointer">Comprar</summary>
               <.form
                 for={Map.get(@purchase_forms, release.id, to_form(%{}, as: :purchase))}
                 id={"purchase-form-#{release.id}"}
                 phx-submit="save_purchase"
-                class="mt-4 grid gap-3 sm:grid-cols-2"
+                class="mt-4 grid gap-3 rounded-xl border border-base-content/10 bg-base-200 p-4 sm:grid-cols-2"
               >
                 <input type="hidden" name="release_id" value={release.id} />
                 <.input
@@ -271,25 +266,23 @@
                   id={"purchase-at-#{release.id}"}
                   label="Comprado em"
                 />
-                <button class="dockd-button dockd-button-primary sm:col-span-2" type="submit">Salvar compra</button>
+                <button class="btn btn-primary sm:col-span-2" type="submit">Salvar</button>
               </.form>
             </details>
-            <%= if veto do %>
+            <%= if data.veto do %>
               <button
-                class="dockd-button dockd-button-danger"
+                class="btn btn-ghost btn-sm text-error"
                 phx-click="undo_veto"
-                phx-value-id={veto.id}
+                phx-value-id={data.veto.id}
               >Desfazer veto</button>
             <% else %>
               <details>
-                <summary class="dockd-button dockd-button-danger cursor-pointer">
-                  Vetar versão
-                </summary>
+                <summary class="btn btn-ghost btn-sm cursor-pointer text-error">Vetar</summary>
                 <.form
                   for={Map.get(@veto_forms, release.id, to_form(%{}, as: :veto))}
                   id={"veto-form-#{release.id}"}
                   phx-submit="save_veto"
-                  class="mt-4 flex gap-2"
+                  class="mt-4 flex gap-2 rounded-xl border border-base-content/10 bg-base-200 p-4"
                 >
                   <input type="hidden" name="release_id" value={release.id} />
                   <.input
@@ -297,16 +290,14 @@
                     id={"veto-reason-#{release.id}"}
                     label="Motivo"
                   />
-                  <button class="dockd-button dockd-button-quiet self-end" type="submit">Confirmar veto</button>
+                  <button class="btn btn-outline btn-error self-end" type="submit">Confirmar</button>
                 </.form>
               </details>
             <% end %>
           </div>
         </article>
       <% end %>
-      <div :if={@game.releases == []} class="col-span-full">
-        <.empty_state title="Nenhuma versão cadastrada" />
-      </div>
+      <div :if={@release_data == []} class="py-8 text-sm text-base-content/60">Sem versões</div>
     </section>
   </div>
 </Layouts.app>

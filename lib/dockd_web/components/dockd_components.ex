@@ -2,10 +2,14 @@ defmodule DockdWeb.DockdComponents do
   @moduledoc "Reusable visual primitives for Dockd screens."
 
   use Phoenix.Component
-  import DockdWeb.CoreComponents, only: [input: 1]
+  import DockdWeb.CoreComponents, only: [icon: 1, input: 1]
   alias Phoenix.LiveView.JS
 
-  @doc "Formats integer cents using the requested currency."
+  @doc """
+  Formats integer cents using the requested currency.
+
+      DockdWeb.DockdComponents.money(19990, "BRL")
+  """
   def money(cents, currency) when is_integer(cents) do
     symbol = %{"BRL" => "R$", "USD" => "$", "EUR" => "€"} |> Map.get(currency, currency)
     whole = div(abs(cents), 100)
@@ -16,64 +20,98 @@ defmodule DockdWeb.DockdComponents do
 
   def money(nil, _currency), do: "Preço não observado"
 
-  @doc "Formats a date for Brazilian readers."
+  @doc """
+  Formats a date for Brazilian readers.
+
+      DockdWeb.DockdComponents.date_pt_br(~D[2026-11-18])
+  """
   def date_pt_br(nil), do: "Data não informada"
   def date_pt_br(%Date{} = date), do: Calendar.strftime(date, "%d/%m/%Y")
 
-  @doc "Renders the application shell with responsive top navigation."
+  @doc "Renders the application shell with responsive navigation."
   attr :current, :string, default: nil
   slot :inner_block, required: true
   slot :footer
 
   def dockd_app_shell(assigns) do
     ~H"""
-    <div class="dockd-shell min-h-screen text-base-content">
-      <header class="dockd-topbar">
-        <div class="dockd-topbar-inner">
+    <div class="dockd-shell min-h-screen bg-base-200 text-base-content">
+      <div class="mx-auto flex min-h-screen max-w-[1440px]">
+        <aside class="hidden w-64 shrink-0 border-r border-base-content/10 bg-base-100 px-5 py-7 lg:flex lg:flex-col">
           <.brand />
-          <nav class="dockd-nav" aria-label="Navegação principal">
+          <nav class="mt-14 space-y-1" aria-label="Navegação principal">
             <%= for item <- navigation() do %>
               <.link
                 navigate={item.path}
-                class="dockd-nav-link"
-                data-active={to_string(item.label == @current)}
+                class={[
+                  "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-all hover:bg-base-200 hover:pl-4",
+                  item.label == @current &&
+                    "bg-primary text-primary-content shadow-sm hover:bg-primary hover:pl-3"
+                ]}
               >
-                {item.label}
+                <.icon name={item.icon} class="size-4" />
+                <span>{item.label}</span>
               </.link>
             <% end %>
           </nav>
-          <.theme_toggle />
+          <div class="mt-auto border-t border-base-content/10 pt-5 text-xs text-base-content/70">
+            <span class="block">Switch · Switch 2</span>
+          </div>
+        </aside>
+        <div class="min-w-0 flex-1 pb-24 lg:pb-0">
+          <header class="sticky top-0 z-20 border-b border-base-content/10 bg-base-100/90 px-4 py-4 backdrop-blur sm:px-8">
+            <div class="flex items-center justify-between">
+              <div class="lg:hidden"><.brand /></div>
+              <div class="ml-auto"><.theme_toggle /></div>
+            </div>
+          </header>
+          <main class="px-4 py-7 sm:px-8 lg:px-12 lg:py-10">{render_slot(@inner_block)}</main>
+          <div class="px-4 pb-8 sm:px-8 lg:px-12">{render_slot(@footer)}</div>
         </div>
-      </header>
-      <main class="dockd-main">{render_slot(@inner_block)}</main>
-      <footer class="dockd-footer">{render_slot(@footer)}</footer>
+      </div>
+      <nav
+        class="fixed inset-x-0 bottom-0 z-30 border-t border-base-content/10 bg-base-100/95 px-2 py-2 backdrop-blur lg:hidden"
+        aria-label="Navegação principal"
+      >
+        <div class="mx-auto flex max-w-lg justify-around gap-1">
+          <%= for item <- navigation() do %>
+            <.link
+              navigate={item.path}
+              class={[
+                "flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-[11px] font-semibold transition-colors hover:bg-base-200",
+                item.label == @current && "bg-primary text-primary-content hover:bg-primary"
+              ]}
+            >
+              <.icon name={item.icon} class="size-4" />
+              <span>{item.short}</span>
+            </.link>
+          <% end %>
+        </div>
+      </nav>
     </div>
     """
   end
 
-  @doc "Renders the Dockd wordmark and home link."
+  @doc "Renders the Dockd wordmark."
   def brand(assigns) do
     ~H"""
-    <.link navigate="/" class="dockd-brand" aria-label="Dockd, abrir planejador">
-      <span class="dockd-brand-mark" aria-hidden="true"></span>
-      <span>dockd</span>
-    </.link>
+    <a href="/catalogo" class="display text-2xl font-black tracking-tight">dockd<span class="text-primary">.</span></a>
     """
   end
 
   @doc "Renders a compact theme switcher."
   def theme_toggle(assigns) do
     ~H"""
-    <div class="dockd-theme-toggle" aria-label="Tema">
+    <div class="flex items-center gap-1 rounded-xl border border-base-content/10 bg-base-200 p-1">
       <button
         type="button"
-        aria-label="Usar tema claro"
+        class="min-h-9 rounded-lg px-3 text-xs font-semibold hover:bg-base-100"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="dockd-light"
       >Claro</button>
       <button
         type="button"
-        aria-label="Usar tema escuro"
+        class="min-h-9 rounded-lg px-3 text-xs font-semibold hover:bg-base-100"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="dockd-dark"
       >Escuro</button>
@@ -87,23 +125,25 @@ defmodule DockdWeb.DockdComponents do
 
   def page_header(assigns) do
     ~H"""
-    <div class="dockd-page-header">
-      <h1 class="dockd-page-title">{@title}</h1>
-      <div :if={@actions != []}>{render_slot(@actions)}</div>
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <h1 class="display text-2xl font-black tracking-tight sm:text-3xl">{@title}</h1>
+      <div :if={@actions} class="shrink-0">{render_slot(@actions)}</div>
     </div>
     """
   end
 
   @doc "Renders a titled surface for related content."
   attr :title, :string, required: true
-  attr :class, :any, default: ""
+  attr :class, :string, default: ""
   slot :inner_block, required: true
 
   def section_card(assigns) do
     ~H"""
-    <section class={["dockd-panel", @class]}>
-      <h2 class="dockd-section-title">{@title}</h2>
-      <div class="mt-5">{render_slot(@inner_block)}</div>
+    <section class={[
+      "rounded-2xl border border-base-content/10 bg-base-100 p-5 shadow-sm sm:p-6",
+      @class
+    ]}>
+      <h2 class="text-lg font-bold">{@title}</h2><div class="mt-5">{render_slot(@inner_block)}</div>
     </section>
     """
   end
@@ -210,7 +250,7 @@ defmodule DockdWeb.DockdComponents do
     """
   end
 
-  @doc "Renders a platform marker."
+  @doc "Renders a platform badge."
   attr :platform, :atom, required: true
 
   def platform_badge(assigns) do
@@ -218,11 +258,11 @@ defmodule DockdWeb.DockdComponents do
     assigns = assign(assigns, :label, label)
 
     ~H"""
-    <span class="dockd-tag">{@label}</span>
+    <span class="badge badge-neutral">{@label}</span>
     """
   end
 
-  @doc "Renders a media format marker."
+  @doc "Renders a media format badge."
   attr :media, :atom, required: true
 
   def media_badge(assigns) do
@@ -233,22 +273,23 @@ defmodule DockdWeb.DockdComponents do
     assigns = assign(assigns, :label, label)
 
     ~H"""
-    <span class="dockd-tag">{@label}</span>
+    <span class="badge badge-outline">{@label}</span>
     """
   end
 
   @doc "Renders a compact status marker."
   attr :label, :string, required: true
-  attr :tone, :string, default: "neutral"
 
-  def status_mark(assigns) do
-    ~H"""
-    <span class="inline-flex items-center gap-2 text-xs font-bold text-base-content/70">
-      <span class={["size-1.5 rounded-full", "bg-#{@tone}"]}></span>
-      {@label}
+  attr :tone, :string,
+    default: "neutral",
+    values: ~w(primary secondary success warning error info neutral)
+
+  def status_mark(assigns),
+    do: ~H"""
+    <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-base-content/70">
+      <span class={["size-2 rounded-full", "bg-#{@tone}"]}></span>{@label}
     </span>
     """
-  end
 
   @doc "Renders a dated value and marks old observations."
   attr :value, :integer, required: true
@@ -256,16 +297,15 @@ defmodule DockdWeb.DockdComponents do
   attr :observed_at, :any, required: true
   attr :stale, :boolean, default: false
 
-  def dated_value(assigns) do
-    ~H"""
+  def dated_value(assigns),
+    do: ~H"""
     <div>
-      <p class={["dockd-value font-bold", @stale && "text-error"]}>{money(@value, @currency)}</p>
-      <p class="dockd-meta">
-        observado em {date_pt_br(@observed_at)}<span :if={@stale} class="font-bold text-error"> · desatualizado</span>
+      <p class={["font-bold tabular-nums", @stale && "text-error"]}>{money(@value, @currency)}</p><p class="text-xs text-base-content/60">
+        observado em {date_pt_br(@observed_at)}
+        <span :if={@stale} class="font-semibold text-error">· desatualizado</span>
       </p>
     </div>
     """
-  end
 
   @doc "Renders one release in a date ordered calendar."
   attr :title, :string, required: true
@@ -273,61 +313,62 @@ defmodule DockdWeb.DockdComponents do
   attr :platform, :atom, required: true
   attr :media, :atom, required: true
 
-  def release_calendar_item(assigns) do
-    ~H"""
+  def release_calendar_item(assigns),
+    do: ~H"""
     <div class="flex min-w-0 items-center gap-3">
-      <time class="w-14 shrink-0 border-l-2 border-primary py-1 pl-2">
-        <b class="dockd-value block text-lg">{Calendar.strftime(@date, "%d")}</b>
-        <small class="dockd-meta">{Calendar.strftime(@date, "%b") |> String.upcase()}</small>
-      </time>
-      <div class="min-w-0">
-        <p class="truncate font-bold">{@title}</p>
-        <div class="mt-1 flex flex-wrap gap-1">
+      <time class="w-14 shrink-0 rounded-xl bg-primary p-2 text-center text-primary-content"><b class="block text-lg">{Calendar.strftime(
+        @date,
+        "%d"
+      )}</b><small>{Calendar.strftime(@date, "%b") |> String.upcase()}</small></time><div class="min-w-0">
+        <p class="truncate font-bold">{@title}</p><div class="mt-1 flex flex-wrap gap-1">
           <.platform_badge platform={@platform} /><.media_badge media={@media} />
         </div>
       </div>
     </div>
     """
-  end
 
-  @doc "Renders a real cover or a quiet title placeholder."
+  @doc "Renders a designed cover placeholder when artwork is unavailable."
   attr :title, :string, required: true
   attr :cover_url, :string, default: nil
-  attr :class, :any, default: ""
+  attr :class, :string, default: ""
 
   def game_cover(assigns) do
+    initials = assigns.title |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
+    assigns = assign(assigns, :initials, String.upcase(initials))
+
     ~H"""
-    <div class={["dockd-cover", @class]}>
+    <div class={["aspect-[3/4] overflow-hidden rounded-xl bg-primary/15", @class]}>
       <%= if @cover_url && @cover_url != "" do %>
-        <img src={@cover_url} alt={"Capa de #{@title}"} loading="lazy" />
+        <img src={@cover_url} alt={@title} class="h-full w-full object-cover" loading="lazy" />
       <% else %>
-        <div class="dockd-cover-placeholder">{@title}</div>
+        <div class="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 via-base-200 to-neutral/20 p-3">
+          <span class="display text-[clamp(1.5rem,8vw,3.5rem)] font-black leading-none text-base-content/75">{@initials}</span>
+        </div>
       <% end %>
     </div>
     """
   end
 
-  @doc "Renders a concise empty collection message."
+  @doc "Renders an empty collection message."
   attr :title, :string, required: true
   attr :description, :string, default: nil
   slot :action
 
-  def empty_state(assigns) do
-    ~H"""
-    <div class="dockd-empty py-5">
-      <p>{@title}</p>
-      <p :if={@description} class="mt-1">{@description}</p>
-      <div :if={@action} class="mt-3">{render_slot(@action)}</div>
+  def empty_state(assigns),
+    do: ~H"""
+    <div class="rounded-2xl border border-dashed border-base-content/20 p-8 text-center">
+      <p class="font-bold">{@title}</p><p :if={@description} class="mt-2 text-sm text-base-content/60">
+        {@description}
+      </p><div :if={@action} class="mt-4">{render_slot(@action)}</div>
     </div>
     """
-  end
 
   defp navigation,
     do: [
-      %{label: "Planejador", path: "/"},
-      %{label: "Biblioteca", path: "/biblioteca"},
-      %{label: "Catálogo", path: "/catalogo"},
-      %{label: "Carteira", path: "/carteira"}
+      %{label: "Planejador", short: "Hoje", path: "/", icon: "hero-home"},
+      %{label: "Biblioteca", short: "Jogos", path: "/biblioteca", icon: "hero-book-open"},
+      %{label: "Descobrir", short: "Descobrir", path: "/catalogo", icon: "hero-sparkles"},
+      %{label: "Carteira", short: "Carteira", path: "/carteira", icon: "hero-wallet"}
     ]
 
   defp format_integer(value) do

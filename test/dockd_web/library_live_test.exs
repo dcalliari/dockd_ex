@@ -24,6 +24,21 @@ defmodule DockdWeb.LibraryLiveTest do
     refute has_element?(view, "#entry-#{entry.id}")
   end
 
+  test "changes play state from the cover menu", %{conn: conn, game: game} do
+    user = Accounts.default_owner()
+    {:ok, entry} = entry_fixture(user, game)
+    {:ok, view, _html} = live(conn, "/biblioteca")
+
+    view |> element("#state-cover-#{entry.id}") |> render_click()
+    assert has_element?(view, "#state-menu-#{entry.id}")
+
+    view
+    |> element("#state-menu-#{entry.id} button[phx-value-state='playing']")
+    |> render_click()
+
+    assert Library.get_entry!(user, entry.id).play_state == :playing
+  end
+
   test "shows ownership records separately from entries", %{conn: conn, game: game} do
     user = Accounts.default_owner()
     release = release_fixture(game)

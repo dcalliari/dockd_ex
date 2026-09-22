@@ -5,6 +5,21 @@ defmodule DockdWeb.CatalogLibraryTest do
   alias Dockd.Accounts
   alias Dockd.Library
 
+  test "filters catalog discovery by title", %{conn: conn} do
+    game_fixture(%{title: "Unique discovery title"})
+    game_fixture(%{title: "Another title"})
+
+    {:ok, view, _html} = live(conn, "/catalogo")
+    assert has_element?(view, "#catalog-search-form")
+
+    view
+    |> form("#catalog-search-form", catalog: %{search: "Unique discovery"})
+    |> render_change()
+
+    assert has_element?(view, "#games-list article h2", "Unique discovery title")
+    refute has_element?(view, "#games-list article h2", "Another title")
+  end
+
   test "adds a catalog game to the library", %{conn: conn} do
     game = game_fixture(%{title: "Pikmin 4"})
     {:ok, view, _html} = live(conn, "/catalogo")

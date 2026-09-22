@@ -14,6 +14,13 @@ defmodule DockdWeb.GameLiveTest do
     %{game: game, release: release, release_2: release_2, user: Accounts.default_owner()}
   end
 
+  test "returns to the route origin", %{conn: conn, game: game} do
+    {:ok, view, _html} = live(conn, ~p"/jogos/#{game.id}?from=planner")
+
+    assert has_element?(view, "#game-back[href='/']")
+    assert has_element?(view, "#game-hero")
+  end
+
   test "records an observation and shows stale state", %{
     conn: conn,
     game: game,
