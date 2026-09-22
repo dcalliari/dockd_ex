@@ -5,9 +5,10 @@ test("a new game moves from Discover to List and can be removed", async ({ page 
   await expect(page.getByRole("heading", { name: "Descobrir" })).toBeVisible();
   await page.getByLabel("Buscar").fill("Discovery Candidate");
   const result = page.getByTestId("discover-results");
-  await expect(result).toContainText("Discovery Candidate");
-  await result.getByRole("button", { name: "Quero jogar" }).click();
-  await expect(result).toContainText("Na lista");
+  const candidate = result.getByRole("article").filter({ hasText: "Discovery Candidate" });
+  await expect(candidate).toBeVisible();
+  await candidate.getByRole("button", { name: "Quero jogar" }).click();
+  await expect(candidate).toContainText("Na lista");
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Lista" })).toBeVisible();
