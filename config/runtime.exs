@@ -1,5 +1,12 @@
 import Config
 
+env_integer = fn name, default ->
+  case System.get_env(name) do
+    value when value in [nil, ""] -> default
+    value -> String.to_integer(value)
+  end
+end
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
@@ -20,13 +27,13 @@ if System.get_env("PHX_SERVER") do
   config :dockd, DockdWeb.Endpoint, server: true
 end
 
-config :dockd, DockdWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
+config :dockd, DockdWeb.Endpoint, http: [port: env_integer.("PORT", 4000)]
 
 config :dockd, :igdb,
   client_id: System.get_env("IGDB_CLIENT_ID"),
   client_secret: System.get_env("IGDB_CLIENT_SECRET"),
-  sync_initial_delay: String.to_integer(System.get_env("IGDB_SYNC_INITIAL_DELAY_MS", "1000")),
-  sync_interval: String.to_integer(System.get_env("IGDB_SYNC_INTERVAL_MS", "86400000"))
+  sync_initial_delay: env_integer.("IGDB_SYNC_INITIAL_DELAY_MS", 1000),
+  sync_interval: env_integer.("IGDB_SYNC_INTERVAL_MS", 86_400_000)
 
 if config_env() == :dev do
   # Reload browser tabs when matching files change.
@@ -58,7 +65,7 @@ if config_env() == :prod do
   config :dockd, Dockd.Repo,
     # ssl: true,
     url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    pool_size: env_integer.("POOL_SIZE", 10),
     # For machines with several cores, consider starting multiple pools of `pool_size`
     # pool_count: 4,
     socket_options: maybe_ipv6

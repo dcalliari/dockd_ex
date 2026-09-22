@@ -27,7 +27,7 @@ services:
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE}
       IGDB_CLIENT_ID: ${IGDB_CLIENT_ID:-}
       IGDB_CLIENT_SECRET: ${IGDB_CLIENT_SECRET:-}
-      IGDB_SYNC_INTERVAL_MS: ${IGDB_SYNC_INTERVAL_MS:-}
+      IGDB_SYNC_INTERVAL_MS: ${IGDB_SYNC_INTERVAL_MS:-86400000}
       PHX_SERVER: "true"
     command: sh -c "bin/migrate && exec bin/dockd start"
     networks: [shared]
