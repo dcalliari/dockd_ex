@@ -4,7 +4,7 @@ set -euo pipefail
 root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root_dir"
 export MIX_ENV=e2e
-export DOCKD_DB_NAME="${DOCKD_DB_NAME:-dockd_e2e}"
+export DOCKD_DB_NAME=dockd_e2e
 export DOCKD_DB_USER="${DOCKD_DB_USER:-dockd}"
 export DOCKD_DB_PASSWORD="${DOCKD_DB_PASSWORD:-dockd}"
 export DOCKD_DB_HOST="${DOCKD_DB_HOST:-localhost}"
