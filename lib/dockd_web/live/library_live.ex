@@ -33,10 +33,10 @@ defmodule DockdWeb.LibraryLive do
     entries =
       user
       |> Library.list_entries()
-      |> Enum.filter(&(&1.purchase_intent in [:want, :planned, :preordered]))
       |> Enum.filter(fn entry ->
-        search == "" or
-          String.contains?(String.downcase(entry.game.title), String.downcase(search))
+        entry.purchase_intent in [:want, :planned, :preordered] and
+          (search == "" or
+             String.contains?(String.downcase(entry.game.title), String.downcase(search)))
       end)
 
     assign(socket,
