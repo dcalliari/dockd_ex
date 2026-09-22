@@ -21,6 +21,17 @@ defmodule DockdWeb.ApiSchemas.PurchasingRequest do
   })
 end
 
+defmodule DockdWeb.ApiSchemas.PurchasingListResponse do
+  @moduledoc false
+  require OpenApiSpex
+
+  OpenApiSpex.schema(%{
+    title: "PurchasingListResponse",
+    type: :object,
+    additionalProperties: true
+  })
+end
+
 defmodule DockdWeb.ApiSchemas.PurchasingResponse do
   @moduledoc false
   require OpenApiSpex

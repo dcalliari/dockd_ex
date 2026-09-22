@@ -44,6 +44,7 @@ defmodule Dockd.PlannerTest do
   end
 
   test "credit is not double counted in committed and out of pocket totals", %{user: user} do
+    {:ok, _} = balance_fixture(user, %{amount_cents: 2_000, currency: "BRL"})
     game = game_fixture()
     release = release_fixture(game)
 

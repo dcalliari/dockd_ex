@@ -40,8 +40,12 @@ defmodule DockdWeb.Router do
 
     resources "/entries", LibraryController, only: [:index, :show, :create, :update, :delete]
     resources "/ownerships", OwnershipController, only: [:index, :show, :create, :update, :delete]
+    get "/purchases", PurchasingController, :index_purchases
+    get "/releases/:release_id/price-observations", PurchasingController, :index_observations
     post "/releases/:release_id/price-observations", PurchasingController, :create_observation
     post "/releases/:release_id/purchases", PurchasingController, :create_purchase
+    get "/vetoes", PurchasingController, :index_vetoes
+    delete "/vetoes/:id", PurchasingController, :delete_veto
     post "/releases/:release_id/vetoes", PurchasingController, :create_veto
     get "/planner", PlannerController, :show
     get "/igdb/search", IGDBController, :search

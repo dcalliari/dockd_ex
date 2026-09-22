@@ -3,8 +3,35 @@ defmodule DockdWeb.PurchasingController do
   use OpenApiSpex.ControllerSpecs
 
   alias Dockd.{Accounts, Library, Purchasing}
+  alias Dockd.Library.ReleaseVeto
+  alias Dockd.Purchasing.{PriceObservation, Purchase}
   alias DockdWeb.ApiSchemas
   plug OpenApiSpex.Plug.CastAndValidate, render_error: DockdWeb.ApiErrorRenderer
+
+  operation(:index_purchases,
+    summary: "List purchases",
+    parameters: [game_id: [in: :query, required: false, type: :string]],
+    responses: %{200 => {"Purchases", "application/json", ApiSchemas.PurchasingListResponse}}
+  )
+
+  operation(:index_observations,
+    summary: "List price observations",
+    parameters: [release_id: [in: :path, required: true, type: :string]],
+    responses: %{
+      200 => {"Price observations", "application/json", ApiSchemas.PurchasingListResponse}
+    }
+  )
+
+  operation(:index_vetoes,
+    summary: "List release vetoes",
+    responses: %{200 => {"Vetoes", "application/json", ApiSchemas.PurchasingListResponse}}
+  )
+
+  operation(:delete_veto,
+    summary: "Remove a release veto",
+    parameters: [id: [in: :path, required: true, type: :string]],
+    responses: %{204 => {nil, nil, nil}}
+  )
 
   operation(:create_observation,
     summary: "Record a price observation",
@@ -38,6 +65,38 @@ defmodule DockdWeb.PurchasingController do
     }
   )
 
+  def index_purchases(conn, params) do
+    user = Accounts.default_owner()
+
+    purchases =
+      case params[:game_id] || params["game_id"] do
+        nil -> Purchasing.list_purchases(user)
+        game_id -> Purchasing.list_purchases_for_game(user, game_id)
+      end
+
+    json(conn, %{data: Enum.map(purchases, &purchase_json/1)})
+  end
+
+  def index_observations(conn, params) do
+    observations =
+      Purchasing.list_price_observations(
+        Accounts.default_owner(),
+        release_param(params, :release_id)
+      )
+
+    json(conn, %{data: Enum.map(observations, &observation_json/1)})
+  end
+
+  def index_vetoes(conn, _),
+    do: json(conn, %{data: Enum.map(Library.list_vetoes(Accounts.default_owner()), &veto_json/1)})
+
+  def delete_veto(conn, params) do
+    user = Accounts.default_owner()
+    veto = Library.get_veto!(user, params[:id] || params["id"])
+    {:ok, _} = Library.delete_veto(user, veto)
+    send_resp(conn, :no_content, "")
+  end
+
   def create_observation(conn, params) do
     attrs = body_attrs(conn) |> Map.put("release_id", release_param(params, :release_id))
     respond(conn, Purchasing.create_price_observation(Accounts.default_owner(), attrs))
@@ -61,6 +120,37 @@ defmodule DockdWeb.PurchasingController do
     |> then(fn attrs -> if is_struct(attrs), do: Map.from_struct(attrs), else: attrs end)
     |> Map.reject(fn {_k, v} -> is_nil(v) end)
   end
+
+  defp purchase_json(%Purchase{} = purchase),
+    do:
+      Map.take(purchase, [
+        :id,
+        :user_id,
+        :release_id,
+        :format,
+        :price_cents,
+        :currency,
+        :store_credit_used_cents,
+        :purchased_at,
+        :is_preorder,
+        :retailer
+      ])
+
+  defp observation_json(%PriceObservation{} = observation),
+    do:
+      Map.take(observation, [
+        :id,
+        :user_id,
+        :release_id,
+        :format,
+        :price_cents,
+        :currency,
+        :observed_at,
+        :source
+      ])
+
+  defp veto_json(%ReleaseVeto{} = veto),
+    do: Map.take(veto, [:id, :user_id, :release_id, :reason, :inserted_at])
 
   defp respond(conn, {:ok, value}),
     do:

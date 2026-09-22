@@ -231,6 +231,17 @@ defmodule Dockd.Library do
     end)
   end
 
+  @doc "Inserts an ownership inside an existing repository transaction."
+  def insert_ownership(repo, %User{id: user_id}, attrs) do
+    changeset =
+      ownership_changeset(
+        %Ownership{user_id: user_id},
+        Map.merge(attrs, %{user_id: user_id})
+      )
+
+    repo.insert(changeset)
+  end
+
   @doc "Appends an ownership insert to a purchase transaction."
   def append_ownership(multi, %User{id: user_id}, attrs) do
     Ecto.Multi.run(multi, :ownership, fn repo, %{purchase: purchase} ->
