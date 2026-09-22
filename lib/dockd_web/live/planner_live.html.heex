@@ -1,136 +1,142 @@
 <Layouts.app flash={@flash} current="Planejador">
-  <div id="planner" class="space-y-9">
+  <div id="planner">
+    <.page_header title="Hoje" subtitle="Atenção de hoje.">
+      <:actions><.link navigate="/carteira" class="link-action">Carteira</.link></:actions>
+    </.page_header>
+
     <section id="planner-money" aria-label="Carteira">
       <%= if @balance_present? do %>
         <.link
           navigate="/carteira"
           id="planner-money-link"
-          class="planner-equation group"
+          class="block text-inherit no-underline"
         >
-          <div class="planner-money-part">
-            <span>Saldo</span>
-            <strong>{money(@summary.money.balance_cents, @summary.money.currency)}</strong>
-          </div>
-          <span class="planner-equation-mark" aria-hidden="true">−</span>
-          <div class="planner-money-part">
-            <span>Reservado</span>
-            <strong>{money(@summary.money.reserved_cents, @summary.money.currency)}</strong>
-          </div>
-          <span class="planner-equation-mark" aria-hidden="true">=</span>
-          <div class="planner-money-part planner-money-free">
-            <span>Livre</span>
-            <strong class={@summary.money.free_cents < 0 && "text-error"}>
-              {money(@summary.money.free_cents, @summary.money.currency)}
-            </strong>
-          </div>
+          <.wallet_equation
+            balance={@summary.money.balance_cents}
+            reserved={@summary.money.reserved_cents}
+            free={@summary.money.free_cents}
+            currency={@summary.money.currency}
+          />
         </.link>
+        <div :if={@summary.money.free_cents < 0} class="wallet-alert">
+          <strong>Livre negativo.</strong> Revise uma reserva.
+        </div>
       <% else %>
-        <.link
-          navigate="/carteira"
-          id="planner-wallet-action"
-          class="planner-wallet-empty"
-        >
-          <span>Carteira</span>
-          <strong>Informar saldo</strong>
-        </.link>
+        <div class="wallet-empty">
+          <div>
+            <strong>Saldo eShop</strong><p>Não informado</p>
+          </div>
+          <.link navigate="/carteira" class="dockd-button dockd-button-primary">Informar saldo</.link>
+        </div>
       <% end %>
     </section>
 
     <section id="planner-calendar">
-      <div class="planner-section-head">
-        <h2>Próximos</h2>
-        <.link navigate="/catalogo" class="text-xs font-bold text-primary">Descobrir</.link>
-      </div>
-      <div class="divide-y divide-base-content/10">
+      <.section_title title="O que vem aí" meta="Lançamentos" />
+      <div class="rule-list">
         <%= for item <- @summary.calendar do %>
           <.link
             navigate={"/jogos/#{item.game.id}?from=planner"}
             id={"release-#{item.release.id}"}
-            class="planner-release-row group"
+            class="calendar-row group"
           >
+            <time
+              class="date-block"
+              datetime={Calendar.strftime(item.release.release_date, "%Y-%m-%d")}
+            >
+              <strong>{Calendar.strftime(item.release.release_date, "%d")}</strong>
+              <small>{Calendar.strftime(item.release.release_date, "%b %Y") |> String.upcase()}</small>
+            </time>
             <.game_cover
               title={item.game.title}
               cover_url={item.game.cover_url}
-              class="w-12 shrink-0 sm:w-14"
+              class="calendar-cover shrink-0"
             />
-            <span class="min-w-0 flex-1">
-              <strong class="block truncate">{item.game.title}</strong>
-              <span class="mt-1 block text-xs text-base-content/70">
-                {Planner.release_date_label(item.release.release_date)} · {enum_label(
-                  item.release.platform
+            <span class="min-w-0">
+              <span class="calendar-title block">{item.game.title}</span>
+              <span class="calendar-meta block">
+                {enum_label(item.release.platform)}{if(item.reserved_cents > 0,
+                  do: " · reservado",
+                  else: ""
                 )}
               </span>
             </span>
-            <span class="planner-verdict">{enum_label(item.recommendation)}</span>
+            <.verdict_mark
+              label={enum_label(item.recommendation)}
+              tone={planner_verdict_tone(item.recommendation)}
+            />
           </.link>
         <% end %>
-        <div :if={@summary.calendar == []} class="planner-empty-row">
-          <span>Sem datas</span>
-          <.link navigate="/catalogo" class="text-xs font-bold text-primary">Descobrir</.link>
-        </div>
+        <.empty_row
+          :if={@summary.calendar == []}
+          title="Nenhum lançamento"
+          description="Explore o catálogo para acompanhar datas."
+        >
+          <:action>
+            <.link navigate="/catalogo" class="link-action">Explorar catálogo</.link>
+          </:action>
+        </.empty_row>
       </div>
     </section>
 
     <section :if={@decision_groups != []} id="planner-decisions">
-      <div class="planner-section-head">
-        <h2>Compras</h2>
-        <.link navigate="/biblioteca?tab=want" class="text-xs font-bold text-primary">Ver todos</.link>
-      </div>
-      <div class="grid gap-8 lg:grid-cols-3">
+      <.section_title title="Comprar agora ou esperar" meta="Por veredito" />
+      <div class="decision-layout">
         <%= for group <- @decision_groups do %>
-          <section id={"planner-#{group.key}"} class="planner-decision-group">
-            <h3>{group.label}<span>{length(group.items)}</span></h3>
-            <div class="divide-y divide-base-content/10">
-              <%= for item <- Enum.take(group.items, 4) do %>
-                <.link
-                  navigate={"/jogos/#{item.game.id}?from=planner"}
-                  id={"purchase-opportunity-#{item.release.id}"}
-                  class="planner-purchase-row group"
-                >
-                  <.game_cover
-                    title={item.game.title}
-                    cover_url={item.game.cover_url}
-                    class="w-10 shrink-0"
-                  />
-                  <span class="min-w-0">
-                    <strong class="block truncate">{item.game.title}</strong>
-                    <span class="mt-1 block truncate text-xs text-base-content/70">
-                      {verdict_reason(item)}
-                    </span>
-                  </span>
-                </.link>
-              <% end %>
-            </div>
+          <section
+            id={"planner-#{group.key}"}
+            class={["decision-group", "decision-group-#{group.key}"]}
+          >
+            <h3>{group.label} <span>{length(group.items)}</span></h3>
+            <%= for item <- Enum.take(group.items, 3) do %>
+              <.link
+                navigate={"/jogos/#{item.game.id}?from=planner"}
+                id={"purchase-opportunity-#{item.release.id}"}
+                class="decision-item group"
+              >
+                <.game_cover
+                  title={item.game.title}
+                  cover_url={item.game.cover_url}
+                  class="decision-cover shrink-0"
+                />
+                <span class="min-w-0">
+                  <strong class="block truncate">{item.game.title}</strong>
+                  <span class="mt-1 block truncate text-xs text-base-content/70">{verdict_reason(
+                    item
+                  )}</span>
+                </span>
+                <.verdict_mark label={group.label} tone={decision_tone(group.key)} />
+              </.link>
+            <% end %>
           </section>
         <% end %>
       </div>
+      <.link navigate="/biblioteca?tab=want" class="link-action decision-more">Ver todos</.link>
     </section>
 
     <section :if={@summary.recommendation} id="planner-recommendation">
-      <div class="planner-section-head">
-        <h2>Jogar hoje</h2>
-      </div>
+      <.section_title title="Jogar hoje" meta="Uma sugestão" />
       <.link
         navigate={"/jogos/#{@summary.recommendation.game.id}?from=planner"}
         id="recommendation-game"
-        class="planner-recommendation group"
+        class="recommendation group"
       >
         <.game_cover
           title={@summary.recommendation.game.title}
           cover_url={@summary.recommendation.game.cover_url}
-          class="w-16 shrink-0 sm:w-20"
+          class="recommendation-cover shrink-0"
         />
-        <span class="min-w-0 flex-1">
-          <strong class="block text-lg">{@summary.recommendation.game.title}</strong>
-          <span class="mt-1 block text-xs text-base-content/70">
-            {recommendation_reason(@summary.recommendation)}
-          </span>
+        <span class="min-w-0">
+          <strong>{@summary.recommendation.game.title}</strong>
+          <span class="mt-1 block text-xs text-base-content/70">{recommendation_reason(
+            @summary.recommendation
+          )}</span>
         </span>
-        <span class="text-xs font-bold text-primary">Começar</span>
+        <span class="dockd-button dockd-button-primary">Começar</span>
       </.link>
     </section>
 
-    <section id="planner-backlog" class="border-t border-base-content/10 pt-5">
+    <section id="planner-backlog" class="mt-8 border-t border-base-content/10 pt-4">
       <.link navigate="/biblioteca" class="inline-flex items-baseline gap-3 group">
         <span class="display text-4xl font-black">{length(@summary.backlog)}</span>
         <span class="text-sm font-semibold text-base-content/70 group-hover:text-primary">Backlog</span>

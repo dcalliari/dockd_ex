@@ -32,7 +32,7 @@ defmodule DockdWeb.PlannerLive do
       %{key: :wait, label: "Esperar", items: Enum.filter(opportunities, &(&1.verdict == :wait))},
       %{
         key: :record,
-        label: "Sem preço",
+        label: "Informar preço",
         items: Enum.filter(opportunities, &(&1.verdict == :record_price))
       }
     ]
@@ -74,4 +74,12 @@ defmodule DockdWeb.PlannerLive do
       _ -> "Na coleção"
     end
   end
+
+  defp planner_verdict_tone(value) when value in ["reserve", :reserve], do: "buy"
+  defp planner_verdict_tone(value) when value in ["can_wait", :can_wait], do: "wait"
+  defp planner_verdict_tone(_), do: "record"
+
+  defp decision_tone(:buy), do: "buy"
+  defp decision_tone(:wait), do: "wait"
+  defp decision_tone(_), do: "record"
 end

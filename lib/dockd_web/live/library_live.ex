@@ -143,6 +143,13 @@ defmodule DockdWeb.LibraryLive do
     }
   end
 
+  defp tab_count(counts, "playing"), do: counts.playing
+  defp tab_count(counts, "backlog"), do: counts.backlog
+  defp tab_count(counts, "want"), do: counts.want
+  defp tab_count(counts, "all"), do: counts.all
+  defp tab_count(counts, "finished"), do: counts.finished
+  defp tab_count(_counts, _tab), do: 0
+
   defp state_attrs("playing"), do: %{play_state: :playing, backlog: :no}
   defp state_attrs("finished"), do: %{play_state: :finished, backlog: :no}
   defp state_attrs("abandoned"), do: %{play_state: :abandoned, backlog: :no}

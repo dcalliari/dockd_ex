@@ -177,6 +177,37 @@ defmodule DockdWeb.GameLive do
   defp return_context("library"), do: %{path: "/biblioteca", label: "Biblioteca"}
   defp return_context(_), do: %{path: "/catalogo", label: "Descobrir"}
 
+  defp game_platform(%{releases: releases}) do
+    releases
+    |> Enum.map(&enum_label(&1.platform))
+    |> Enum.uniq()
+    |> Enum.join(" · ")
+  end
+
+  defp first_observation(release_data) do
+    release_data
+    |> Enum.map(& &1.observation)
+    |> Enum.reject(&is_nil/1)
+    |> List.first()
+  end
+
+  defp availability_label(release) do
+    [
+      release.digital_available && "Digital",
+      release.physical_available && "Físico"
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" / ")
+    |> case do
+      "" -> "Sem disponibilidade"
+      value -> value
+    end
+  end
+
+  defp release_verdict_tone("Abaixo do alvo"), do: "buy"
+  defp release_verdict_tone("Esperar"), do: "wait"
+  defp release_verdict_tone(_), do: "record"
+
   defp entry_form(nil, game_id), do: to_form(%{"game_id" => game_id}, as: :entry)
   defp entry_form(entry, _game_id), do: to_form(Ecto.Changeset.change(entry), as: :entry)
 

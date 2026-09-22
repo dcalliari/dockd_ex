@@ -28,6 +28,42 @@ defmodule DockdWeb.DockdComponents do
   def date_pt_br(nil), do: "Data não informada"
   def date_pt_br(%Date{} = date), do: Calendar.strftime(date, "%d/%m/%Y")
 
+  @doc "Formats today's date for the application context."
+  def today_label do
+    date = Date.utc_today()
+
+    weekday =
+      %{
+        1 => "segunda-feira",
+        2 => "terça-feira",
+        3 => "quarta-feira",
+        4 => "quinta-feira",
+        5 => "sexta-feira",
+        6 => "sábado",
+        7 => "domingo"
+      }
+      |> Map.fetch!(Date.day_of_week(date))
+
+    month =
+      %{
+        1 => "janeiro",
+        2 => "fevereiro",
+        3 => "março",
+        4 => "abril",
+        5 => "maio",
+        6 => "junho",
+        7 => "julho",
+        8 => "agosto",
+        9 => "setembro",
+        10 => "outubro",
+        11 => "novembro",
+        12 => "dezembro"
+      }
+      |> Map.fetch!(date.month)
+
+    "#{weekday}, #{date.day} de #{month} de #{date.year}"
+  end
+
   @doc "Renders the application shell with responsive navigation."
   attr :current, :string, default: nil
   slot :inner_block, required: true
@@ -35,58 +71,45 @@ defmodule DockdWeb.DockdComponents do
 
   def dockd_app_shell(assigns) do
     ~H"""
-    <div class="dockd-shell min-h-screen bg-base-200 text-base-content">
-      <div class="mx-auto flex min-h-screen max-w-[1440px]">
-        <aside class="hidden w-64 shrink-0 border-r border-base-content/10 bg-base-100 px-5 py-7 lg:flex lg:flex-col">
+    <div class="dockd-shell min-h-screen text-base-content">
+      <div class="dockd-frame flex min-h-screen">
+        <aside class="dockd-sidebar hidden lg:flex lg:flex-col">
           <.brand />
-          <nav class="mt-14 space-y-1" aria-label="Navegação principal">
+          <nav class="dockd-nav" aria-label="Navegação principal">
             <%= for item <- navigation() do %>
               <.link
                 navigate={item.path}
-                class={[
-                  "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-all hover:bg-base-200 hover:pl-4",
-                  item.label == @current &&
-                    "bg-primary text-primary-content shadow-sm hover:bg-primary hover:pl-3"
-                ]}
+                class={["dockd-nav-link", item.label == @current && "active"]}
               >
-                <.icon name={item.icon} class="size-4" />
+                <.icon name={item.icon} class="icon" />
                 <span>{item.label}</span>
               </.link>
             <% end %>
           </nav>
-          <div class="mt-auto border-t border-base-content/10 pt-5 text-xs text-base-content/70">
-            <span class="block">Switch · Switch 2</span>
+          <div class="dockd-sidebar-note">
+            <strong>Carteira</strong>
+            <span>Switch · Switch 2</span>
+            <.link navigate="/carteira">Ver carteira</.link>
           </div>
         </aside>
-        <div class="min-w-0 flex-1 pb-24 lg:pb-0">
-          <header class="sticky top-0 z-20 border-b border-base-content/10 bg-base-100/90 px-4 py-4 backdrop-blur sm:px-8">
-            <div class="flex items-center justify-between">
-              <div class="lg:hidden"><.brand /></div>
-              <div class="ml-auto"><.theme_toggle /></div>
+        <div class="dockd-content">
+          <header class="dockd-topbar">
+            <div class="flex items-center gap-3">
+              <span class="dockd-context">{today_label()}</span>
             </div>
+            <div class="dockd-top-actions"><.theme_toggle /></div>
           </header>
-          <main class="px-4 py-7 sm:px-8 lg:px-12 lg:py-10">{render_slot(@inner_block)}</main>
-          <div class="px-4 pb-8 sm:px-8 lg:px-12">{render_slot(@footer)}</div>
+          <main class="dockd-main">{render_slot(@inner_block)}</main>
+          <div class="dockd-footer">{render_slot(@footer)}</div>
         </div>
       </div>
-      <nav
-        class="fixed inset-x-0 bottom-0 z-30 border-t border-base-content/10 bg-base-100/95 px-2 py-2 backdrop-blur lg:hidden"
-        aria-label="Navegação principal"
-      >
-        <div class="mx-auto flex max-w-lg justify-around gap-1">
-          <%= for item <- navigation() do %>
-            <.link
-              navigate={item.path}
-              class={[
-                "flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-[11px] font-semibold transition-colors hover:bg-base-200",
-                item.label == @current && "bg-primary text-primary-content hover:bg-primary"
-              ]}
-            >
-              <.icon name={item.icon} class="size-4" />
-              <span>{item.short}</span>
-            </.link>
-          <% end %>
-        </div>
+      <nav class="dockd-mobile-nav" aria-label="Navegação principal">
+        <%= for item <- navigation() do %>
+          <.link navigate={item.path} class={item.label == @current && "active"}>
+            <.icon name={item.icon} class="icon" />
+            <span>{item.short}</span>
+          </.link>
+        <% end %>
       </nav>
     </div>
     """
@@ -95,38 +118,40 @@ defmodule DockdWeb.DockdComponents do
   @doc "Renders the Dockd wordmark."
   def brand(assigns) do
     ~H"""
-    <a href="/catalogo" class="display text-2xl font-black tracking-tight">dockd<span class="text-primary">.</span></a>
+    <a href="/" class="dockd-brand">dockd<span>.</span></a>
     """
   end
 
   @doc "Renders a compact theme switcher."
   def theme_toggle(assigns) do
     ~H"""
-    <div class="flex items-center gap-1 rounded-xl border border-base-content/10 bg-base-200 p-1">
+    <div class="dockd-top-actions">
       <button
         type="button"
-        class="min-h-9 rounded-lg px-3 text-xs font-semibold hover:bg-base-100"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="dockd-light"
-      >Claro</button>
+      >claro</button>
       <button
         type="button"
-        class="min-h-9 rounded-lg px-3 text-xs font-semibold hover:bg-base-100"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="dockd-dark"
-      >Escuro</button>
+      >escuro</button>
     </div>
     """
   end
 
-  @doc "Renders a page title with an optional action slot."
+  @doc "Renders a compact screen heading with an optional action."
   attr :title, :string, required: true
+  attr :subtitle, :string, default: nil
   slot :actions
 
   def page_header(assigns) do
     ~H"""
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <h1 class="display text-2xl font-black tracking-tight sm:text-3xl">{@title}</h1>
+    <div class="screen-header">
+      <div>
+        <h1>{@title}</h1>
+        <p :if={@subtitle}>{@subtitle}</p>
+      </div>
       <div :if={@actions} class="shrink-0">{render_slot(@actions)}</div>
     </div>
     """
@@ -145,6 +170,81 @@ defmodule DockdWeb.DockdComponents do
     ]}>
       <h2 class="text-lg font-bold">{@title}</h2><div class="mt-5">{render_slot(@inner_block)}</div>
     </section>
+    """
+  end
+
+  @doc "Renders a shared section heading."
+  attr :title, :string, required: true
+  attr :meta, :string, default: nil
+
+  def section_title(assigns) do
+    ~H"""
+    <div class="section-title">
+      <h2>{@title}</h2>
+      <span :if={@meta}>{@meta}</span>
+    </div>
+    """
+  end
+
+  @doc "Renders a shared action button."
+  attr :variant, :string, default: "secondary", values: ~w(primary secondary ghost danger)
+  attr :class, :string, default: ""
+  attr :type, :string, default: "button"
+  attr :rest, :global
+  slot :inner_block, required: true
+
+  def dockd_button(assigns) do
+    ~H"""
+    <button type={@type} class={["dockd-button", "dockd-button-#{@variant}", @class]} {@rest}>
+      {render_slot(@inner_block)}
+    </button>
+    """
+  end
+
+  @doc "Renders an empty list row with an optional action."
+  attr :title, :string, required: true
+  attr :description, :string, default: nil
+  slot :action
+
+  def empty_row(assigns) do
+    ~H"""
+    <div class="empty-row">
+      <strong>{@title}</strong>
+      <p :if={@description}>{@description}</p>
+      <div :if={@action}>{render_slot(@action)}</div>
+    </div>
+    """
+  end
+
+  @doc "Renders a compact verdict marker."
+  attr :label, :string, required: true
+  attr :tone, :string, default: "record", values: ~w(buy wait record)
+
+  def verdict_mark(assigns) do
+    ~H"""
+    <span class={["verdict", "verdict-#{@tone}"]}>{@label}</span>
+    """
+  end
+
+  @doc "Renders the wallet equation used by the planner."
+  attr :balance, :integer, required: true
+  attr :reserved, :integer, required: true
+  attr :free, :integer, required: true
+  attr :currency, :string, default: "BRL"
+
+  def wallet_equation(assigns) do
+    ~H"""
+    <div class="wallet-line" aria-label="Saldo menos reservas é igual ao livre">
+      <div class="wallet-part"><label>Saldo</label><strong>{money(@balance, @currency)}</strong></div>
+      <span class="wallet-symbol" aria-hidden="true">−</span>
+      <div class="wallet-part">
+        <label>Reservas</label><strong>{money(@reserved, @currency)}</strong>
+      </div>
+      <span class="wallet-symbol" aria-hidden="true">=</span>
+      <div class="wallet-part wallet-part-free">
+        <label>Livre</label><strong>{money(@free, @currency)}</strong>
+      </div>
+    </div>
     """
   end
 
@@ -337,13 +437,11 @@ defmodule DockdWeb.DockdComponents do
     assigns = assign(assigns, :initials, String.upcase(initials))
 
     ~H"""
-    <div class={["aspect-[3/4] overflow-hidden rounded-xl bg-primary/15", @class]}>
+    <div class={["dockd-cover", @class]}>
       <%= if @cover_url && @cover_url != "" do %>
-        <img src={@cover_url} alt={@title} class="h-full w-full object-cover" loading="lazy" />
+        <img src={@cover_url} alt={@title} loading="lazy" />
       <% else %>
-        <div class="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 via-base-200 to-neutral/20 p-3">
-          <span class="display text-[clamp(1.5rem,8vw,3.5rem)] font-black leading-none text-base-content/75">{@initials}</span>
-        </div>
+        <div class="cover-placeholder"><span class="display">{@initials}</span></div>
       <% end %>
     </div>
     """

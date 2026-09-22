@@ -1,82 +1,78 @@
 <Layouts.app flash={@flash} current="Carteira">
-  <div class="mx-auto max-w-4xl space-y-8">
-    <.page_header title="Carteira" />
+  <div id="wallet">
+    <.page_header title="Carteira" subtitle="Saldo e reservas.">
+      <:actions><.link navigate="/" class="link-action">Planejador</.link></:actions>
+    </.page_header>
 
-    <section id="balance-section" class="wallet-page-balance">
-      <div class="flex flex-wrap items-end justify-between gap-5">
-        <%= if @balance_exists? do %>
-          <div>
-            <span class="block text-xs font-bold uppercase tracking-widest text-base-content/50">Saldo</span>
-            <strong class="mt-2 block text-4xl font-black tabular-nums sm:text-5xl">
-              {money(@balance.amount_cents, @balance.currency)}
-            </strong>
-            <span :if={@balance.updated_at} class="mt-2 block text-xs text-base-content/55">
+    <section id="balance-section">
+      <%= if @balance_exists? do %>
+        <div class="wallet-summary">
+          <div class="wallet-balance">
+            <label>Saldo eShop</label>
+            <strong>{money(@balance.amount_cents, @balance.currency)}</strong>
+            <p :if={@balance.updated_at}>
               Atualizado {date_pt_br(DateTime.to_date(@balance.updated_at))}
-            </span>
+            </p>
+          </div>
+          <div class="wallet-edit">
+            <strong>{if @reserved_cents > @balance.amount_cents,
+              do: "Livre negativo",
+              else: "Livre disponível"}</strong>
+            <p>{money(@reserved_cents, @balance.currency)} em reservas.</p>
+            <details>
+              <summary class="dockd-button dockd-button-secondary">Editar saldo</summary>
+              <.form
+                for={@balance_form}
+                id="balance-form"
+                phx-submit="save-balance"
+                class="mt-3 max-w-sm space-y-3"
+              >
+                <.money_input field={@balance_form[:amount_cents]} label="Saldo (R$)" />
+                <input type="hidden" name="store_balance[currency]" value="BRL" />
+                <.dockd_button id="save-balance-button" variant="primary" type="submit">Salvar</.dockd_button>
+              </.form>
+            </details>
+          </div>
+        </div>
+      <% else %>
+        <div class="wallet-empty">
+          <div>
+            <strong>Saldo eShop</strong><p>Não informado</p>
           </div>
           <details>
-            <summary class="btn btn-ghost btn-sm cursor-pointer">Editar</summary>
+            <summary class="dockd-button dockd-button-primary">Informar saldo</summary>
             <.form
               for={@balance_form}
               id="balance-form"
               phx-submit="save-balance"
-              class="mt-4 min-w-64 space-y-4"
+              class="mt-3 max-w-sm space-y-3"
             >
               <.money_input field={@balance_form[:amount_cents]} label="Saldo (R$)" />
               <input type="hidden" name="store_balance[currency]" value="BRL" />
-              <button id="save-balance-button" class="btn btn-primary" type="submit">Salvar</button>
+              <.dockd_button id="save-balance-button" variant="primary" type="submit">Salvar</.dockd_button>
             </.form>
           </details>
-        <% else %>
-          <details>
-            <summary class="btn btn-primary cursor-pointer">Informar saldo</summary>
-            <.form
-              for={@balance_form}
-              id="balance-form"
-              phx-submit="save-balance"
-              class="mt-4 max-w-sm space-y-4"
-            >
-              <.money_input field={@balance_form[:amount_cents]} label="Saldo (R$)" />
-              <input type="hidden" name="store_balance[currency]" value="BRL" />
-              <button id="save-balance-button" class="btn btn-primary" type="submit">Salvar</button>
-            </.form>
-          </details>
-        <% end %>
-      </div>
-      <div :if={@balance_exists?} class="wallet-equation mt-7">
-        <span><small>Saldo</small><strong>{money(@balance.amount_cents, @balance.currency)}</strong></span>
-        <b aria-hidden="true">−</b>
-        <span><small>Reservado</small><strong>{money(@reserved_cents, @balance.currency)}</strong></span>
-        <b aria-hidden="true">=</b>
-        <span class="text-primary"><small>Livre</small><strong>{money(
-          @balance.amount_cents - @reserved_cents,
-          @balance.currency
-        )}</strong></span>
-      </div>
+        </div>
+      <% end %>
     </section>
 
     <section id="reservations-section">
-      <div class="flex items-end justify-between gap-3 border-b border-base-content/10 pb-3">
-        <h2 class="text-lg font-bold">Reservas</h2>
-        <span class="text-xs text-base-content/55">{length(@reservations)} · {money(
-          @reserved_cents,
-          @balance.currency
-        )}</span>
-      </div>
-      <div id="reservations-list" class="divide-y divide-base-content/10">
+      <.section_title
+        title="Reservas"
+        meta={"#{length(@reservations)} · #{money(@reserved_cents, @balance.currency)}"}
+      />
+      <div id="reservations-list" class="reservation-list">
         <%= for reservation <- @reservations do %>
-          <details id={"reservation-#{reservation.id}"} class="group py-4">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3">
+          <details id={"reservation-#{reservation.id}"}>
+            <summary class="reservation-row cursor-pointer list-none">
               <span>
-                <strong class="block">{reservation.game.title}</strong>
-                <small class="mt-1 block text-xs text-base-content/55">{money(
-                  reservation.amount_cents,
-                  @balance.currency
-                )}</small>
+                <strong>{reservation.game.title}</strong>
+                <span>{money(reservation.amount_cents, @balance.currency)}</span>
               </span>
-              <span class="text-xs font-semibold text-primary">Editar</span>
+              <b>{money(reservation.amount_cents, @balance.currency)}</b>
+              <span class="link-action">Editar</span>
             </summary>
-            <div class="mt-4 rounded-xl bg-base-200 p-4">
+            <div class="mt-3 rounded bg-base-200 p-3">
               <.form
                 for={@reservation_form}
                 id={"reservation-form-#{reservation.id}"}
@@ -102,7 +98,7 @@
                   field={@reservation_form[:note]}
                   label="Observação"
                 />
-                <button class="btn btn-primary" type="submit">Salvar</button>
+                <.dockd_button variant="primary" type="submit">Salvar</.dockd_button>
               </.form>
               <button
                 id={"delete-reservation-#{reservation.id}"}
@@ -114,19 +110,20 @@
             </div>
           </details>
         <% end %>
-        <div :if={@reservations == []} class="py-5 text-sm text-base-content/60">
-          Sem reservas
+        <div :if={@reservations == []} class="empty-row">
+          <strong>Nenhuma reserva</strong>
+          <p>Reserve um lançamento para vê-lo no planejador.</p>
         </div>
       </div>
       <details id="new-reservation" class="mt-5">
-        <summary id="new-reservation-button" class="btn btn-outline btn-primary cursor-pointer">
+        <summary id="new-reservation-button" class="dockd-button dockd-button-secondary">
           Nova reserva
         </summary>
         <.form
           for={@reservation_form}
           id="reservation-form"
           phx-submit="save-reservation"
-          class="mt-5 grid gap-4 rounded-xl bg-base-200 p-4"
+          class="mt-3 grid gap-3 rounded bg-base-200 p-3"
         >
           <.input
             id="new-reservation-game"
@@ -142,9 +139,13 @@
             label="Valor (R$)"
           />
           <.input id="new-reservation-note" field={@reservation_form[:note]} label="Observação" />
-          <button id="save-reservation-button" class="btn btn-primary" type="submit">Salvar</button>
+          <.dockd_button id="save-reservation-button" variant="primary" type="submit">Salvar</.dockd_button>
         </.form>
       </details>
+      <div class="wallet-footer">
+        <p>Reservas afetam o livre do planejador.</p>
+        <.link navigate="/" class="dockd-button dockd-button-primary">Ver impacto</.link>
+      </div>
     </section>
   </div>
 </Layouts.app>

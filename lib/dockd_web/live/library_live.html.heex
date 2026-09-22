@@ -1,76 +1,61 @@
 <Layouts.app flash={@flash} current="Biblioteca">
-  <div class="space-y-7">
-    <.page_header title="Biblioteca">
+  <div id="library">
+    <.page_header title="Biblioteca" subtitle="Seus jogos e estados.">
       <:actions>
-        <.link navigate="/catalogo" class="btn btn-primary min-h-10">Descobrir</.link>
+        <.link navigate="/catalogo" class="dockd-button dockd-button-primary">Descobrir</.link>
       </:actions>
     </.page_header>
 
-    <nav
-      id="library-tabs"
-      class="flex gap-1 overflow-x-auto border-b border-base-content/10"
-      aria-label="Seções da biblioteca"
-    >
+    <nav id="library-tabs" class="library-tabs" aria-label="Seções da biblioteca">
       <%= for {label, key, count} <- [{"Jogando", "playing", @tab_counts.playing}, {"Backlog", "backlog", @tab_counts.backlog}, {"Quero", "want", @tab_counts.want}, {"Coleção", "all", @tab_counts.all}, {"Terminados", "finished", @tab_counts.finished}] do %>
         <button
           id={"library-tab-#{key}"}
-          class={[
-            "shrink-0 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold transition-colors",
-            @filters["tab"] == key && "border-primary text-primary",
-            @filters["tab"] != key &&
-              "border-transparent text-base-content/65 hover:text-base-content"
-          ]}
+          class={@filters["tab"] == key && "active"}
           phx-click="filter"
           phx-value-tab={key}
         >
-          {label}<span class="ml-1 text-xs">{count}</span>
+          {label}<b>{count}</b>
         </button>
       <% end %>
     </nav>
 
-    <.form
-      for={to_form(@filters, as: :filters)}
-      id="library-filter-form"
-      phx-change="filter"
-      class="max-w-sm"
-    >
-      <.input
-        field={to_form(@filters, as: :filters)[:search]}
-        name="search"
-        label="Buscar"
-        value={@filters["search"] || ""}
-      />
-    </.form>
+    <div class="library-toolbar">
+      <.form
+        for={to_form(@filters, as: :filters)}
+        id="library-filter-form"
+        phx-change="filter"
+        class="w-full max-w-sm"
+      >
+        <.input
+          field={to_form(@filters, as: :filters)[:search]}
+          name="search"
+          label="Buscar"
+          value={@filters["search"] || ""}
+          class="search-field"
+        />
+      </.form>
+      <span class="text-xs text-base-content/60">{tab_count(@tab_counts, @filters["tab"])} jogos</span>
+    </div>
 
-    <div
-      id="library-groups"
-      class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-    >
+    <div id="library-groups" class="library-grid">
       <%= for entry <- @entries do %>
-        <article id={"entry-#{entry.id}"} class="group relative min-w-0">
+        <article id={"entry-#{entry.id}"} class="library-item group">
           <button
             id={"state-cover-#{entry.id}"}
-            class="relative block w-full text-left"
+            class="library-cover-button"
             phx-click="toggle_state_menu"
             phx-value-id={entry.id}
             aria-label={"Alterar estado de #{entry.game.title}"}
           >
-            <.game_cover
-              title={entry.game.title}
-              cover_url={entry.game.cover_url}
-              class="transition duration-200 group-hover:-translate-y-1 group-hover:shadow-xl"
-            />
-            <span
-              :if={status_label(entry)}
-              class="absolute bottom-2 left-2 rounded-md bg-base-100/90 px-2 py-1 text-[11px] font-semibold shadow-sm"
-            >{status_label(entry)}</span>
+            <.game_cover title={entry.game.title} cover_url={entry.game.cover_url} />
+            <span :if={status_label(entry)} class="status-chip">{status_label(entry)}</span>
           </button>
           <div
             :if={@state_menu_id == to_string(entry.id)}
             id={"state-menu-#{entry.id}"}
-            class="absolute inset-x-1 top-2 z-10 grid gap-1 rounded-xl border border-base-content/10 bg-base-100/95 p-2 shadow-xl backdrop-blur"
+            class="state-menu"
           >
-            <span class="px-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-base-content/50">Estado</span>
+            <span>Estado</span>
             <button
               :for={
                 {label, state} <- [
@@ -80,7 +65,6 @@
                   {"Backlog", "backlog"}
                 ]
               }
-              class="rounded-lg px-2 py-2 text-left text-xs font-semibold hover:bg-base-200"
               phx-click="set_state"
               phx-value-id={entry.id}
               phx-value-state={state}
@@ -92,27 +76,41 @@
             phx-click="edit_entry"
             phx-value-id={entry.id}
           >{entry.game.title}</button>
-          <p class="mt-1 text-xs text-base-content/70">
-            {ownership_label(entry.game_id, @ownerships)} · {platform_label(entry.game)}
-          </p>
+          <p>{ownership_label(entry.game_id, @ownerships)} · {platform_label(entry.game)}</p>
+          <div class="quick-state">
+            <span>{status_label(entry) || "Coleção"}</span>
+            <%= if entry.play_state == :playing do %>
+              <button
+                id={"quick-state-#{entry.id}"}
+                phx-click="toggle_state_menu"
+                phx-value-id={entry.id}
+              >Alterar</button>
+            <% else %>
+              <button
+                id={"quick-state-#{entry.id}"}
+                phx-click="set_state"
+                phx-value-id={entry.id}
+                phx-value-state="playing"
+              >Começar</button>
+            <% end %>
+          </div>
         </article>
       <% end %>
-      <div
-        :if={@entries == []}
-        class="col-span-full py-10 text-center text-sm text-base-content/60"
-      >
-        Nenhum jogo
+      <div :if={@entries == []} class="col-span-full library-empty">
+        <strong>Nenhum jogo</strong>
+        <p>Escolha um jogo da Coleção para começar.</p>
+        <.link navigate="/catalogo" class="dockd-button dockd-button-primary mt-3">Ver coleção</.link>
       </div>
     </div>
 
     <section
       :if={@editing}
       id="entry-editor"
-      class="max-w-3xl border-t border-base-content/10 pt-6"
+      class="mt-8 max-w-3xl border-t border-base-content/10 pt-5"
     >
       <div class="mb-5 flex items-center justify-between gap-3">
-        <h2 class="text-xl font-bold">{@editing.game.title}</h2>
-        <button class="btn btn-sm btn-ghost" phx-click="filter">Fechar</button>
+        <h2 class="text-lg font-bold">{@editing.game.title}</h2>
+        <button class="dockd-button dockd-button-secondary" phx-click="filter">Fechar</button>
       </div>
       <.form for={@form} id="entry-form" phx-submit="save_entry" class="grid gap-3 sm:grid-cols-2">
         <.input
@@ -152,13 +150,14 @@
           options={[{"Baixa", :low}, {"Normal", :normal}, {"Alta", :high}]}
         />
         <.money_input field={@form[:target_price_cents]} label="Preço alvo (R$)" />
-        <button
+        <.dockd_button
           id="save-entry-button"
-          class="btn btn-primary min-h-11 sm:col-span-2"
+          variant="primary"
+          class="sm:col-span-2"
           type="submit"
         >
           Salvar
-        </button>
+        </.dockd_button>
       </.form>
       <button
         id={"remove-entry-#{@editing.id}"}
