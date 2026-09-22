@@ -102,12 +102,14 @@ defmodule Dockd.MixProject do
         "esbuild dockd --minify",
         "phx.digest"
       ],
+      e2e: ["cmd bash e2e/run.sh"],
       precommit: [
         "compile --warnings-as-errors",
         "deps.unlock --unused",
         "format --check-formatted",
         "credo --strict",
-        "test"
+        "test",
+        "e2e"
       ]
     ]
   end

@@ -21,7 +21,7 @@
       <span id="list-count" class="text-xs text-base-content/60">{length(@entries)}</span>
     </div>
 
-    <div id="list-games" class="library-grid">
+    <div id="list-games" data-testid="list-items" class="library-grid">
       <%= for entry <- @entries do %>
         <article id={"list-entry-#{entry.id}"} class="library-item group">
           <.link

@@ -23,7 +23,7 @@
       </.form>
     </div>
 
-    <div id="games-list" class="catalog-grid">
+    <div id="games-list" data-testid="discover-results" class="catalog-grid">
       <%= for game <- @games do %>
         <article id={"game-#{game.id}"} class="catalog-card group">
           <.link navigate={"/jogos/#{game.id}?from=catalog"}>

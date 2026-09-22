@@ -44,6 +44,58 @@ jobs:
       - run: mix credo --strict
       - run: mix test
 
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: dockd
+          POSTGRES_PASSWORD: dockd
+          POSTGRES_DB: dockd_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U dockd -d dockd_e2e"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      MIX_ENV: e2e
+      DOCKD_DB_PASSWORD: dockd
+      DOCKD_DB_NAME: dockd_e2e
+    steps:
+      - uses: actions/checkout@v7
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: 1.18.3
+          otp-version: 27.3.4.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - uses: actions/cache@v6
+        with:
+          path: |
+            deps
+            _build
+          key: beam-e2e-${{ runner.os }}-${{ hashFiles('.tool-versions', 'mix.lock') }}
+          restore-keys: beam-e2e-${{ runner.os }}-
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
+      - run: mix deps.get
+      - run: npm ci --prefix e2e
+      - run: npx --prefix e2e playwright install --with-deps chromium
+      - run: mix e2e
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dockd-e2e-artifacts
+          path: |
+            e2e/test-results
+            e2e/playwright-report
+          if-no-files-found: ignore
+
   container:
     runs-on: ubuntu-latest
     steps:
