@@ -23,6 +23,29 @@ defmodule DockdWeb.ApiSchemas.Error do
   })
 end
 
+defmodule DockdWeb.ApiSchemas.ConflictError do
+  @moduledoc false
+  require OpenApiSpex
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "ConflictError",
+    type: :object,
+    properties: %{
+      error: %Schema{
+        type: :object,
+        required: [:type, :message, :blockers],
+        properties: %{
+          type: %Schema{type: :string, enum: ["conflict"]},
+          message: %Schema{type: :string},
+          blockers: %Schema{type: :array, items: %Schema{type: :string}}
+        }
+      }
+    },
+    required: [:error]
+  })
+end
+
 defmodule DockdWeb.ApiSchemas.Release do
   @moduledoc false
   require OpenApiSpex

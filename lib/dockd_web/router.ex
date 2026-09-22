@@ -62,7 +62,7 @@ defmodule DockdWeb.Router do
     delete "/wallet/reservations/:id", WalletController, :delete_reservation
 
     resources "/games", GameController, only: [:index, :show, :create, :update] do
-      resources "/releases", ReleaseController, only: [:index, :show, :create, :update]
+      resources "/releases", ReleaseController, only: [:index, :show, :create, :update, :delete]
     end
   end
 

@@ -102,4 +102,46 @@ defmodule DockdWeb.CatalogApiTest do
     assert response["components"]["schemas"]["GameAttributes"]["properties"]["igdb_id"]
     assert response["components"]["schemas"]["Release"]["properties"]["release_date_precision"]
   end
+
+  test "deletes an orphan release and protects releases with ownership", %{conn: conn} do
+    {:ok, game} = Catalog.create_game(%{title: "Sports Resort", availability: :switch2_exclusive})
+    {:ok, orphan} = Catalog.create_release(game.id, %{platform: :switch})
+    conn = put_req_header(conn, "content-type", "application/json")
+
+    assert conn
+           |> delete(~p"/api/v1/games/#{game.id}/releases/#{orphan.id}")
+           |> response(204) == ""
+
+    {:ok, owned} = Catalog.create_release(game.id, %{platform: :switch_2})
+    user = Dockd.Accounts.default_owner()
+
+    assert {:ok, _ownership} =
+             Dockd.Library.create_ownership(user, %{
+               release_id: owned.id,
+               ownership_type: :digital,
+               acquired_at: DateTime.utc_now()
+             })
+
+    conflict =
+      conn
+      |> delete(~p"/api/v1/games/#{game.id}/releases/#{owned.id}")
+      |> json_response(409)
+
+    assert conflict["error"]["type"] == "conflict"
+    assert "ownership" in conflict["error"]["blockers"]
+  end
+
+  test "returns not found for a release belonging to another game", %{conn: conn} do
+    {:ok, game} = Catalog.create_game(%{title: "First game", availability: :nintendo_exclusive})
+
+    {:ok, other_game} =
+      Catalog.create_game(%{title: "Other game", availability: :nintendo_exclusive})
+
+    {:ok, release} = Catalog.create_release(other_game.id, %{platform: :switch})
+
+    assert_error_sent 404, fn ->
+      delete(conn, ~p"/api/v1/games/#{game.id}/releases/#{release.id}")
+    end
+  end
+  end
 end

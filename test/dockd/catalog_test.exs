@@ -33,6 +33,29 @@ defmodule Dockd.CatalogTest do
     assert hd(Catalog.list_releases(game.id)).id == release.id
   end
 
+  test "deletes an unused release" do
+    {:ok, game} = Catalog.create_game(%{title: "Sports Resort", availability: :switch2_exclusive})
+    {:ok, release} = Catalog.create_release(game.id, %{platform: :switch})
+
+    assert {:ok, _deleted} = Catalog.delete_release(release)
+    assert_raise Ecto.NoResultsError, fn -> Catalog.get_release!(game.id, release.id) end
+  end
+
+  test "refuses to delete a release with ownership" do
+    {:ok, game} = Catalog.create_game(%{title: "Owned game", availability: :nintendo_exclusive})
+    {:ok, release} = Catalog.create_release(game.id, %{platform: :switch})
+    user = Dockd.Accounts.default_owner()
+
+    assert {:ok, _ownership} =
+             Dockd.Library.create_ownership(user, %{
+               release_id: release.id,
+               ownership_type: :digital,
+               acquired_at: DateTime.utc_now()
+             })
+
+    assert {:error, {:in_use, [:ownership]}} = Catalog.delete_release(release)
+  end
+
   test "release key card is castable" do
     changeset =
       Release.changeset(%Release{game_id: Ecto.UUID.generate()}, %{

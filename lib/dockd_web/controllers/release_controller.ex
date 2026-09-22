@@ -39,6 +39,20 @@ defmodule DockdWeb.ReleaseController do
     }
   )
 
+  operation(:delete,
+    summary: "Delete a release",
+    parameters: [
+      game_id: [in: :path, required: true, type: :string],
+      id: [in: :path, required: true, type: :string]
+    ],
+    responses: %{
+      204 => "Release deleted",
+      404 => {"Not found", "application/json", ApiSchemas.Error},
+      409 => {"Release in use", "application/json", ApiSchemas.ConflictError},
+      422 => {"Validation error", "application/json", ApiSchemas.Error}
+    }
+  )
+
   operation(:update,
     summary: "Update a release",
     parameters: [
@@ -85,6 +99,16 @@ defmodule DockdWeb.ReleaseController do
     end
   end
 
+  def delete(conn, params) do
+    game_id = path_param(params, :game_id)
+    id = path_param(params, :id)
+
+    case Catalog.delete_release(Catalog.get_release!(game_id, id)) do
+      {:ok, _release} -> send_resp(conn, :no_content, "")
+      {:error, {:in_use, blockers}} -> conflict_error(conn, blockers)
+    end
+  end
+
   defp path_param(params, key), do: Map.get(params, key) || Map.get(params, Atom.to_string(key))
 
   defp body_attrs(conn) do
@@ -112,5 +136,17 @@ defmodule DockdWeb.ReleaseController do
     conn
     |> put_status(:unprocessable_entity)
     |> json(%{error: %{type: "validation", details: details}})
+  end
+
+  defp conflict_error(conn, blockers) do
+    conn
+    |> put_status(:conflict)
+    |> json(%{
+      error: %{
+        type: "conflict",
+        message: "A versão não pode ser apagada porque possui dados associados.",
+        blockers: Enum.map(blockers, &to_string/1)
+      }
+    })
   end
 end
