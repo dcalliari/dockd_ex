@@ -9,7 +9,7 @@ defmodule DockdWeb.PlannerWalletLiveTest do
     assert has_element?(view, "#planner-calendar a[href='/catalogo']")
     assert has_element?(view, "#planner-backlog")
     assert has_element?(view, "#planner-backlog a[href='/biblioteca']")
-    assert html_response(get(conn, "/"), 200) =~ "<title>Planejador · Dockd</title>"
+    assert html_response(get(conn, "/"), 200) =~ "Planejador · Dockd</title>"
     assert render(view) =~ ~s(id="igdb-attribution")
     assert render(view) =~ ~s(href="https://www.igdb.com")
     assert render(view) =~ ~s(rel="noopener noreferrer")

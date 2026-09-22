@@ -36,7 +36,7 @@ defmodule DockdWeb.GameLiveTest do
     assert has_element?(view, "#observation-form-#{release.id}")
 
     assert html_response(get(conn, ~p"/jogos/#{game.id}"), 200) =~
-             "<title>Metroid Prime 4 · Dockd</title>"
+             "Metroid Prime 4 · Dockd</title>"
 
     assert render_submit(element(view, "#observation-form-#{release.id}"), %{
              "observation" => %{
