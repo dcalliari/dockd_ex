@@ -7,6 +7,7 @@ defmodule DockdWeb.PlannerWalletApiTest do
     assert Map.has_key?(response, "money")
     assert Map.has_key?(response, "calendar")
     assert Map.has_key?(response, "backlog")
+    assert Map.has_key?(response, "recommendation")
   end
 
   test "wallet collection endpoints return data", %{conn: conn} do

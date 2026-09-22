@@ -11,6 +11,17 @@ defmodule DockdWeb.PlannerWalletLiveTest do
     assert has_element?(view, "#planner-backlog a[href='/biblioteca']")
   end
 
+  test "planner explains why it suggests a backlog game", %{conn: conn} do
+    user = Dockd.Accounts.default_owner()
+    game = Dockd.DomainFixtures.game_fixture(%{title: "Suggested backlog game"})
+    {:ok, _entry} = Dockd.Library.create_entry(user, %{game_id: game.id, backlog: :backlog})
+
+    {:ok, view, _html} = live(conn, "/")
+
+    assert has_element?(view, "#planner-recommendation")
+    assert has_element?(view, "#recommendation-game[href='/jogos/#{game.id}']")
+  end
+
   test "wallet ignores unknown fields in balance and reservation forms", %{conn: conn} do
     game = Dockd.DomainFixtures.game_fixture(%{title: "Unknown field game"})
     user = Dockd.Accounts.default_owner()

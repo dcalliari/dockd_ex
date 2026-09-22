@@ -53,7 +53,12 @@ defmodule Dockd.Library do
         type = event_type(field, get_change(changeset, field))
 
         if get_change(changeset, field) && type,
-          do: event_for(acc, type, user_id, %{field: field, value: get_change(changeset, field)}),
+          do:
+            event_for(acc, type, user_id, %{
+              game_id: entry.game_id,
+              field: field,
+              value: get_change(changeset, field)
+            }),
           else: acc
       end)
 
@@ -173,8 +178,8 @@ defmodule Dockd.Library do
     do:
       Activity.append(multi, %{
         user_id: user_id,
-        game_id: attrs[:game_id],
-        release_id: attrs[:release_id],
+        game_id: Map.get(attrs, :game_id, Map.get(attrs, "game_id")),
+        release_id: Map.get(attrs, :release_id, Map.get(attrs, "release_id")),
         type: type,
         occurred_at: DateTime.utc_now(),
         payload: Map.new(attrs)
@@ -193,9 +198,10 @@ defmodule Dockd.Library do
   defp result({:ok, values}, key), do: {:ok, values[key]}
   defp result({:error, _op, changeset, _}, _), do: {:error, changeset}
 
-  @doc "Lists entries for a user, optionally filtered by backlog, play state, or search term."
+  @doc "Lists entries for a user, optionally filtered by tab, backlog, play state, or search term."
   def list_entries(%User{} = user, filters) when is_map(filters) do
     entries = list_entries(user)
+    owned_game_ids = owned_game_ids(user)
 
     search =
       Map.get(filters, :search, Map.get(filters, "search", ""))
@@ -207,11 +213,14 @@ defmodule Dockd.Library do
     play_state =
       filters |> Map.get(:play_state, Map.get(filters, "play_state")) |> normalize_filter()
 
+    tab = Map.get(filters, :tab, Map.get(filters, "tab"))
+
     Enum.filter(entries, fn entry ->
       matches_search = search == "" or String.contains?(String.downcase(entry.game.title), search)
       matches_backlog = is_nil(backlog) or entry.backlog == normalize_enum(backlog)
       matches_play_state = is_nil(play_state) or entry.play_state == normalize_enum(play_state)
-      matches_search and matches_backlog and matches_play_state
+      matches_tab = matches_tab?(entry, tab, owned_game_ids)
+      matches_search and matches_backlog and matches_play_state and matches_tab
     end)
   end
 
@@ -223,6 +232,29 @@ defmodule Dockd.Library do
           where: e.user_id == ^user_id and e.game_id == ^game_id,
           preload: [game: :releases]
       )
+
+  defp matches_tab?(_entry, nil, _owned_game_ids), do: true
+  defp matches_tab?(_entry, "", _owned_game_ids), do: true
+  defp matches_tab?(entry, "all", owned_game_ids), do: entry.game_id in owned_game_ids
+  defp matches_tab?(entry, "playing", _owned_game_ids), do: entry.play_state == :playing
+  defp matches_tab?(entry, "backlog", _owned_game_ids), do: entry.backlog == :backlog
+
+  defp matches_tab?(entry, "want", _owned_game_ids),
+    do: entry.purchase_intent in [:want, :planned, :preordered]
+
+  defp matches_tab?(entry, "finished", _owned_game_ids), do: entry.play_state == :finished
+  defp matches_tab?(_entry, _tab, _owned_game_ids), do: true
+
+  @doc "Lists game ids for which the user owns at least one release."
+  def owned_game_ids(%User{id: user_id}) do
+    Repo.all(
+      from o in Ownership,
+        join: r in Dockd.Catalog.Release,
+        on: r.id == o.release_id,
+        where: o.user_id == ^user_id,
+        select: r.game_id
+    )
+  end
 
   defp normalize_veto_attrs(attrs) do
     Enum.reduce([:release_id, :reason], %{}, fn key, result ->

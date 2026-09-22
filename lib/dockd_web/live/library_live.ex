@@ -76,20 +76,40 @@ defmodule DockdWeb.LibraryLive do
   end
 
   defp load(socket, user, params) do
-    filters = Map.take(params, ["search", "backlog", "play_state"])
-    entries = Library.list_entries(user, filters)
+    all_entries = Library.list_entries(user)
+    ownerships = Library.list_ownerships(user)
+    owned_game_ids = MapSet.new(ownerships, & &1.release.game_id)
+
+    filters =
+      params
+      |> Map.take(["search", "backlog", "play_state", "tab"])
+      |> Map.put_new("tab", "all")
+
+    entry_filters = if Map.has_key?(params, "tab"), do: filters, else: Map.delete(filters, "tab")
+    entries = Library.list_entries(user, entry_filters)
     games = Catalog.list_games()
 
     assign(socket,
       user: user,
       entries: entries,
-      ownerships: Library.list_ownerships(user),
+      ownerships: ownerships,
       games: games,
       editing: nil,
       form: to_form(Entry.changeset(%Entry{}, %{})),
       filters: filters,
+      tab_counts: tab_counts(all_entries, owned_game_ids),
       groups: Enum.group_by(entries, &group_for/1)
     )
+  end
+
+  defp tab_counts(entries, owned_game_ids) do
+    %{
+      playing: Enum.count(entries, &(&1.play_state == :playing)),
+      backlog: Enum.count(entries, &(&1.backlog == :backlog)),
+      want: Enum.count(entries, &(&1.purchase_intent in [:want, :planned, :preordered])),
+      all: Enum.count(entries, &(&1.game_id in owned_game_ids)),
+      finished: Enum.count(entries, &(&1.play_state == :finished))
+    }
   end
 
   defp group_for(%{play_state: :playing}), do: "Jogando"

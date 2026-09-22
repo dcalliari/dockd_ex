@@ -9,8 +9,9 @@
       class="flex gap-1 overflow-x-auto border-b border-base-content/10"
       aria-label="Seções da biblioteca"
     >
-      <%= for {label, key, count} <- [{"Jogando", "playing", Enum.count(@entries, &(&1.play_state == :playing))}, {"Backlog", "backlog", Enum.count(@entries, &(&1.backlog == :backlog))}, {"Quero", "want", Enum.count(@entries, &(&1.purchase_intent in [:want, :planned, :preordered]))}, {"Coleção", "all", length(@entries)}, {"Terminados", "finished", Enum.count(@entries, &(&1.play_state == :finished))}] do %>
+      <%= for {label, key, count} <- [{"Jogando", "playing", @tab_counts.playing}, {"Backlog", "backlog", @tab_counts.backlog}, {"Quero", "want", @tab_counts.want}, {"Coleção", "all", @tab_counts.all}, {"Terminados", "finished", @tab_counts.finished}] do %>
         <button
+          id={"library-tab-#{key}"}
           class={[
             "whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold",
             @filters["tab"] == key && "border-primary text-primary",
