@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Histórico · três caminhos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
+<style>
+:root, [data-theme="light"]{--surface:#ffffff;--surface-raised:#f4f2f1;--surface-sunken:#ebe8e6;--line:#dedad8;--line-strong:#8f8886;--ink:#161414;--ink-muted:#6a6462;--on-ink:#ffffff;--red:#e60012;--red-hover:#cc0010;--on-red:#ffffff;--red-ink:#d4000f;--warn:#9a5b00;--poster-edge:#0000001f;--focus-ring:var(--red-ink);}
+[data-theme="dark"]{--surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink);}
+:root{--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--radius-sm:3px;--radius-md:6px;--radius-full:999px;--container-max:1120px;--nav-height:56px;--control-height:36px;--thumb-height:44px;--cover-ratio:3 / 4;--cover-min:140px;--font-sans:"Archivo", "Helvetica Neue", Arial, sans-serif;}
+.t-wordmark{font-family:var(--font-sans);font-size:22px;line-height:24px;font-weight:900;letter-spacing:-0.02em;}
+.t-display{font-family:var(--font-sans);font-size:32px;line-height:36px;font-weight:800;letter-spacing:-0.02em;}
+.t-heading{font-family:var(--font-sans);font-size:14px;line-height:18px;font-weight:700;}
+.t-control{font-family:var(--font-sans);font-size:14px;line-height:20px;font-weight:600;}
+.t-body{font-family:var(--font-sans);font-size:15px;line-height:22px;font-weight:400;}
+.t-meta{font-family:var(--font-sans);font-size:12px;line-height:16px;font-weight:400;}
+.t-label{font-family:var(--font-sans);font-size:11px;line-height:16px;font-weight:700;letter-spacing:0.08em;}
+.t-num{font-family:var(--font-sans);font-size:15px;line-height:20px;font-weight:600;}
+.t-num-lg{font-family:var(--font-sans);font-size:20px;line-height:24px;font-weight:800;letter-spacing:-0.02em;}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink); } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+body { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+img { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* type: width axes and numerals the token classes cannot carry */
+.t-wordmark { font-stretch: 125%; }
+.t-display { font-stretch: 110%; }
+.t-label, .t-num-lg { font-stretch: 90%; }
+.t-label { text-transform: uppercase; }
+.t-num, .t-num-lg { font-variant-numeric: tabular-nums; }
+
+.dk-preview { padding: var(--space-4); }
+.dk-stack { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+
+/* Poster */
+.dk-poster { position: relative; display: block; aspect-ratio: 3 / 4; width: 100%; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-sunken); }
+.dk-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dk-poster::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--poster-edge); pointer-events: none; transition: box-shadow 120ms; }
+a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 0 0 0 2px var(--red); }
+.dk-poster--empty { display: flex; align-items: flex-end; padding: var(--space-2); color: var(--ink-muted); font-size: 12px; line-height: 16px; font-weight: 600; }
+.dk-poster__status { position: absolute; left: var(--space-2); top: var(--space-2); z-index: 1; }
+.dk-poster--sm { width: 33px; height: var(--thumb-height); border-radius: var(--radius-sm); }
+
+/* StatusChip */
+.dk-status { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
+.dk-status--sm { height: 18px; padding: 0 6px; font-size: 10px; letter-spacing: .06em; }
+.dk-status--quero { border-color: var(--red-ink); color: var(--red-ink); background: var(--surface); }
+.dk-status--backlog { background: var(--ink); color: var(--on-ink); }
+.dk-status--jogando { background: var(--red); color: var(--on-red); }
+.dk-status--zerado { background: var(--surface-sunken); color: var(--ink); }
+.dk-status--larguei { border-color: var(--line-strong); color: var(--ink-muted); background: var(--surface); }
+
+/* StatusControl: the current chip as a button, plus a menu of the five */
+.dk-status-control { position: relative; display: inline-block; }
+.dk-status-control__button { display: inline-flex; align-items: center; gap: var(--space-2); height: var(--control-height); padding: 0 var(--space-2) 0 var(--space-3); border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); transition: background-color 120ms; }
+.dk-status-control__button:hover { background: var(--surface-raised); }
+.dk-status-control__button svg { width: 16px; height: 16px; color: var(--ink-muted); }
+.dk-status-control__menu { position: absolute; left: 0; top: calc(100% + var(--space-1)); z-index: 2; min-width: 180px; margin: 0; padding: var(--space-1) 0; list-style: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
+.dk-status-control__menu button { display: flex; width: 100%; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink); text-align: left; }
+.dk-status-control__menu button:hover { background: var(--surface-sunken); }
+.dk-status-control__menu button[aria-checked="true"] { color: var(--ink); }
+.dk-status-control__menu .dk-status { width: 78px; justify-content: center; }
+.dk-status-control__menu small { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--ink-muted); }
+
+/* MediaTag */
+.dk-media { display: inline-flex; align-items: center; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); white-space: nowrap; }
+
+/* Button */
+.dk-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; transition: background-color 120ms, border-color 120ms, color 120ms; }
+.dk-btn--primary { background: var(--red); border-color: var(--red); color: var(--on-red); }
+.dk-btn--primary:hover { background: var(--red-hover); border-color: var(--red-hover); }
+.dk-btn--secondary { border-color: var(--line-strong); color: var(--ink); background: var(--surface); }
+.dk-btn--secondary:hover { background: var(--surface-raised); }
+.dk-btn--sm { height: 28px; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; }
+.dk-btn[disabled] { opacity: .45; cursor: default; }
+.dk-link { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--red-ink); }
+.dk-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Tabs */
+.dk-tabs { display: flex; gap: var(--space-5); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.dk-tab { position: relative; display: inline-flex; align-items: baseline; gap: 6px; padding: var(--space-2) 0 10px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; transition: color 120ms; }
+.dk-tab:hover { color: var(--ink); }
+.dk-tab[aria-selected="true"] { color: var(--ink); }
+.dk-tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--red); }
+.dk-tab__count { font-size: 12px; line-height: 16px; font-weight: 400; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+
+/* NavBar (top) and BottomNav (phone) */
+.dk-nav { height: var(--nav-height); display: flex; align-items: center; gap: var(--space-5); padding: 0 var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
+.dk-wordmark { font-size: 22px; line-height: 24px; font-weight: 900; font-stretch: 125%; letter-spacing: -0.02em; color: var(--ink); }
+.dk-wordmark i { font-style: normal; color: var(--red); }
+.dk-nav__links { display: flex; gap: var(--space-4); }
+.dk-nav__link { padding: 4px 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-bottom: 2px solid transparent; transition: color 120ms; }
+.dk-nav__link:hover { color: var(--ink); }
+.dk-nav__link[aria-current="page"] { color: var(--ink); border-bottom-color: var(--red); }
+.dk-nav__search { margin-left: auto; width: 240px; }
+.dk-nav__icon { margin-left: auto; display: inline-flex; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--ink); }
+.dk-nav__icon svg { width: 20px; height: 20px; }
+.dk-bottomnav { height: var(--nav-height); display: flex; align-items: stretch; background: var(--surface); border-top: 1px solid var(--line); }
+.dk-bottomnav a { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-top: 2px solid transparent; margin-top: -1px; }
+.dk-bottomnav a[aria-current="page"] { color: var(--ink); border-top-color: var(--red); }
+
+/* SearchField */
+.dk-search { position: relative; }
+.dk-search input { width: 100%; height: var(--control-height); padding: 0 var(--space-3) 0 36px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; }
+.dk-search input::placeholder { color: var(--ink-muted); }
+.dk-search svg { position: absolute; left: 12px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--ink-muted); pointer-events: none; }
+
+/* GameCard + grid */
+.dk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--space-4) var(--space-3); }
+@media (min-width: 768px) { .dk-grid { grid-template-columns: repeat(auto-fill, minmax(var(--cover-min), 1fr)); } }
+.dk-card { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.dk-card__title { font-size: 14px; line-height: 18px; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.dk-card__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-card__text { display: flex; flex-direction: column; gap: 2px; }
+
+/* GameRow */
+.dk-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }
+.dk-row > :first-child { justify-self: start; }
+.dk-row__title { font-size: 14px; line-height: 18px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-row__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-row__end { display: flex; align-items: center; gap: var(--space-3); justify-self: end; }
+
+/* DateBlock */
+.dk-date { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: var(--thumb-height); height: var(--thumb-height); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--ink); font-stretch: 90%; }
+.dk-date b { font-size: 20px; line-height: 24px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.dk-date small { font-size: 10px; line-height: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
+.dk-date--month b { font-size: 13px; line-height: 16px; letter-spacing: .06em; text-transform: uppercase; }
+.dk-date--year b { font-size: 15px; line-height: 20px; }
+.dk-date--soon { background: var(--red); color: var(--on-red); }
+.dk-date--soon small { color: var(--on-red); }
+
+/* Price */
+.dk-price { display: inline-flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.dk-price b { font-size: 15px; line-height: 20px; font-weight: 600; }
+.dk-price small { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-price--stale small { color: var(--warn); }
+.dk-price--none b { font-weight: 400; color: var(--ink-muted); }
+
+/* EmptyState */
+.dk-empty { margin: 0; padding: var(--space-6) 0; font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+.dk-empty a { color: var(--red-ink); font-weight: 600; }
+
+/* SectionHead */
+.dk-section { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); margin-bottom: var(--space-3); }
+.dk-section h2 { margin: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.dk-section h2 span { margin-left: 6px; font-weight: 400; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.dk-section a { font-size: 14px; line-height: 16px; font-weight: 600; color: var(--red-ink); }
+
+.page { width: min(100%, 720px); margin: 0 auto; padding: var(--space-5) var(--space-4) var(--space-7); }
+.opt { margin-bottom: var(--space-7); }
+.opt > p.lead { margin: 0 0 var(--space-4); font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+.opt > p.lead b { color: var(--ink); }
+
+/* A: linha do tempo horizontal */
+.tl { position: relative; padding: 28px 0 8px; }
+.tl::before { content: ""; position: absolute; left: 0; right: 0; top: 33px; height: 1px; background: var(--line-strong); }
+.tl-items { display: flex; justify-content: space-between; align-items: flex-start; }
+.tl-item { position: relative; width: 120px; padding-top: 18px; }
+.tl-item::before { content: ""; position: absolute; left: 0; top: 0; width: 10px; height: 10px; border-radius: 2px; background: var(--ink); }
+.tl-item.is-red::before { background: var(--red); }
+.tl-item.is-hollow::before { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.tl-item .when { position: absolute; top: -24px; left: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); white-space: nowrap; }
+.tl-item .what { font-size: 14px; line-height: 18px; font-weight: 700; }
+.tl-item .who { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.tl-item:last-child { text-align: right; } .tl-item:last-child::before { left: auto; right: 0; } .tl-item:last-child .when { left: auto; right: 0; }
+
+/* B: trilho vertical com tempo relativo */
+.rail { position: relative; padding-left: 24px; }
+.rail::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 1px; background: var(--line-strong); }
+.rail-item { position: relative; padding: 0 0 var(--space-4); }
+.rail-item::before { content: ""; position: absolute; left: -24px; top: 6px; width: 9px; height: 9px; border-radius: 2px; background: var(--ink); }
+.rail-item.is-red::before { background: var(--red); }
+.rail-item.is-hollow::before { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.rail-item .what { font-size: 15px; line-height: 22px; font-weight: 700; }
+.rail-item .what small { font-weight: 400; color: var(--ink-muted); font-size: 13px; margin-left: var(--space-2); }
+.rail-item .who { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+
+/* C: fatos, sem lista */
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.fact { padding: var(--space-3) 0; border-top: 2px solid var(--ink); }
+.fact.is-red { border-top-color: var(--red); }
+.fact .n { font-size: 20px; line-height: 24px; font-weight: 800; letter-spacing: -0.02em; font-stretch: 90%; font-variant-numeric: tabular-nums; }
+.fact .l { font-size: 12px; line-height: 16px; color: var(--ink-muted); margin-top: 2px; }
+@media (max-width: 600px) { .tl-items { flex-direction: column; gap: var(--space-5); } .tl::before { display: none; } .tl-item:last-child { text-align: left; } .tl-item:last-child::before { left: 0; right: auto; } .tl-item:last-child .when { left: 0; right: auto; } .facts { grid-template-columns: 1fr; } }
+
+.glyphs { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-bottom: var(--space-5); }
+.glyph { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; line-height: 16px; color: var(--ink-muted); }
+.glyph-box { display: inline-flex; width: 36px; height: 36px; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink); }
+.ev { width: 18px; height: 18px; }
+.rail--icons::before { display: none; }
+.rail--icons .rail-item::before { display: none; }
+.rail--icons .rail-item { display: grid; grid-template-columns: 20px 1fr; column-gap: var(--space-3); }
+.rail--icons .rail-item .mark { grid-row: 1 / span 2; width: 20px; height: 20px; margin-top: 1px; color: var(--ink-muted); }
+.rail--icons .rail-item.is-red .mark { color: var(--red-ink); }
+</style>
+</head>
+<body>
+<main class="page">
+
+<section class="opt">
+  <div class="dk-section"><h2>Caminho A · linha do tempo</h2></div>
+  <p class="lead"><b>Horizontal, do mais antigo ao mais recente.</b> Marcador quadrado no fio: preto para fato, vermelho para o estado atual, vazado para observação. O tempo aparece como distância.</p>
+  <div class="tl"><div class="tl-items">
+    <div class="tl-item"><span class="when">14 set</span><div class="what">Entrou na biblioteca</div><div class="who">Backlog</div></div>
+    <div class="tl-item"><span class="when">14 set</span><div class="what">Registrou a posse</div><div class="who">Físico · Switch 2</div></div>
+    <div class="tl-item is-hollow"><span class="when">22 set</span><div class="what">Viu o preço</div><div class="who">R$ 350,00 · OLX</div></div>
+    <div class="tl-item is-red"><span class="when">22 set</span><div class="what">Começou a jogar</div><div class="who">há 3 dias</div></div>
+  </div></div>
+</section>
+
+<section class="opt">
+  <div class="dk-section"><h2>Caminho B · trilho com tempo relativo</h2></div>
+  <p class="lead"><b>Vertical, do mais recente ao mais antigo, com "há quanto tempo".</b> O verbo é o que se lê primeiro; a data exata fica menor ao lado. Mesmos marcadores do caminho A.</p>
+  <div class="rail">
+    <div class="rail-item is-red"><div class="what">Começou a jogar <small>há 3 dias</small></div><div class="who">22/09/2026 · Switch 2</div></div>
+    <div class="rail-item is-hollow"><div class="what">Viu o preço: R$ 350,00 <small>há 3 dias</small></div><div class="who">22/09/2026 · OLX · físico</div></div>
+    <div class="rail-item"><div class="what">Registrou a posse <small>há 11 dias</small></div><div class="who">14/09/2026 · Físico · Switch 2</div></div>
+    <div class="rail-item"><div class="what">Entrou na biblioteca <small>há 11 dias</small></div><div class="who">14/09/2026</div></div>
+  </div>
+</section>
+
+<section class="opt">
+  <div class="dk-section"><h2>Caminho C · fatos, sem lista</h2></div>
+  <p class="lead"><b>Nada de cronologia: só o que o histórico responde.</b> Três números derivados do log, no estilo dos totais do Letterboxd. A lista completa fica atrás de "Ver tudo", para quem quiser.</p>
+  <div class="facts">
+    <div class="fact is-red"><div class="n">3 dias</div><div class="l">jogando</div></div>
+    <div class="fact"><div class="n">8 dias</div><div class="l">entre ter e começar</div></div>
+    <div class="fact"><div class="n">R$ 350,00</div><div class="l">último preço visto, há 3 dias</div></div>
+  </div>
+  <p style="margin:var(--space-3) 0 0"><a class="dk-link" href="#">Ver tudo</a></p>
+</section>
+
+<section class="opt">
+  <div class="dk-section"><h2>Caminho D · trilho com glifos de ação</h2></div>
+  <p class="lead"><b>O caminho B com um glifo por tipo de ação no lugar do quadrado.</b> Nove glifos desenhados na mesma grade e traço dos Heroicons, em cinza; só o da ação que definiu o estado atual fica em vermelho. Aparecem só aqui, no histórico.</p>
+  <div class="glyphs"><div class="glyph"><span class="glyph-box"><svg class="ev " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>entrou</span></div><div class="glyph"><span class="glyph-box"><svg class="ev " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 5.25v13.5L18 12 7.5 5.25Z"/></svg></span><span>começou</span></div><div class="glyph"><span class="glyph-box"><svg class="ev " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.25 5.25v13.5M15.75 5.25v13.5"/></svg></span><span>pausou</span></div><div class="glyph"><span class="glyph-box"><svg class="ev " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.25 21V4.5M5.25 4.5h12l-2.25 4.5 2.25 4.5h-12"/></svg></span><span>zerou</span></div><div class="glyph"><span class="glyph-box"><svg class="ev " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6h12v12H6z"/></svg></span><span>largou</span></div><div class="glyph"><span class="glyph-box"><svg class="ev " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 3.75h9a1.5 1.5 0 0 1 1.5 1.5v13.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 18.75V5.25a1.5 1.5 0 0 1 1.5-1.5ZM9 6.75h6v3.75H9z"/></svg></span><span>posse</span></div><div class="glyph"><span class="glyph-box"><svg class="ev " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.75 9V4.5A.75.75 0 0 1 4.5 3.75H9l10.5 10.5-5.25 5.25L3.75 9ZM7.5 7.5h.008"/></svg></span><span>preço</span></div><div class="glyph"><span class="glyph-box"><svg class="ev " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.25 8.25h13.5l-1.125 11.25H6.375L5.25 8.25ZM9 8.25V6a3 3 0 0 1 6 0v2.25"/></svg></span><span>comprou</span></div><div class="glyph"><span class="glyph-box"><svg class="ev " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.25a8.25 8.25 0 1 0 0-16.5 8.25 8.25 0 0 0 0 16.5ZM6.2 6.2l11.6 11.6"/></svg></span><span>vetou</span></div></div>
+  <div class="rail rail--icons">
+    <div class="rail-item is-red"><svg class="ev mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 5.25v13.5L18 12 7.5 5.25Z"/></svg><div class="what">Começou a jogar <small>há 3 dias</small></div><div class="who">22/09/2026 · Switch 2</div></div>
+    <div class="rail-item"><svg class="ev mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.75 9V4.5A.75.75 0 0 1 4.5 3.75H9l10.5 10.5-5.25 5.25L3.75 9ZM7.5 7.5h.008"/></svg><div class="what">Viu o preço: R$ 350,00 <small>há 3 dias</small></div><div class="who">22/09/2026 · OLX · físico</div></div>
+    <div class="rail-item"><svg class="ev mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 3.75h9a1.5 1.5 0 0 1 1.5 1.5v13.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 18.75V5.25a1.5 1.5 0 0 1 1.5-1.5ZM9 6.75h6v3.75H9z"/></svg><div class="what">Registrou a posse <small>há 11 dias</small></div><div class="who">14/09/2026 · Físico · Switch 2</div></div>
+    <div class="rail-item"><svg class="ev mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><div class="what">Entrou na biblioteca <small>há 11 dias</small></div><div class="who">14/09/2026</div></div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>
