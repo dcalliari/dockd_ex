@@ -2,6 +2,20 @@
 
 Todas as mudanças relevantes do Dockd são documentadas neste arquivo.
 
+## [0.3.0] Não lançada
+
+### Alterado
+
+- Camada web reescrita a partir do design system aprovado em 25/09/2026: Biblioteca como home, página do Jogo com um único controle de status, Descobrir sobre o IGDB inteiro e Comprar como fila de lançamentos.
+- Um status derivado por jogo (Quero, Backlog, Jogando, Zerado, Larguei), calculado de posse e estado de jogo, sem campo novo no modelo.
+- Busca no IGDB filtrada por plataforma na própria consulta, para não devolver versões sem lançamento Nintendo.
+- Importação do IGDB movida do controller para o contexto `Catalog`.
+- Tipografia Archivo variável auto-hospedada no lugar de Noto Sans e JetBrains Mono.
+
+### Removido
+
+- DaisyUI, o seletor de tema, a barra lateral, o feature flag `flows` e as telas de Planejador, Carteira e Catálogo.
+
 ## [0.2.0] 2026-09-22
 
 ### Adicionado

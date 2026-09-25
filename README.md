@@ -14,16 +14,17 @@ A restrição a Switch e Switch 2 é uma escolha de produto, não uma limitaçã
 
 ## Estado atual
 
-### Disponível hoje: versão 0.2.0
+### Disponível hoje: versão 0.3.0
 
-- Planejador em `/`, com saldo, reservas, calendário e pressão do backlog.
-- Biblioteca em `/biblioteca`, com estados pessoais, filtros e registros de posse.
-- Catálogo em `/catalogo` e decisão por jogo em `/jogos/:id`, com versões, preços, compras e vetos. O catálogo é administrado pela API; a interface web é somente para consulta e ações do usuário.
-- Carteira em `/carteira`, com saldo e reservas editáveis.
-- API JSON versionada em `/api/v1` e especificação em `/api/openapi`.
-- Seeds demonstrativas idempotentes, executadas por `mix ecto.setup`.
-- Interface responsiva com temas `dockd-light` e `dockd-dark`.
-- Integração opcional com IGDB para sincronizar dados de jogos. O uso não comercial exige atribuição visível à fonte, disponível no rodapé da aplicação. No deploy por compose, as variáveis do IGDB são fornecidas pelo `.env`.
+Quatro telas, desenhadas a partir do design system em [`design/`](design/FONTE.md) e aprovadas em maquete antes de virarem código:
+
+- **Biblioteca** em `/`: grade de capas com um status por jogo (Quero, Backlog, Jogando, Zerado, Larguei), derivado de posse e estado de jogo; abas com contagem, filtros de plataforma e mídia, busca e ordenação.
+- **Jogo** em `/jogos/:id`: capa com plataformas e exclusividade, um único controle de status, versões com preço observado e datado, e o histórico das ações.
+- **Descobrir** em `/descobrir`: busca no IGDB inteiro restrita a Switch e Switch 2, com `Quero jogar` em um toque. Sem credenciais do IGDB, busca no catálogo local.
+- **Comprar** em `/comprar`: a fila dos jogos em Quero, separada em próximos lançamentos, disponíveis e sem data, com reserva de saldo e registro de compra em linha.
+- API JSON versionada em `/api/v1` e especificação em `/api/openapi`. O catálogo continua sendo administrado só pela API.
+- Tema segue o sistema operacional; não há seletor de tema.
+- Integração opcional com IGDB para sincronizar dados de jogos. O uso não comercial exige atribuição visível à fonte, presente no rodapé de toda página. No deploy por compose, as variáveis do IGDB são fornecidas pelo `.env`.
 
 ### Próximos passos
 
@@ -100,8 +101,8 @@ Uma aplicação Phoenix única serve a interface LiveView e a API JSON sobre a m
 | Ecto SQL | `3.14.0` | Integração SQL e migrações |
 | Postgrex | `0.22.4` | Driver PostgreSQL |
 | Bandit | `1.12.5` | Servidor HTTP |
-| Tailwind | `0.5.1` | Instalador do Tailwind CSS 4 |
-| DaisyUI | `v5.5.20` | Componentes visuais sobre Tailwind 4 |
+| Tailwind | `0.5.1` | Instalador do Tailwind CSS 4; os tokens e as classes `dk-` vivem em `assets/css/app.css` |
+| Archivo | variável, latino | Única família tipográfica, auto-hospedada em `priv/static/fonts` |
 
 As versões efetivamente resolvidas estão em [`mix.lock`](mix.lock); as restrições de dependência estão em [`mix.exs`](mix.exs).
 
@@ -158,7 +159,8 @@ Coleções, feedback explícito de recomendações e histórico completo de pre�
 
 ## Decisões de produto e engenharia
 
-- **Planejador primeiro**: o backlog alimenta decisões de compra; não é o produto inteiro.
+- **Biblioteca primeiro**: a home é a biblioteca com um status por jogo. O planejador financeiro fica no domínio e na API e volta à tela quando houver compras registradas (decisão de 25/09/2026, que substitui a ADR-0007 na interface).
+- **Design system antes de código**: toda tela nasce de uma maquete aprovada e emite só as classes de `design/components/bundle.css`.
 - **Nintendo apenas**: Switch e Switch 2 concentram a complexidade que o Dockd quer resolver.
 - **Obra diferente de versão**: vontade pertence ao jogo; posse, preço e compra pertencem à release.
 - **Intenção diferente de posse**: querer jogar e já ter acesso são fatos independentes.

@@ -14,12 +14,18 @@ defmodule Dockd.IGDB do
       is_binary(config(:client_secret)) and config(:client_secret) != ""
   end
 
+  @doc """
+  Searches IGDB by title, restricted to works with a Switch or Switch 2 platform.
+
+  The platform filter lives in the query itself: an unfiltered search for "zelda"
+  returns NES and Game Boy entries first and no Nintendo Switch release at all.
+  """
   def search(title) when is_binary(title) do
     if configured?(),
       do:
         post(
           "games",
-          "search \"#{escape(title)}\"; fields id,name,alternative_names.name,cover.image_id,summary,platforms.id,platforms.name,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher; limit 10;"
+          "search \"#{escape(title)}\"; fields id,name,alternative_names.name,cover.image_id,summary,platforms.id,platforms.name,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher; where platforms = (#{@switch_id},#{@switch_2_id}); limit 20;"
         ),
       else: {:error, :not_configured}
   end

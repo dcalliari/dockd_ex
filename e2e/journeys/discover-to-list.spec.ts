@@ -1,33 +1,27 @@
 import { expect, test } from "@playwright/test";
 
-test("a new game moves from Discover to List and can be removed", async ({ page }) => {
-  await page.goto("/catalogo");
-  await expect(page.getByRole("heading", { name: "Descobrir" })).toBeVisible();
-  await page.getByLabel("Buscar").fill("Discovery Candidate");
-  const result = page.getByTestId("discover-results");
-  const candidate = result.getByRole("article").filter({ hasText: "Discovery Candidate" });
+test("a new game goes from Descobrir to the Biblioteca as Quero and can be started", async ({ page }) => {
+  await page.goto("/descobrir");
+  await page.getByLabel("Buscar no catálogo").fill("Discovery Candidate");
+  const results = page.getByTestId("discover-results").or(page.locator("#discover-results"));
+  const candidate = results.locator(".dk-card").filter({ hasText: "Discovery Candidate" });
   await expect(candidate).toBeVisible();
-  await candidate.getByRole("button", { name: "Quero jogar" }).click();
-  await expect(candidate).toContainText("Na lista");
+  await candidate.getByRole("button", { name: "Quero jogar" }).first().click({ force: true });
+  await expect(candidate.locator(".dk-status--quero")).toBeVisible();
 
-  await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Lista" })).toBeVisible();
-  const listEntry = page
-    .getByTestId("list-items")
-    .getByRole("article")
-    .filter({ hasText: "Discovery Candidate" });
-  await expect(listEntry).toBeVisible();
-  await expect(listEntry.getByText("Na lista", { exact: true })).toBeVisible();
+  await page.goto("/?tab=quero");
+  const card = page.locator("#library-grid .dk-card").filter({ hasText: "Discovery Candidate" });
+  await expect(card).toBeVisible();
+  await expect(card.locator(".dk-status--quero")).toBeVisible();
 
-  await listEntry.getByRole("link", { name: "Discovery Candidate" }).click();
+  await card.click();
   await expect(page.getByRole("heading", { name: "Discovery Candidate" })).toBeVisible();
+  await expect(page.locator("#buy-button")).toBeVisible();
+
+  await page.locator("button.dk-status--jogando[phx-click=set_status]").click({ force: true });
+  await expect(page.locator("#game-history")).toContainText("Começou a jogar");
+
   await page.locator("#game-back").click();
   await expect(page).toHaveURL("http://localhost:4460/");
-
-  const listEntryAfterReturn = page
-    .getByTestId("list-items")
-    .getByRole("article")
-    .filter({ hasText: "Discovery Candidate" });
-  await listEntryAfterReturn.getByRole("button", { name: "Tirar" }).click();
-  await expect(page.getByTestId("list-items")).not.toContainText("Discovery Candidate");
+  await expect(page.locator("#library-grid .dk-card").filter({ hasText: "Discovery Candidate" }).locator(".dk-status--jogando")).toBeVisible();
 });

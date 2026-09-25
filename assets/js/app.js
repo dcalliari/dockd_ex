@@ -1,22 +1,3 @@
-// If you want to use Phoenix channels, run `mix help phx.gen.channel`
-// to get started and then uncomment the line below.
-// import "./user_socket.js"
-
-// You can include dependencies in two ways.
-//
-// The simplest option is to put them in assets/vendor and
-// import them using relative paths:
-//
-//     import "../vendor/some-package.js"
-//
-// Alternatively, you can `npm install some-package --prefix assets` and import
-// them using a path starting with the package name:
-//
-//     import "some-package"
-//
-// If you have dependencies that try to import CSS, esbuild will generate a separate `app.css` file.
-// To load it, simply add a second `<link>` to your `root.html.heex` file.
-
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
@@ -25,37 +6,60 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/dockd"
 import topbar from "../vendor/topbar"
 
-const systemTheme = () => matchMedia("(prefers-color-scheme: dark)").matches ? "dockd-dark" : "dockd-light"
-const setTheme = theme => {
-  if (theme === "system") {
-    localStorage.removeItem("phx:theme")
-    document.documentElement.dataset.theme = systemTheme()
-    document.documentElement.dataset.themeSource = "system"
-  } else {
-    localStorage.setItem("phx:theme", theme)
-    document.documentElement.dataset.theme = theme
-    document.documentElement.dataset.themeSource = "user"
-  }
+// O tema segue o sistema operacional: nenhum estado guardado no navegador.
+
+const StatusTray = {
+  mounted() {
+    const current = this.el.querySelector(":scope > .dk-status")
+    const options = this.el.querySelector(".dk-status-control__options")
+    const layout = () => {
+      if (current && options) options.style.paddingLeft = `${current.offsetWidth + 8}px`
+    }
+    layout()
+    if (document.fonts) document.fonts.ready.then(layout)
+    current?.addEventListener("click", () => {
+      const open = this.el.classList.toggle("is-open")
+      current.setAttribute("aria-expanded", String(open))
+    })
+    this.close = event => {
+      if (!this.el.contains(event.target)) this.el.classList.remove("is-open")
+    }
+    document.addEventListener("click", this.close)
+  },
+  updated() {
+    const current = this.el.querySelector(":scope > .dk-status")
+    const options = this.el.querySelector(".dk-status-control__options")
+    if (current && options) options.style.paddingLeft = `${current.offsetWidth + 8}px`
+    this.el.classList.remove("is-open")
+  },
+  destroyed() {
+    document.removeEventListener("click", this.close)
+  },
 }
 
-setTheme(localStorage.getItem("phx:theme") || "system")
-window.addEventListener("storage", event => {
-  if (event.key === "phx:theme") setTheme(event.newValue || "system")
-})
-window.addEventListener("phx:set-theme", event => setTheme(event.target.dataset.phxTheme))
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-  if (document.documentElement.dataset.themeSource === "system") setTheme("system")
-})
+const NavSearch = {
+  mounted() {
+    const nav = this.el.closest(".dk-nav")
+    const input = nav?.querySelector(".dk-nav__search input")
+    this.el.addEventListener("click", () => {
+      nav.classList.add("dk-nav--searching")
+      input?.focus()
+    })
+    input?.addEventListener("blur", () => {
+      if (!input.value) nav.classList.remove("dk-nav--searching")
+    })
+  },
+}
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks},
+  hooks: {...colocatedHooks, StatusTray, NavSearch},
 })
 
 // Show progress bar on live navigation and form submits
-topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
+topbar.config({barColors: {0: "#e60012"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
@@ -86,7 +90,7 @@ if (process.env.NODE_ENV === "development") {
     //   * click with "d" key pressed to open at function component definition location
     let keyDown
     window.addEventListener("keydown", e => keyDown = e.key)
-    window.addEventListener("keyup", _e => keyDown = null)
+    window.addEventListener("keyup", e => keyDown = null)
     window.addEventListener("click", e => {
       if(keyDown === "c"){
         e.preventDefault()
@@ -102,4 +106,3 @@ if (process.env.NODE_ENV === "development") {
     window.liveReloader = reloader
   })
 }
-

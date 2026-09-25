@@ -40,21 +40,19 @@ defmodule DockdWeb.IGDBController do
   )
 
   def import(conn, %{igdb_id: id}) do
-    with true <- IGDB.configured?(),
-         {:ok, %{body: [data]}} <- IGDB.get_games([id]),
-         {:ok, game} <- Catalog.create_game(import_attrs(data)),
-         :ok <- import_releases(game, data) do
-      conn
-      |> put_status(:created)
-      |> json(%{data: imported_game_json(Catalog.get_game!(game.id))})
-    else
-      false ->
+    case Catalog.import_igdb(id) do
+      {:ok, game} ->
+        conn
+        |> put_status(:created)
+        |> json(%{data: imported_game_json(game)})
+
+      {:error, :not_configured} ->
         not_configured(conn)
 
-      {:ok, %{body: []}} ->
+      {:error, :not_found} ->
         conn |> put_status(:not_found) |> json(%{error: %{type: "not_found"}})
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
         |> json(%{
@@ -102,22 +100,6 @@ defmodule DockdWeb.IGDBController do
     end
   end
 
-  defp import_attrs(data) do
-    %{
-      title: data["name"],
-      igdb_id: data["id"],
-      availability: Catalog.suggested_availability(data) || :multiplatform,
-      cover_url: cover_url(data),
-      developer: company(data, "developer"),
-      publisher: company(data, "publisher")
-    }
-  end
-
-  defp import_releases(game, data) do
-    Enum.each(Catalog.release_attributes(data), &Catalog.create_release(game.id, &1))
-    :ok
-  end
-
   defp sync_json(%{synced: synced, results: results}),
     do: %{synced: synced, results: Enum.map(results, &sync_result_json/1)}
 
@@ -154,16 +136,6 @@ defmodule DockdWeb.IGDBController do
       digital_available: release.digital_available
     }
   end
-
-  defp cover_url(%{"cover" => %{"image_id" => id}}),
-    do: "https://images.igdb.com/igdb/image/upload/t_cover_big/#{id}.jpg"
-
-  defp cover_url(_), do: nil
-
-  defp company(data, role),
-    do:
-      (data["involved_companies"] || [])
-      |> Enum.find_value(fn c -> if c[role], do: get_in(c, ["company", "name"]) end)
 
   defp not_configured(conn),
     do:

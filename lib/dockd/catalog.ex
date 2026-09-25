@@ -293,6 +293,81 @@ defmodule Dockd.Catalog do
 
   defp company(_, _), do: nil
 
+  @doc "Finds a local game by its IGDB identifier."
+  def get_game_by_igdb_id(igdb_id) when is_integer(igdb_id),
+    do: Repo.one(from g in Game, where: g.igdb_id == ^igdb_id, preload: :releases)
+
+  @doc """
+  Searches IGDB and returns lightweight results, each tagged with the local game when
+  the work is already in the catalog. Returns `{:error, :not_configured}` without credentials.
+  """
+  def search_igdb(query) when is_binary(query) do
+    with {:ok, %{body: externals}} <- Dockd.IGDB.search(query) do
+      ids = Enum.map(externals, & &1["id"])
+
+      local =
+        Repo.all(from g in Game, where: g.igdb_id in ^ids, preload: :releases)
+        |> Map.new(&{&1.igdb_id, &1})
+
+      results =
+        externals
+        |> Enum.map(fn external ->
+          releases = release_attributes(external)
+
+          %{
+            igdb_id: external["id"],
+            title: external["name"],
+            cover_url: cover_url(external),
+            platforms: releases |> Enum.map(& &1.platform) |> Enum.uniq() |> Enum.sort(),
+            year:
+              releases
+              |> Enum.map(& &1.release_date)
+              |> Enum.reject(&is_nil/1)
+              |> case do
+                [] -> nil
+                dates -> dates |> Enum.min(Date) |> Map.fetch!(:year)
+              end,
+            game: Map.get(local, external["id"])
+          }
+        end)
+        |> Enum.reject(&(&1.platforms == []))
+        |> Enum.sort_by(&{-(&1.year || 0), &1.title})
+
+      {:ok, results}
+    end
+  end
+
+  @doc "Imports an IGDB work into the catalog with its Nintendo releases, or returns the existing one."
+  def import_igdb(igdb_id) when is_integer(igdb_id) do
+    case get_game_by_igdb_id(igdb_id) do
+      %Game{} = game ->
+        {:ok, game}
+
+      nil ->
+        with true <- Dockd.IGDB.configured?() || {:error, :not_configured},
+             {:ok, %{body: [external]}} <- Dockd.IGDB.get_games([igdb_id]),
+             {:ok, game} <- create_game(import_attrs(external)) do
+          Enum.each(release_attributes(external), &create_release(game.id, &1))
+          {:ok, get_game!(game.id)}
+        else
+          {:ok, %{body: []}} -> {:error, :not_found}
+          {:error, reason} -> {:error, reason}
+        end
+    end
+  end
+
+  defp import_attrs(external) do
+    %{
+      title: external["name"],
+      igdb_id: external["id"],
+      availability: suggested_availability(external) || :multiplatform,
+      cover_url: cover_url(external),
+      developer: company(external, "developer"),
+      publisher: company(external, "publisher"),
+      synced_at: DateTime.utc_now()
+    }
+  end
+
   def match_igdb(opts \\ []) do
     if Dockd.IGDB.configured?() do
       dry_run = Keyword.get(opts, :dry_run, false)

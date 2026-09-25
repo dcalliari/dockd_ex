@@ -1,104 +1,383 @@
 defmodule DockdWeb.GameLive do
+  @moduledoc "Página do jogo: capa, um controle de status, versões com preço e o histórico."
   use DockdWeb, :live_view
 
-  alias Dockd.{Accounts, Catalog, Library}
+  alias Dockd.{Accounts, Activity, Catalog, Library, Purchasing}
+  alias Dockd.Library.Shelf
 
   @impl true
-  def mount(%{"id" => id} = params, _session, socket) do
-    game = Catalog.get_game!(id)
+  def mount(%{"id" => id}, _session, socket) do
     user = Accounts.default_owner()
-    return_context = return_context(Map.get(params, "from"))
+    game = Catalog.get_game!(id)
 
     {:ok,
-     assign(socket,
-       page_title: game.title,
-       game: game,
-       user: user,
-       entry: Library.get_entry_for_game(user, game.id),
-       return_to: return_context.path,
-       return_label: return_context.label
-     )}
+     socket
+     |> assign(page_title: game.title, user: user, game: game, panel: nil, form: nil)
+     |> load()}
+  end
+
+  defp load(socket) do
+    %{user: user, game: game} = socket.assigns
+    item = Shelf.item(user, game)
+
+    observations =
+      Map.new(item.releases, &{&1.id, Purchasing.latest_price_observation(user, &1.id)})
+
+    assign(socket,
+      item: item,
+      observations: observations,
+      history: history(user, item),
+      since: since(item)
+    )
+  end
+
+  # ---------------------------------------------------------------------------
+  # Status changes
+
+  @impl true
+  def handle_event("set_status", %{"status" => "quero"}, socket) do
+    socket.assigns.user
+    |> upsert_entry(socket.assigns.item, %{purchase_intent: :want, play_state: :unplayed})
+    |> after_change(socket)
+  end
+
+  def handle_event("set_status", %{"status" => "backlog"}, socket) do
+    if socket.assigns.item.ownerships == [] do
+      {:noreply, assign(socket, panel: :own)}
+    else
+      socket.assigns.user
+      |> upsert_entry(socket.assigns.item, %{play_state: :unplayed, purchase_intent: :none})
+      |> after_change(socket)
+    end
+  end
+
+  def handle_event("set_status", %{"status" => status}, socket)
+      when status in ~w(jogando zerado larguei) do
+    play_state = %{"jogando" => :playing, "zerado" => :finished, "larguei" => :abandoned}[status]
+
+    socket.assigns.user
+    |> upsert_entry(socket.assigns.item, %{play_state: play_state, purchase_intent: :none})
+    |> after_change(socket)
+  end
+
+  @media_types %{"physical" => :physical, "digital" => :digital}
+
+  def handle_event("own", %{"release_id" => release_id, "media" => media}, socket) do
+    %{user: user, item: item} = socket.assigns
+
+    with {:ok, _} <-
+           Library.create_ownership(user, %{
+             release_id: release_id,
+             ownership_type: Map.get(@media_types, media, :digital),
+             acquired_at: DateTime.utc_now()
+           }),
+         {:ok, _} <- upsert_entry(user, item, %{play_state: :unplayed, purchase_intent: :none}) do
+      {:noreply, socket |> assign(panel: nil) |> load()}
+    else
+      {:error, changeset} -> {:noreply, put_flash(socket, :error, error_message(changeset))}
+    end
+  end
+
+  def handle_event("cancel", _params, socket),
+    do: {:noreply, assign(socket, panel: nil, form: nil)}
+
+  # ---------------------------------------------------------------------------
+  # Prices and purchases, inline per release
+
+  def handle_event("price_form", %{"release_id" => release_id}, socket),
+    do: {:noreply, assign(socket, form: {:price, release_id}, panel: nil)}
+
+  def handle_event("buy_form", %{"release_id" => release_id}, socket),
+    do: {:noreply, assign(socket, form: {:buy, release_id}, panel: nil)}
+
+  def handle_event("save_price", %{"release_id" => release_id} = params, socket) do
+    with {:ok, cents} when is_integer(cents) <- parse_money(params["price"]),
+         {:ok, _} <-
+           Purchasing.create_price_observation(socket.assigns.user, %{
+             release_id: release_id,
+             format: params["format"] || "digital",
+             price_cents: cents,
+             observed_at: DateTime.utc_now(),
+             source: blank_to(params["source"], "eShop")
+           }) do
+      {:noreply, socket |> assign(form: nil) |> load()}
+    else
+      {:ok, nil} -> {:noreply, put_flash(socket, :error, "Informe o preço visto.")}
+      :error -> {:noreply, put_flash(socket, :error, "Preço inválido. Use 199,90.")}
+      {:error, changeset} -> {:noreply, put_flash(socket, :error, error_message(changeset))}
+    end
+  end
+
+  def handle_event("save_purchase", %{"release_id" => release_id} = params, socket) do
+    with {:ok, cents} when is_integer(cents) <- parse_money(params["price"]),
+         {:ok, _} <-
+           Purchasing.create_purchase(socket.assigns.user, %{
+             release_id: release_id,
+             format: params["format"] || "digital",
+             price_cents: cents,
+             purchased_at: DateTime.utc_now(),
+             retailer: blank_to(params["retailer"], "eShop")
+           }) do
+      {:noreply, socket |> assign(form: nil) |> load()}
+    else
+      {:ok, nil} -> {:noreply, put_flash(socket, :error, "Informe o preço pago.")}
+      :error -> {:noreply, put_flash(socket, :error, "Preço inválido. Use 199,90.")}
+      {:error, changeset} -> {:noreply, put_flash(socket, :error, error_message(changeset))}
+    end
+  end
+
+  defp upsert_entry(user, %Shelf{entry: nil, game: game}, attrs),
+    do: Library.create_entry(user, Map.put(attrs, :game_id, game.id))
+
+  defp upsert_entry(user, %Shelf{entry: entry}, attrs),
+    do: Library.update_entry(user, entry, attrs)
+
+  defp after_change({:ok, _}, socket), do: {:noreply, socket |> assign(panel: nil) |> load()}
+
+  defp after_change({:error, changeset}, socket),
+    do: {:noreply, put_flash(socket, :error, error_message(changeset))}
+
+  defp blank_to(value, default) when value in [nil, ""], do: default
+  defp blank_to(value, _default), do: value
+
+  defp error_message(%Ecto.Changeset{} = changeset) do
+    case Keyword.values(changeset.errors) do
+      [{message, _} | _] -> message
+      _ -> "Não foi possível salvar."
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Read model for the page
+
+  defp since(%Shelf{entry: nil}), do: nil
+  defp since(%Shelf{entry: entry}), do: entry.updated_at
+
+  defp history(user, %Shelf{game: game, ownerships: ownerships, releases: releases}) do
+    release_names = Map.new(releases, &{&1.id, enum_label(&1.platform)})
+
+    events =
+      user
+      |> Activity.list_events()
+      |> Enum.filter(&(&1.game_id == game.id))
+      |> Enum.map(&event_item(&1, release_names))
+      |> Enum.reject(&is_nil/1)
+
+    owned =
+      Enum.map(ownerships, fn o ->
+        %{
+          what: "Registrou a posse",
+          at: o.acquired_at,
+          who: [enum_label(o.ownership_type), release_names[o.release_id]]
+        }
+      end)
+
+    prices =
+      Enum.flat_map(releases, fn r ->
+        user
+        |> Purchasing.list_price_observations(r.id)
+        |> Enum.map(fn p ->
+          %{
+            what: "Viu o preço: #{money(p.price_cents, p.currency)}",
+            at: p.observed_at,
+            who: [p.source, enum_label(p.format), release_names[r.id]]
+          }
+        end)
+      end)
+
+    items = Enum.sort_by(events ++ owned ++ prices, & &1.at, {:desc, DateTime})
+
+    case Enum.find_index(items, & &1[:state]) do
+      nil -> items
+      index -> List.update_at(items, index, &Map.put(&1, :current, true))
+    end
+  end
+
+  @state_events %{
+    added: "Entrou na biblioteca",
+    started: "Começou a jogar",
+    resumed: "Voltou a jogar",
+    paused: "Pausou",
+    finished: "Zerou",
+    abandoned: "Largou"
+  }
+  @other_events %{purchased: "Comprou", vetoed: "Não quer esta versão"}
+
+  defp event_item(event, release_names) do
+    who = [release_names[event.release_id]]
+
+    cond do
+      what = @state_events[event.type] ->
+        %{what: what, at: event.occurred_at, who: who, state: true}
+
+      what = @other_events[event.type] ->
+        %{what: what, at: event.occurred_at, who: who}
+
+      true ->
+        nil
+    end
+  end
+
+  defp igdb_url(%{igdb_id: nil}), do: nil
+  defp igdb_url(%{slug: slug}), do: "https://www.igdb.com/games/#{slug}"
+
+  defp release_title(release) do
+    if release.edition in [nil, "", "Edição padrão"],
+      do: enum_label(release.platform),
+      else: "#{enum_label(release.platform)} · #{release.edition}"
+  end
+
+  defp ownership_for(item, release_id),
+    do: Enum.find(item.ownerships, &(&1.release_id == release_id))
+
+  defp exclusive?(game), do: game.availability in [:nintendo_exclusive, :switch2_exclusive]
+
+  defp default_price(observations, release_id) do
+    case observations[release_id] do
+      nil -> ""
+      observation -> observation.price_cents |> money() |> String.replace("R$ ", "")
+    end
   end
 
   @impl true
-  def handle_event("add_to_list", _params, socket) do
-    result =
-      case socket.assigns.entry do
-        nil ->
-          Library.create_entry(socket.assigns.user, %{
-            game_id: socket.assigns.game.id,
-            purchase_intent: :want
-          })
+  def render(assigns) do
+    ~H"""
+    <Layouts.app flash={@flash} current="Biblioteca" igdb_url={igdb_url(@game)}>
+      <p class="dk-back">
+        <.link id="game-back" navigate={~p"/"} class="dk-link">
+          <.icon name="hero-arrow-left" /> Biblioteca
+        </.link>
+      </p>
 
-        entry ->
-          Library.update_entry(socket.assigns.user, entry, %{purchase_intent: :want})
-      end
+      <section id="game-hero" class="dk-hero">
+        <div>
+          <.poster title={@game.title} cover_url={@game.cover_url} />
+          <.poster_caption
+            platforms={platform_label(@item.releases)}
+            exclusive={exclusive?(@game)}
+          />
+        </div>
+        <div class="dk-hero__text">
+          <h1 class="t-display">{@game.title}</h1>
+          <p id="game-meta" class="t-meta">{meta([@game.developer, @item.year])}</p>
 
-    case result do
-      {:ok, entry} -> {:noreply, assign(socket, entry: entry)}
-      {:error, changeset} -> {:noreply, put_flash(socket, :error, error_message(changeset))}
-    end
-  end
+          <.status_control
+            id={"status-control-#{@item.status}"}
+            status={@item.status}
+            since={@since}
+            options={if @item.ownerships == [], do: statuses(), else: statuses() -- [:quero]}
+          />
 
-  def handle_event("remove_from_list", _params, socket) do
-    case Library.update_entry(socket.assigns.user, socket.assigns.entry, %{purchase_intent: :none}) do
-      {:ok, entry} -> {:noreply, assign(socket, entry: entry)}
-      {:error, changeset} -> {:noreply, put_flash(socket, :error, error_message(changeset))}
-    end
-  end
+          <div :if={@panel == :own} id="own-panel" class="dk-hero__panel">
+            <span>Tem em qual versão?</span>
+            <.btn
+              :for={
+                {release, media} <- for(r <- @item.releases, m <- [:physical, :digital], do: {r, m})
+              }
+              size="sm"
+              phx-click="own"
+              phx-value-release_id={release.id}
+              phx-value-media={media}
+            >
+              {release_title(release)} · {enum_label(media)}
+            </.btn>
+            <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
+          </div>
 
-  defp return_context("list"), do: %{path: "/", label: "Lista"}
-  defp return_context("catalog"), do: %{path: "/catalogo", label: "Descobrir"}
-  defp return_context(_), do: %{path: "/catalogo", label: "Descobrir"}
+          <div :if={@item.status in [nil, :quero] and @item.releases != []} class="dk-hero__actions">
+            <.btn
+              id="buy-button"
+              variant="primary"
+              phx-click="buy_form"
+              phx-value-release_id={hd(@item.releases).id}
+            >
+              Comprei
+            </.btn>
+          </div>
+        </div>
+      </section>
 
-  defp relation?(nil), do: false
+      <.section_head title="Versões" count={length(@item.releases)} />
+      <div :for={release <- @item.releases} id={"release-#{release.id}"}>
+        <div class="dk-row dk-row--wide">
+          <.date_block date={release.release_date} precision={release.release_date_precision} />
+          <div>
+            <span class="dk-row__title">{release_title(release)}</span>
+            <div class="dk-row__meta">
+              <%= if ownership = ownership_for(@item, release.id) do %>
+                Tem · <.media_tag media={ownership.ownership_type} />
+                desde {date_pt_br(ownership.acquired_at)}
+              <% else %>
+                {meta([
+                  release.physical_available && "Físico",
+                  release.digital_available && "Digital",
+                  release.physical_is_key_card && "Key card"
+                ])}
+              <% end %>
+            </div>
+          </div>
+          <div class="dk-row__end">
+            <.price id={"price-#{release.id}"} observation={@observations[release.id]} />
+            <.btn size="sm" phx-click="price_form" phx-value-release_id={release.id}>
+              Registrar preço
+            </.btn>
+          </div>
+        </div>
 
-  defp relation?(%{purchase_intent: intent}),
-    do: intent in [:want, :planned, :preordered]
+        <form
+          :if={@form == {:price, release.id}}
+          id={"price-form-#{release.id}"}
+          class="dk-inline-form"
+          phx-submit="save_price"
+        >
+          <input type="hidden" name="release_id" value={release.id} />
+          <input
+            type="text"
+            name="price"
+            inputmode="decimal"
+            placeholder="199,90"
+            aria-label="Preço visto"
+            value={default_price(@observations, release.id)}
+            autofocus
+          />
+          <select name="format" aria-label="Mídia">
+            <option value="digital">Digital</option>
+            <option value="physical">Físico</option>
+          </select>
+          <input type="text" name="source" placeholder="eShop" aria-label="Onde viu" />
+          <.btn type="submit" size="sm" variant="primary">Salvar preço</.btn>
+          <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
+        </form>
 
-  defp platform_label(%{releases: releases}) do
-    releases
-    |> Enum.map(&enum_label(&1.platform))
-    |> Enum.uniq()
-    |> Enum.join(" · ")
-  end
+        <form
+          :if={@form == {:buy, release.id}}
+          id={"buy-form-#{release.id}"}
+          class="dk-inline-form"
+          phx-submit="save_purchase"
+        >
+          <input type="hidden" name="release_id" value={release.id} />
+          <input
+            type="text"
+            name="price"
+            inputmode="decimal"
+            placeholder="199,90"
+            aria-label="Preço pago"
+            value={default_price(@observations, release.id)}
+            autofocus
+          />
+          <select name="format" aria-label="Mídia">
+            <option value="digital">Digital</option>
+            <option value="physical">Físico</option>
+          </select>
+          <input type="text" name="retailer" placeholder="eShop" aria-label="Onde comprou" />
+          <.btn type="submit" size="sm" variant="primary">Comprei</.btn>
+          <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
+        </form>
+      </div>
 
-  defp release_date_label(%{release_date: nil}), do: "a definir"
-  defp release_date_label(%{release_date_precision: :tbd}), do: "a definir"
-
-  defp release_date_label(%{release_date_precision: :year, release_date: date}),
-    do: "#{date.year}"
-
-  defp release_date_label(%{release_date_precision: :month, release_date: date}) do
-    "#{month_label(date.month)} #{date.year}"
-  end
-
-  defp release_date_label(%{release_date_precision: :quarter, release_date: date}) do
-    "T#{div(date.month - 1, 3) + 1} #{date.year}"
-  end
-
-  defp release_date_label(%{release_date: date}), do: date_pt_br(date)
-
-  defp month_label(1), do: "jan"
-  defp month_label(2), do: "fev"
-  defp month_label(3), do: "mar"
-  defp month_label(4), do: "abr"
-  defp month_label(5), do: "mai"
-  defp month_label(6), do: "jun"
-  defp month_label(7), do: "jul"
-  defp month_label(8), do: "ago"
-  defp month_label(9), do: "set"
-  defp month_label(10), do: "out"
-  defp month_label(11), do: "nov"
-  defp month_label(12), do: "dez"
-
-  defp error_message(changeset) do
-    changeset.errors
-    |> Keyword.values()
-    |> List.first()
-    |> case do
-      {message, _} -> message
-      _ -> "Não foi possível atualizar a lista."
-    end
+      <.section_head :if={@history != []} title="Histórico" />
+      <.history :if={@history != []} id="game-history" items={@history} />
+    </Layouts.app>
+    """
   end
 end

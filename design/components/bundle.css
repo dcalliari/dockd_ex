@@ -32,8 +32,9 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-poster-caption { display: flex; justify-content: space-between; gap: var(--space-2); margin: var(--space-2) 0 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
 .dk-poster-caption__mark { color: var(--red-ink); }
 
-.dk-poster__veil { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--scrim); opacity: 0; transition: opacity 160ms; }
-.dk-poster:hover .dk-poster__veil, .dk-poster:focus-within .dk-poster__veil { opacity: 1; }
+/* O véu é irmão da capa dentro do cartão, nunca filho do link: o botão não pode navegar. */
+.dk-poster__veil { position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 3 / 4; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: var(--scrim); opacity: 0; transition: opacity 160ms; }
+.dk-card:hover > .dk-poster__veil, .dk-card:focus-within > .dk-poster__veil { opacity: 1; }
 .dk-tip { position: absolute; left: 50%; top: -32px; translate: -50% 0; z-index: 2; padding: 4px 8px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 12px; line-height: 16px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 120ms; }
 .dk-tip::after { content: ""; position: absolute; left: 50%; top: 100%; translate: -50% -4px; width: 8px; height: 8px; rotate: 45deg; background: var(--ink); }
 .dk-card--poster { position: relative; }
