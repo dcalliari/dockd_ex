@@ -165,7 +165,20 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .hero-text h1 { margin: 0; text-wrap: balance; }
 .hero-text p { margin: 0; color: var(--ink-muted); }
 .hero-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
-.since { margin-top: var(--space-1); }
+
+.hero-side { display: flex; flex-direction: column; gap: var(--space-2); }
+.poster-caption { display: flex; justify-content: space-between; gap: var(--space-2); margin: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.poster-caption__mark { color: var(--red-ink); }
+.status-tray { position: relative; display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); min-height: 22px; }
+.status-tray .dk-status { cursor: pointer; }
+.status-tray__since { color: var(--ink-muted); transition: opacity 120ms; }
+.status-tray__options { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: var(--space-2); padding-left: calc(var(--tray-offset, 88px)); opacity: 0; pointer-events: none; transition: opacity 120ms; }
+.status-tray__options .dk-status { opacity: .55; transition: opacity 120ms; }
+.status-tray__options .dk-status:hover, .status-tray__options .dk-status:focus-visible { opacity: 1; }
+.status-tray:hover .status-tray__options, .status-tray:focus-within .status-tray__options, .status-tray.is-open .status-tray__options { opacity: 1; pointer-events: auto; }
+.status-tray:hover .status-tray__since, .status-tray:focus-within .status-tray__since, .status-tray.is-open .status-tray__since { opacity: 0; }
+@media (hover: none) { .status-tray:hover:not(.is-open) .status-tray__options { opacity: 0; pointer-events: none; } .status-tray:hover:not(.is-open) .status-tray__since { opacity: 1; } }
+
 .history-head { margin-top: var(--space-6); }
 .history-row { display: grid; grid-template-columns: 96px 1fr; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--line); font-size: 15px; line-height: 22px; }
 .history-row .t-meta { color: var(--ink-muted); font-variant-numeric: tabular-nums; line-height: 22px; }
@@ -193,12 +206,15 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 <main class="page">
   <p class="back"><a class="dk-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>Biblioteca</a></p>
   <section class="hero">
-    <span class="dk-poster hero-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobd1q.jpg" alt=""></span>
+    <div class="hero-side"><span class="dk-poster hero-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobd1q.jpg" alt=""></span><p class="poster-caption"><span>Switch 2</span><span class="poster-caption__mark">Exclusivo</span></p></div>
     <div class="hero-text">
       <h1 class="t-display">Donkey Kong Bananza</h1>
-      <p class="t-meta">Nintendo EPD · 2025 · Exclusivo Switch 2</p>
-      <div class="hero-actions"><div class="dk-status-control"><button class="dk-status-control__button" type="button" aria-haspopup="menu" aria-expanded="false"><span class="dk-status dk-status--jogando">Jogando</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></button></div></div>
-      <p class="t-meta since">Jogando desde 22/09/2026 · <span class="dk-media">Físico</span></p>
+      <p class="t-meta">Nintendo EPD · 2025</p>
+      <div class="status-tray" data-tray>
+  <button type="button" class="dk-status dk-status--jogando status-tray__current" aria-haspopup="true" aria-expanded="false">Jogando</button>
+  <span class="t-meta status-tray__since">desde 22/09/2026</span>
+  <div class="status-tray__options" role="group" aria-label="Mudar status"><button type="button" class="dk-status dk-status--quero">Quero</button><button type="button" class="dk-status dk-status--backlog">Backlog</button><button type="button" class="dk-status dk-status--zerado">Zerado</button><button type="button" class="dk-status dk-status--larguei">Larguei</button></div>
+</div>
     </div>
   </section>
   <div class="dk-section"><h2>Versões<span>1</span></h2></div>
@@ -217,12 +233,16 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 <main class="page">
   <p class="back"><a class="dk-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>Biblioteca</a></p>
   <section class="hero">
-    <span class="dk-poster hero-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobebu.jpg" alt=""></span>
+    <div class="hero-side"><span class="dk-poster hero-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobebu.jpg" alt=""></span><p class="poster-caption"><span>Switch · Switch 2</span></p></div>
     <div class="hero-text">
       <h1 class="t-display">Hollow Knight: Silksong</h1>
-      <p class="t-meta">Team Cherry · 2025 · Multiplataforma</p>
-      <div class="hero-actions"><div class="dk-status-control"><button class="dk-status-control__button" type="button" aria-haspopup="menu" aria-expanded="false"><span class="dk-status dk-status--quero">Quero</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></button></div><button class="dk-btn dk-btn--primary">Comprei</button></div>
-      <p class="t-meta since">Na lista desde 14/09/2026</p>
+      <p class="t-meta">Team Cherry · 2025</p>
+      <div class="status-tray" data-tray>
+  <button type="button" class="dk-status dk-status--quero status-tray__current" aria-haspopup="true" aria-expanded="false">Quero</button>
+  <span class="t-meta status-tray__since">desde 14/09/2026</span>
+  <div class="status-tray__options" role="group" aria-label="Mudar status"><button type="button" class="dk-status dk-status--backlog">Backlog</button><button type="button" class="dk-status dk-status--jogando">Jogando</button><button type="button" class="dk-status dk-status--zerado">Zerado</button><button type="button" class="dk-status dk-status--larguei">Larguei</button></div>
+</div>
+      <div class="hero-actions"><button class="dk-btn dk-btn--primary">Comprei</button></div>
     </div>
   </section>
   <div class="dk-section"><h2>Versões<span>2</span></h2></div>
@@ -232,5 +252,16 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
   <p class="t-meta credit">Dados de jogos por <a href="https://www.igdb.com">IGDB</a></p>
 </main>
 <nav class="dk-bottomnav" aria-label="Principal"><a href="#" aria-current="page">Biblioteca</a><a href="#">Comprar</a><a href="#">Descobrir</a></nav>
+<script>
+document.querySelectorAll('[data-tray]').forEach(function (t) {
+  var cur = t.querySelector('.status-tray__current');
+  t.querySelector('.status-tray__options').style.paddingLeft = (cur.offsetWidth + 8) + 'px';
+  cur.addEventListener('click', function () { var o = t.classList.toggle('is-open'); cur.setAttribute('aria-expanded', o); });
+  t.querySelectorAll('.status-tray__options .dk-status').forEach(function (b) { b.addEventListener('click', function () {
+    var cls = Array.prototype.find.call(b.classList, function (c) { return c.indexOf('dk-status--') === 0; });
+    cur.className = 'dk-status ' + cls + ' status-tray__current'; cur.textContent = b.textContent; t.classList.remove('is-open'); cur.setAttribute('aria-expanded', 'false');
+    b.className = b.className; }); });
+});
+</script>
 </body>
 </html>
