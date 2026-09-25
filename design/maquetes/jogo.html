@@ -180,8 +180,15 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 @media (hover: none) { .status-tray:hover:not(.is-open) .status-tray__options { opacity: 0; pointer-events: none; } .status-tray:hover:not(.is-open) .status-tray__since { opacity: 1; } }
 
 .history-head { margin-top: var(--space-6); }
-.history-row { display: grid; grid-template-columns: 96px 1fr; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--line); font-size: 15px; line-height: 22px; }
-.history-row .t-meta { color: var(--ink-muted); font-variant-numeric: tabular-nums; line-height: 22px; }
+.diary-month { margin: 0 0 var(--space-1); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.diary-row { display: grid; grid-template-columns: 44px 96px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }
+.diary-day { font-size: 20px; line-height: 24px; font-weight: 800; letter-spacing: -0.02em; font-stretch: 90%; font-variant-numeric: tabular-nums; color: var(--ink); }
+.diary-mark { display: flex; }
+.diary-mark .dk-price b { font-size: 13px; line-height: 18px; }
+.diary-text { font-size: 15px; line-height: 22px; }
+.diary-end { color: var(--ink-muted); white-space: nowrap; }
+@media (max-width: 767px) { .diary-row { grid-template-columns: 32px 88px minmax(0, 1fr); } .diary-end { display: none; } .diary-day { font-size: 16px; } }
+
 .credit { margin: var(--space-7) 0 0; color: var(--ink-muted); }
 .credit a { text-decoration: underline; text-underline-offset: 3px; }
 .divider { margin: var(--space-7) 0 0; padding: var(--space-2) var(--space-4); background: var(--surface-raised); color: var(--ink-muted); font-size: 12px; text-align: center; }
@@ -220,7 +227,7 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
   <div class="dk-section"><h2>Versões<span>1</span></h2></div>
   <div class="dk-row"><span class="dk-date"><b>17</b><small>jul</small></span><div><div class="dk-row__title">Switch 2</div><div class="dk-row__meta">Tem · <span class="dk-media">Físico</span> desde 14/09/2026</div></div><div class="dk-row__end"><span class="dk-price"><b>R$ 350,00</b><small>visto em 22/09/2026 · OLX</small></span><button class="dk-btn dk-btn--secondary dk-btn--sm">Registrar preço</button></div></div>
   <div class="dk-section history-head"><h2>Histórico</h2></div>
-  <div class="history-row"><span class="t-meta">22/09/2026</span><span>Começou a jogar</span></div><div class="history-row"><span class="t-meta">14/09/2026</span><span>Registrou a posse, físico</span></div><div class="history-row"><span class="t-meta">14/09/2026</span><span>Adicionado à biblioteca</span></div>
+<p class="diary-month">Setembro 2026</p><div class="diary-row"><span class="diary-day">22</span><span class="diary-mark"><span class="dk-status dk-status--jogando">Jogando</span></span><span class="diary-text">Começou a jogar</span><span class="diary-end t-meta">Switch 2</span></div><div class="diary-row"><span class="diary-day">22</span><span class="diary-mark"><span class="dk-price"><b>R$ 350,00</b></span></span><span class="diary-text">Viu o preço na OLX</span><span class="diary-end t-meta">Switch 2 · físico</span></div><div class="diary-row"><span class="diary-day">14</span><span class="diary-mark"><span class="dk-media">Físico</span></span><span class="diary-text">Registrou a posse</span><span class="diary-end t-meta">Switch 2</span></div><div class="diary-row"><span class="diary-day">14</span><span class="diary-mark"><span class="dk-status dk-status--backlog">Backlog</span></span><span class="diary-text">Entrou na biblioteca</span><span class="diary-end t-meta"></span></div>
   <p class="t-meta credit">Dados de jogos por <a href="https://www.igdb.com">IGDB</a></p>
 </main>
 <p class="divider">Segundo exemplo da mesma tela: jogo em Quero, sem posse</p>
@@ -248,7 +255,7 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
   <div class="dk-section"><h2>Versões<span>2</span></h2></div>
   <div class="dk-row"><span class="dk-date"><b>04</b><small>set</small></span><div><div class="dk-row__title">Switch 2</div><div class="dk-row__meta"><span class="dk-media">Digital</span></div></div><div class="dk-row__end"><span class="dk-price dk-price--none"><b>Sem preço</b></span><button class="dk-btn dk-btn--secondary dk-btn--sm">Registrar preço</button></div></div><div class="dk-row"><span class="dk-date"><b>04</b><small>set</small></span><div><div class="dk-row__title">Switch</div><div class="dk-row__meta"><span class="dk-media">Digital</span></div></div><div class="dk-row__end"><span class="dk-price dk-price--none"><b>Sem preço</b></span><button class="dk-btn dk-btn--secondary dk-btn--sm">Registrar preço</button></div></div>
   <div class="dk-section history-head"><h2>Histórico</h2></div>
-  <div class="history-row"><span class="t-meta">14/09/2026</span><span>Adicionado à lista</span></div>
+<p class="diary-month">Setembro 2026</p><div class="diary-row"><span class="diary-day">14</span><span class="diary-mark"><span class="dk-status dk-status--quero">Quero</span></span><span class="diary-text">Entrou na lista</span><span class="diary-end t-meta"></span></div>
   <p class="t-meta credit">Dados de jogos por <a href="https://www.igdb.com">IGDB</a></p>
 </main>
 <nav class="dk-bottomnav" aria-label="Principal"><a href="#" aria-current="page">Biblioteca</a><a href="#">Comprar</a><a href="#">Descobrir</a></nav>
