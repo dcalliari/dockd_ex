@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jogo · dockd.</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
+<style>
+:root, [data-theme="light"]{--surface:#ffffff;--surface-raised:#f4f2f1;--surface-sunken:#ebe8e6;--line:#dedad8;--line-strong:#8f8886;--ink:#161414;--ink-muted:#6a6462;--on-ink:#ffffff;--red:#e60012;--red-hover:#cc0010;--on-red:#ffffff;--red-ink:#d4000f;--warn:#9a5b00;--poster-edge:#0000001f;--focus-ring:var(--red-ink);}
+[data-theme="dark"]{--surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink);}
+:root{--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--radius-sm:3px;--radius-md:6px;--radius-full:999px;--container-max:1120px;--nav-height:56px;--control-height:36px;--thumb-height:44px;--cover-ratio:3 / 4;--cover-min:140px;--font-sans:"Archivo", "Helvetica Neue", Arial, sans-serif;}
+.t-wordmark{font-family:var(--font-sans);font-size:22px;line-height:24px;font-weight:900;letter-spacing:-0.02em;}
+.t-display{font-family:var(--font-sans);font-size:32px;line-height:36px;font-weight:800;letter-spacing:-0.02em;}
+.t-heading{font-family:var(--font-sans);font-size:14px;line-height:18px;font-weight:700;}
+.t-control{font-family:var(--font-sans);font-size:14px;line-height:20px;font-weight:600;}
+.t-body{font-family:var(--font-sans);font-size:15px;line-height:22px;font-weight:400;}
+.t-meta{font-family:var(--font-sans);font-size:12px;line-height:16px;font-weight:400;}
+.t-label{font-family:var(--font-sans);font-size:11px;line-height:16px;font-weight:700;letter-spacing:0.08em;}
+.t-num{font-family:var(--font-sans);font-size:15px;line-height:20px;font-weight:600;}
+.t-num-lg{font-family:var(--font-sans);font-size:20px;line-height:24px;font-weight:800;letter-spacing:-0.02em;}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink); } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+body { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+img { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* type: width axes and numerals the token classes cannot carry */
+.t-wordmark { font-stretch: 125%; }
+.t-display { font-stretch: 110%; }
+.t-label, .t-num-lg { font-stretch: 90%; }
+.t-label { text-transform: uppercase; }
+.t-num, .t-num-lg { font-variant-numeric: tabular-nums; }
+
+.dk-preview { padding: var(--space-4); }
+.dk-stack { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+
+/* Poster */
+.dk-poster { position: relative; display: block; aspect-ratio: 3 / 4; width: 100%; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-sunken); }
+.dk-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dk-poster::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--poster-edge); pointer-events: none; transition: box-shadow 120ms; }
+a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 0 0 0 2px var(--red); }
+.dk-poster--empty { display: flex; align-items: flex-end; padding: var(--space-2); color: var(--ink-muted); font-size: 12px; line-height: 16px; font-weight: 600; }
+.dk-poster__status { position: absolute; left: var(--space-2); top: var(--space-2); z-index: 1; }
+.dk-poster--sm { width: 33px; height: var(--thumb-height); border-radius: var(--radius-sm); }
+
+/* StatusChip */
+.dk-status { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
+.dk-status--sm { height: 18px; padding: 0 6px; font-size: 10px; letter-spacing: .06em; }
+.dk-status--quero { border-color: var(--red-ink); color: var(--red-ink); background: var(--surface); }
+.dk-status--backlog { background: var(--ink); color: var(--on-ink); }
+.dk-status--jogando { background: var(--red); color: var(--on-red); }
+.dk-status--zerado { background: var(--surface-sunken); color: var(--ink); }
+.dk-status--larguei { border-color: var(--line-strong); color: var(--ink-muted); background: var(--surface); }
+
+/* StatusControl: the current chip as a button, plus a menu of the five */
+.dk-status-control { position: relative; display: inline-block; }
+.dk-status-control__button { display: inline-flex; align-items: center; gap: var(--space-2); height: var(--control-height); padding: 0 var(--space-2) 0 var(--space-3); border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); transition: background-color 120ms; }
+.dk-status-control__button:hover { background: var(--surface-raised); }
+.dk-status-control__button svg { width: 16px; height: 16px; color: var(--ink-muted); }
+.dk-status-control__menu { position: absolute; left: 0; top: calc(100% + var(--space-1)); z-index: 2; min-width: 180px; margin: 0; padding: var(--space-1) 0; list-style: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
+.dk-status-control__menu button { display: flex; width: 100%; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink); text-align: left; }
+.dk-status-control__menu button:hover { background: var(--surface-sunken); }
+.dk-status-control__menu button[aria-checked="true"] { color: var(--ink); }
+.dk-status-control__menu .dk-status { width: 78px; justify-content: center; }
+.dk-status-control__menu small { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--ink-muted); }
+
+/* MediaTag */
+.dk-media { display: inline-flex; align-items: center; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); white-space: nowrap; }
+
+/* Button */
+.dk-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; transition: background-color 120ms, border-color 120ms, color 120ms; }
+.dk-btn--primary { background: var(--red); border-color: var(--red); color: var(--on-red); }
+.dk-btn--primary:hover { background: var(--red-hover); border-color: var(--red-hover); }
+.dk-btn--secondary { border-color: var(--line-strong); color: var(--ink); background: var(--surface); }
+.dk-btn--secondary:hover { background: var(--surface-raised); }
+.dk-btn--sm { height: 28px; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; }
+.dk-btn[disabled] { opacity: .45; cursor: default; }
+.dk-link { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--red-ink); }
+.dk-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Tabs */
+.dk-tabs { display: flex; gap: var(--space-5); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.dk-tab { position: relative; display: inline-flex; align-items: baseline; gap: 6px; padding: var(--space-2) 0 10px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; transition: color 120ms; }
+.dk-tab:hover { color: var(--ink); }
+.dk-tab[aria-selected="true"] { color: var(--ink); }
+.dk-tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--red); }
+.dk-tab__count { font-size: 12px; line-height: 16px; font-weight: 400; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+
+/* NavBar (top) and BottomNav (phone) */
+.dk-nav { height: var(--nav-height); display: flex; align-items: center; gap: var(--space-5); padding: 0 var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
+.dk-wordmark { font-size: 22px; line-height: 24px; font-weight: 900; font-stretch: 125%; letter-spacing: -0.02em; color: var(--ink); }
+.dk-wordmark i { font-style: normal; color: var(--red); }
+.dk-nav__links { display: flex; gap: var(--space-4); }
+.dk-nav__link { padding: 4px 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-bottom: 2px solid transparent; transition: color 120ms; }
+.dk-nav__link:hover { color: var(--ink); }
+.dk-nav__link[aria-current="page"] { color: var(--ink); border-bottom-color: var(--red); }
+.dk-nav__search { margin-left: auto; width: 240px; }
+.dk-nav__icon { margin-left: auto; display: inline-flex; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--ink); }
+.dk-nav__icon svg { width: 20px; height: 20px; }
+.dk-bottomnav { height: var(--nav-height); display: flex; align-items: stretch; background: var(--surface); border-top: 1px solid var(--line); }
+.dk-bottomnav a { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-top: 2px solid transparent; margin-top: -1px; }
+.dk-bottomnav a[aria-current="page"] { color: var(--ink); border-top-color: var(--red); }
+
+/* SearchField */
+.dk-search { position: relative; }
+.dk-search input { width: 100%; height: var(--control-height); padding: 0 var(--space-3) 0 36px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; }
+.dk-search input::placeholder { color: var(--ink-muted); }
+.dk-search svg { position: absolute; left: 12px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--ink-muted); pointer-events: none; }
+
+/* GameCard + grid */
+.dk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--space-4) var(--space-3); }
+@media (min-width: 768px) { .dk-grid { grid-template-columns: repeat(auto-fill, minmax(var(--cover-min), 1fr)); } }
+.dk-card { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.dk-card__title { font-size: 14px; line-height: 18px; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.dk-card__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-card__text { display: flex; flex-direction: column; gap: 2px; }
+
+/* GameRow */
+.dk-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }
+.dk-row > :first-child { justify-self: start; }
+.dk-row__title { font-size: 14px; line-height: 18px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-row__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-row__end { display: flex; align-items: center; gap: var(--space-3); justify-self: end; }
+
+/* DateBlock */
+.dk-date { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: var(--thumb-height); height: var(--thumb-height); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--ink); font-stretch: 90%; }
+.dk-date b { font-size: 20px; line-height: 24px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.dk-date small { font-size: 10px; line-height: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
+.dk-date--month b { font-size: 13px; line-height: 16px; letter-spacing: .06em; text-transform: uppercase; }
+.dk-date--year b { font-size: 15px; line-height: 20px; }
+.dk-date--soon { background: var(--red); color: var(--on-red); }
+.dk-date--soon small { color: var(--on-red); }
+
+/* Price */
+.dk-price { display: inline-flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.dk-price b { font-size: 15px; line-height: 20px; font-weight: 600; }
+.dk-price small { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-price--stale small { color: var(--warn); }
+.dk-price--none b { font-weight: 400; color: var(--ink-muted); }
+
+/* EmptyState */
+.dk-empty { margin: 0; padding: var(--space-6) 0; font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+.dk-empty a { color: var(--red-ink); font-weight: 600; }
+
+/* SectionHead */
+.dk-section { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); margin-bottom: var(--space-3); }
+.dk-section h2 { margin: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.dk-section h2 span { margin-left: 6px; font-weight: 400; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.dk-section a { font-size: 14px; line-height: 16px; font-weight: 600; color: var(--red-ink); }
+
+.page { width: min(100%, var(--container-max)); margin: 0 auto; padding: 0 var(--space-4) var(--space-7); }
+@media (min-width: 768px) { .page { padding-inline: var(--space-5); } }
+.back { margin: var(--space-4) 0 var(--space-5); }
+.hero { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: var(--space-4); align-items: start; margin-bottom: var(--space-6); }
+@media (min-width: 768px) { .hero { grid-template-columns: 180px minmax(0, 1fr); gap: var(--space-5); } }
+.hero-poster { width: 100%; }
+.hero-text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.hero-text h1 { margin: 0; text-wrap: balance; }
+.hero-text p { margin: 0; color: var(--ink-muted); }
+.hero-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.since { margin-top: var(--space-1); }
+.history-head { margin-top: var(--space-6); }
+.history-row { display: grid; grid-template-columns: 96px 1fr; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--line); font-size: 15px; line-height: 22px; }
+.history-row .t-meta { color: var(--ink-muted); font-variant-numeric: tabular-nums; line-height: 22px; }
+.credit { margin: var(--space-7) 0 0; color: var(--ink-muted); }
+.credit a { text-decoration: underline; text-underline-offset: 3px; }
+.divider { margin: var(--space-7) 0 0; padding: var(--space-2) var(--space-4); background: var(--surface-raised); color: var(--ink-muted); font-size: 12px; text-align: center; }
+.dk-bottomnav { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; padding-bottom: env(safe-area-inset-bottom, 0px); }
+@media (max-width: 767px) {
+  .dk-nav__links, .dk-nav__search { display: none; }
+  .dk-bottomnav { display: flex; }
+  .page { padding-bottom: calc(var(--nav-height) + var(--space-5)); }
+  .dk-row { grid-template-columns: 44px minmax(0, 1fr); }
+  .dk-row__end { grid-column: 2; justify-self: stretch; justify-content: space-between; }
+}
+@media (min-width: 768px) { .dk-nav__icon { display: none; } }
+</style>
+</head>
+<body>
+<header class="dk-nav">
+  <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+  <nav class="dk-nav__links" aria-label="Principal"><a class="dk-nav__link" href="#" aria-current="page">Biblioteca</a><a class="dk-nav__link" href="#">Comprar</a><a class="dk-nav__link" href="#">Descobrir</a></nav>
+  <form class="dk-search dk-nav__search" role="search" onsubmit="return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" placeholder="Buscar jogo" aria-label="Buscar jogo"></form>
+  <button class="dk-nav__icon" type="button" aria-label="Buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></button>
+</header>
+<main class="page">
+  <p class="back"><a class="dk-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>Biblioteca</a></p>
+  <section class="hero">
+    <span class="dk-poster hero-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobd1q.jpg" alt=""></span>
+    <div class="hero-text">
+      <h1 class="t-display">Donkey Kong Bananza</h1>
+      <p class="t-meta">Nintendo EPD · 2025 · Exclusivo Switch 2</p>
+      <div class="hero-actions"><div class="dk-status-control"><button class="dk-status-control__button" type="button" aria-haspopup="menu" aria-expanded="false"><span class="dk-status dk-status--jogando">Jogando</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></button></div></div>
+      <p class="t-meta since">Jogando desde 22/09/2026 · <span class="dk-media">Físico</span></p>
+    </div>
+  </section>
+  <div class="dk-section"><h2>Versões<span>1</span></h2></div>
+  <div class="dk-row"><span class="dk-date"><b>17</b><small>jul</small></span><div><div class="dk-row__title">Switch 2</div><div class="dk-row__meta">Tem · <span class="dk-media">Físico</span> desde 14/09/2026</div></div><div class="dk-row__end"><span class="dk-price"><b>R$ 350,00</b><small>visto em 22/09/2026 · OLX</small></span><button class="dk-btn dk-btn--secondary dk-btn--sm">Registrar preço</button></div></div>
+  <div class="dk-section history-head"><h2>Histórico</h2></div>
+  <div class="history-row"><span class="t-meta">22/09/2026</span><span>Começou a jogar</span></div><div class="history-row"><span class="t-meta">14/09/2026</span><span>Registrou a posse, físico</span></div><div class="history-row"><span class="t-meta">14/09/2026</span><span>Adicionado à biblioteca</span></div>
+  <p class="t-meta credit">Dados de jogos por <a href="https://www.igdb.com">IGDB</a></p>
+</main>
+<p class="divider">Segundo exemplo da mesma tela: jogo em Quero, sem posse</p>
+<header class="dk-nav">
+  <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+  <nav class="dk-nav__links" aria-label="Principal"><a class="dk-nav__link" href="#" aria-current="page">Biblioteca</a><a class="dk-nav__link" href="#">Comprar</a><a class="dk-nav__link" href="#">Descobrir</a></nav>
+  <form class="dk-search dk-nav__search" role="search" onsubmit="return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" placeholder="Buscar jogo" aria-label="Buscar jogo"></form>
+  <button class="dk-nav__icon" type="button" aria-label="Buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></button>
+</header>
+<main class="page">
+  <p class="back"><a class="dk-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>Biblioteca</a></p>
+  <section class="hero">
+    <span class="dk-poster hero-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobebu.jpg" alt=""></span>
+    <div class="hero-text">
+      <h1 class="t-display">Hollow Knight: Silksong</h1>
+      <p class="t-meta">Team Cherry · 2025 · Multiplataforma</p>
+      <div class="hero-actions"><div class="dk-status-control"><button class="dk-status-control__button" type="button" aria-haspopup="menu" aria-expanded="false"><span class="dk-status dk-status--quero">Quero</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></button></div><button class="dk-btn dk-btn--primary">Comprei</button></div>
+      <p class="t-meta since">Na lista desde 14/09/2026</p>
+    </div>
+  </section>
+  <div class="dk-section"><h2>Versões<span>2</span></h2></div>
+  <div class="dk-row"><span class="dk-date"><b>04</b><small>set</small></span><div><div class="dk-row__title">Switch 2</div><div class="dk-row__meta"><span class="dk-media">Digital</span></div></div><div class="dk-row__end"><span class="dk-price dk-price--none"><b>Sem preço</b></span><button class="dk-btn dk-btn--secondary dk-btn--sm">Registrar preço</button></div></div><div class="dk-row"><span class="dk-date"><b>04</b><small>set</small></span><div><div class="dk-row__title">Switch</div><div class="dk-row__meta"><span class="dk-media">Digital</span></div></div><div class="dk-row__end"><span class="dk-price dk-price--none"><b>Sem preço</b></span><button class="dk-btn dk-btn--secondary dk-btn--sm">Registrar preço</button></div></div>
+  <div class="dk-section history-head"><h2>Histórico</h2></div>
+  <div class="history-row"><span class="t-meta">14/09/2026</span><span>Adicionado à lista</span></div>
+  <p class="t-meta credit">Dados de jogos por <a href="https://www.igdb.com">IGDB</a></p>
+</main>
+<nav class="dk-bottomnav" aria-label="Principal"><a href="#" aria-current="page">Biblioteca</a><a href="#">Comprar</a><a href="#">Descobrir</a></nav>
+</body>
+</html>
