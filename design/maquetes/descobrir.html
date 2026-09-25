@@ -178,8 +178,9 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-card--poster { position: relative; gap: var(--space-2); }
 .dk-poster__overlay { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; padding: var(--space-2); background: var(--scrim); opacity: 0; transition: opacity 120ms; }
 .dk-poster:hover .dk-poster__overlay, .dk-poster:focus-within .dk-poster__overlay { opacity: 1; }
-.dk-tip { position: absolute; left: 50%; bottom: calc(100% + 8px); translate: -50% 0; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 1px; max-width: 220px; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 12px; line-height: 16px; text-align: center; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 120ms; }
-.dk-tip b { font-weight: 700; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.dk-tip { position: absolute; left: 50%; bottom: calc(100% + 8px); translate: -50% 0; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 1px; max-width: 220px; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 12px; line-height: 16px; text-align: center; opacity: 0; pointer-events: none; transition: opacity 120ms; }
+.dk-tip b { font-weight: 700; }
+.dk-tip span { white-space: nowrap; }
 .dk-tip::after { content: ""; position: absolute; left: 50%; top: 100%; translate: -50% -4px; width: 8px; height: 8px; rotate: 45deg; background: var(--ink); }
 .dk-card--poster:hover .dk-tip, .dk-card--poster:focus-within .dk-tip { opacity: 1; }
 .dk-card__action--touch { display: none; }
