@@ -61,8 +61,9 @@ defmodule DockdWeb.LibraryLiveTest do
     assert has_element?(view, "#shelf-#{ctx.owned.id}")
     refute has_element?(view, "#shelf-#{ctx.wanted.id}")
 
-    view |> element("#library-filters") |> render_change(%{"plat" => "switch_2"})
+    view |> element("#filter-plat a", "Switch 2") |> render_click()
     assert_patch(view, "/?plat=switch_2&tab=backlog")
+    assert has_element?(view, "#filter-plat.dk-filter--active summary b", "Switch 2")
     assert has_element?(view, "#library-empty", "Nada aqui.")
 
     {:ok, view, _html} = live(conn, "/?media=physical")
@@ -70,14 +71,11 @@ defmodule DockdWeb.LibraryLiveTest do
     refute has_element?(view, "#shelf-#{ctx.owned.id}")
   end
 
-  test "searches by title from the navigation bar", %{conn: conn} = ctx do
+  test "the navigation search always goes to Descobrir", %{conn: conn} do
     {:ok, view, _html} = live(conn, "/")
 
-    view |> element("form[role=search]") |> render_change(%{"q" => "hollow"})
-
-    assert_patch(view, "/?q=hollow")
-    assert has_element?(view, "#shelf-#{ctx.owned.id}")
-    refute has_element?(view, "#shelf-#{ctx.wanted.id}")
+    assert has_element?(view, "#nav-search-form[action='/descobrir']")
+    refute has_element?(view, "#nav-search-form[phx-change]")
   end
 
   test "has no theme toggle and no sidebar", %{conn: conn} do

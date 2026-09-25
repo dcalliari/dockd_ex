@@ -106,21 +106,19 @@ defmodule Dockd.Library.Shelf do
   @doc """
   Filters and sorts items by the Biblioteca controls.
 
-  Keys: `"tab"`, `"plat"` (switch or switch_2), `"media"` (physical or digital),
-  `"q"` (title search) and `"sort"` (`titulo` or `lancamento`).
+  Keys: `"tab"`, `"plat"` (switch or switch_2), `"media"` (physical or digital)
+  and `"sort"` (`titulo` or `lancamento`). Title search lives in Descobrir.
   """
   def filter(items, params) do
     tab = Map.get(params, "tab", "todos")
     plat = Map.get(params, "plat", "")
     media = Map.get(params, "media", "")
-    q = params |> Map.get("q", "") |> String.trim() |> String.downcase()
 
     items
     |> Enum.filter(fn item ->
       (tab in ["", "todos"] or Atom.to_string(item.status) == tab) and
         (plat == "" or plat in Enum.map(item.platforms, &Atom.to_string/1)) and
-        (media == "" or Enum.any?(item.ownerships, &(Atom.to_string(&1.ownership_type) == media))) and
-        (q == "" or String.contains?(String.downcase(item.game.title), q))
+        (media == "" or Enum.any?(item.ownerships, &(Atom.to_string(&1.ownership_type) == media)))
     end)
     |> sort(Map.get(params, "sort", "titulo"))
   end

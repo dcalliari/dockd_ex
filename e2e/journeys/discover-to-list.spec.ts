@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("a new game goes from Descobrir to the Biblioteca as Quero and can be started", async ({ page }) => {
   await page.goto("/descobrir");
-  await page.getByLabel("Buscar no catálogo").fill("Discovery Candidate");
+  await page.locator("#nav-search").fill("Discovery Candidate");
   const results = page.getByTestId("discover-results").or(page.locator("#discover-results"));
   const candidate = results.locator(".dk-card").filter({ hasText: "Discovery Candidate" });
   await expect(candidate).toBeVisible();

@@ -139,7 +139,10 @@ defmodule DockdWeb.DockdComponents do
 
   attr :current, :string, default: nil
   attr :search, :string, default: ""
-  attr :search_live, :boolean, default: false, doc: "true when the LiveView filters on change"
+
+  attr :search_live, :boolean,
+    default: false,
+    doc: "true on Descobrir, where the same field searches as you type"
 
   def nav_bar(assigns) do
     ~H"""
@@ -156,12 +159,12 @@ defmodule DockdWeb.DockdComponents do
         </.link>
       </nav>
       <form
-        :if={@search_live}
         id="nav-search-form"
         class="dk-search dk-nav__search"
         role="search"
-        phx-change="search"
-        phx-submit="search"
+        action={if(!@search_live, do: "/descobrir")}
+        phx-change={if(@search_live, do: "search")}
+        phx-submit={if(@search_live, do: "search")}
       >
         <.icon name="hero-magnifying-glass" />
         <input
@@ -169,35 +172,18 @@ defmodule DockdWeb.DockdComponents do
           type="search"
           name="q"
           value={@search}
-          placeholder="Buscar jogo"
-          aria-label="Buscar jogo"
+          placeholder="Buscar no catálogo"
+          aria-label="Buscar no catálogo"
           autocomplete="off"
-          phx-debounce="250"
-        />
-      </form>
-      <form
-        :if={!@search_live}
-        id="nav-search-form"
-        class="dk-search dk-nav__search"
-        role="search"
-        action="/descobrir"
-      >
-        <.icon name="hero-magnifying-glass" />
-        <input
-          id="nav-search"
-          type="search"
-          name="q"
-          value={@search}
-          placeholder="Buscar jogo"
-          aria-label="Buscar jogo"
-          autocomplete="off"
+          phx-debounce={if(@search_live, do: "300")}
+          autofocus={@search_live and @search == ""}
         />
       </form>
       <button
         id="nav-search-toggle"
         type="button"
         class="dk-nav__icon"
-        aria-label="Buscar"
+        aria-label="Buscar no catálogo"
         phx-hook="NavSearch"
       >
         <.icon name="hero-magnifying-glass" />
@@ -247,6 +233,53 @@ defmodule DockdWeb.DockdComponents do
         <span :if={tab[:count]} class="dk-tab__count">{tab.count}</span>
       </.link>
     </nav>
+    """
+  end
+
+  @doc """
+  One dropdown of the FilterBar: an uppercase label that opens a menu of links.
+
+  `options` is a list of `{value, label}` or `{value, label, count}`; the option whose
+  value equals `value` is current. `path` builds the patch target for a value.
+  """
+  attr :id, :string, required: true
+  attr :label, :string, required: true
+  attr :value, :string, default: ""
+  attr :options, :list, required: true
+  attr :path, :any, required: true, doc: "function from value to a patch path"
+  attr :prefix, :string, default: nil, doc: "a lowercase word before the label, like Ordenar por"
+  attr :align, :string, default: "start", values: ~w(start end)
+
+  def filter(assigns) do
+    current =
+      Enum.find(assigns.options, fn option -> elem(option, 0) == assigns.value end)
+
+    assigns = assign(assigns, current: current, active: assigns.value != "" and current != nil)
+
+    ~H"""
+    <details
+      id={@id}
+      class={["dk-filter", @active && "dk-filter--active", @align == "end" && "dk-filter--end"]}
+    >
+      <summary>
+        <small :if={@prefix}>{@prefix}</small>
+        <b :if={@active}>{elem(@current, 1)}</b>
+        <span :if={!@active}>{@label}</span>
+        <.icon name="hero-chevron-down" />
+      </summary>
+      <ul class="dk-filter__menu">
+        <li :for={option <- @options}>
+          <.link
+            patch={@path.(elem(option, 0))}
+            aria-current={to_string(elem(option, 0) == @value)}
+            phx-click={Phoenix.LiveView.JS.remove_attribute("open", to: "##{@id}")}
+          >
+            {elem(option, 1)}
+            <small :if={tuple_size(option) == 3}>{elem(option, 2)}</small>
+          </.link>
+        </li>
+      </ul>
+    </details>
     """
   end
 

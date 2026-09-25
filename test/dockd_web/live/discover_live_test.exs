@@ -23,7 +23,7 @@ defmodule DockdWeb.DiscoverLiveTest do
     {:ok, view, _html} = live(conn, "/descobrir")
     assert has_element?(view, "#discover-hint")
 
-    view |> form("#discover-search", %{"q" => "discovery"}) |> render_change()
+    view |> form("#nav-search-form", %{"q" => "discovery"}) |> render_change()
     assert_patch(view, "/descobrir?q=discovery")
 
     assert has_element?(view, "#discover-count", "2 jogos para “discovery”")

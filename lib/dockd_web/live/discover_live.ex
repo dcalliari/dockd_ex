@@ -106,28 +106,7 @@ defmodule DockdWeb.DiscoverLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current="Descobrir" search={@q}>
-      <form
-        id="discover-search"
-        class="dk-search dk-search--lg"
-        role="search"
-        phx-change="search"
-        phx-submit="search"
-      >
-        <.icon name="hero-magnifying-glass" />
-        <input
-          id="discover-q"
-          type="search"
-          name="q"
-          value={@q}
-          placeholder="Buscar no catálogo"
-          aria-label="Buscar no catálogo"
-          autocomplete="off"
-          phx-debounce="300"
-          autofocus
-        />
-      </form>
-
+    <Layouts.app flash={@flash} current="Descobrir" search={@q} search_live>
       <p :if={@q != ""} id="discover-count" class="dk-count">
         {count_label(length(@results))} para “{@q}”
       </p>
@@ -170,7 +149,7 @@ defmodule DockdWeb.DiscoverLive do
         Nenhum jogo com “{@q}” para Switch ou Switch 2.
       </.empty_state>
       <.empty_state :if={@q == ""} id="discover-hint">
-        Busque um jogo pelo título para acompanhar o lançamento ou marcar Quero.
+        Busque um jogo pelo título, na barra acima, para acompanhar o lançamento ou marcar Quero.
       </.empty_state>
     </Layouts.app>
     """
