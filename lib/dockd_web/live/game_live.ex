@@ -35,29 +35,20 @@ defmodule DockdWeb.GameLive do
   # Status changes
 
   @impl true
-  def handle_event("set_status", %{"status" => "quero"}, socket) do
-    socket.assigns.user
-    |> upsert_entry(socket.assigns.item, %{purchase_intent: :want, play_state: :unplayed})
-    |> after_change(socket)
-  end
+  def handle_event("set_status", %{"status" => status}, socket) do
+    status = Enum.find(statuses(), &(Atom.to_string(&1) == status))
 
-  def handle_event("set_status", %{"status" => "backlog"}, socket) do
-    if socket.assigns.item.ownerships == [] do
-      {:noreply, assign(socket, panel: :own)}
-    else
-      socket.assigns.user
-      |> upsert_entry(socket.assigns.item, %{play_state: :unplayed, purchase_intent: :none})
-      |> after_change(socket)
+    case Library.set_status(socket.assigns.user, socket.assigns.game, status) do
+      {:ok, _} -> {:noreply, socket |> assign(panel: nil) |> load()}
+      {:error, :needs_ownership} -> {:noreply, assign(socket, panel: :own)}
+      {:error, :owned} -> {:noreply, socket}
+      {:error, changeset} -> {:noreply, put_flash(socket, :error, error_message(changeset))}
     end
   end
 
-  def handle_event("set_status", %{"status" => status}, socket)
-      when status in ~w(jogando zerado larguei) do
-    play_state = %{"jogando" => :playing, "zerado" => :finished, "larguei" => :abandoned}[status]
-
-    socket.assigns.user
-    |> upsert_entry(socket.assigns.item, %{play_state: play_state, purchase_intent: :none})
-    |> after_change(socket)
+  def handle_event("remove", _params, socket) do
+    {:ok, :ok} = Library.remove_game(socket.assigns.user, socket.assigns.game)
+    {:noreply, push_navigate(socket, to: ~p"/")}
   end
 
   @media_types %{"physical" => :physical, "digital" => :digital}
@@ -131,11 +122,6 @@ defmodule DockdWeb.GameLive do
 
   defp upsert_entry(user, %Shelf{entry: entry}, attrs),
     do: Library.update_entry(user, entry, attrs)
-
-  defp after_change({:ok, _}, socket), do: {:noreply, socket |> assign(panel: nil) |> load()}
-
-  defp after_change({:error, changeset}, socket),
-    do: {:noreply, put_flash(socket, :error, error_message(changeset))}
 
   defp blank_to(value, default) when value in [nil, ""], do: default
   defp blank_to(value, _default), do: value
@@ -294,6 +280,17 @@ defmodule DockdWeb.GameLive do
               Comprei
             </.btn>
           </div>
+          <p :if={@item.status} class="t-meta" style="margin-top: var(--space-3)">
+            <button
+              id="remove-game"
+              type="button"
+              class="dk-link"
+              phx-click="remove"
+              data-confirm={"Tirar #{@game.title} da biblioteca?"}
+            >
+              Tirar da biblioteca
+            </button>
+          </p>
         </div>
       </section>
 

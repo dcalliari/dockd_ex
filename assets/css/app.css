@@ -208,8 +208,14 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-poster-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px var(--space-2); margin: var(--space-2) 0 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
 .dk-poster-caption__mark { color: var(--red-ink); }
 /* O véu é irmão da capa dentro do cartão, nunca filho do link: o botão não pode navegar. */
-.dk-poster__veil { position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 3 / 4; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: var(--scrim); opacity: 0; transition: opacity 160ms; }
+.dk-poster__veil { position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 3 / 4; border-radius: var(--radius-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-2); background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity 160ms; }
+.dk-poster__veil > * { pointer-events: auto; }
 .dk-card:hover > .dk-poster__veil, .dk-card:focus-within > .dk-poster__veil { opacity: 1; }
+.dk-quick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.dk-quick .dk-status { cursor: pointer; }
+.dk-quick .dk-status:hover { outline: 2px solid var(--on-red); outline-offset: 1px; }
+.dk-poster__veil .dk-remove { font-size: 12px; line-height: 16px; font-weight: 600; color: var(--on-red); text-decoration: underline; text-underline-offset: 3px; opacity: .85; }
+.dk-poster__veil .dk-remove:hover { opacity: 1; }
 
 /* StatusChip */
 .dk-status { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }

@@ -14,7 +14,7 @@ test("a new game goes from Descobrir to the Biblioteca as Quero and can be start
   await expect(card).toBeVisible();
   await expect(card.locator(".dk-status--quero")).toBeVisible();
 
-  await card.click();
+  await card.locator(".dk-card__text").click();
   await expect(page.getByRole("heading", { name: "Discovery Candidate" })).toBeVisible();
   await expect(page.locator("#buy-button")).toBeVisible();
 

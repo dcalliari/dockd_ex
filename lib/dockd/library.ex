@@ -4,6 +4,7 @@ defmodule Dockd.Library do
   import Ecto.Changeset
   alias Dockd.Accounts.User
   alias Dockd.Activity
+  alias Dockd.Catalog.Game
   alias Dockd.Library.Entry
   alias Dockd.Library.Ownership
   alias Dockd.Library.ReleaseVeto
@@ -63,6 +64,54 @@ defmodule Dockd.Library do
       end)
 
     multi |> Repo.transaction() |> result(:entry)
+  end
+
+  @doc """
+  Moves a game to one of the five visible statuses.
+
+  `:backlog` needs at least one owned release; without it, returns `{:error, :needs_ownership}`
+  so the caller can ask which version and media. Every transition writes its event through
+  `update_entry/3`.
+  """
+  def set_status(%User{} = user, %Game{} = game, status) when is_atom(status) do
+    case status_attrs(status, game.id in owned_game_ids(user)) do
+      {:error, reason} -> {:error, reason}
+      attrs -> upsert_entry(user, game, attrs)
+    end
+  end
+
+  defp status_attrs(:quero, false), do: %{purchase_intent: :want, play_state: :unplayed}
+  defp status_attrs(:quero, true), do: {:error, :owned}
+  defp status_attrs(:backlog, true), do: %{purchase_intent: :none, play_state: :unplayed}
+  defp status_attrs(:backlog, false), do: {:error, :needs_ownership}
+  defp status_attrs(:jogando, _), do: %{purchase_intent: :none, play_state: :playing}
+  defp status_attrs(:zerado, _), do: %{purchase_intent: :none, play_state: :finished}
+  defp status_attrs(:larguei, _), do: %{purchase_intent: :none, play_state: :abandoned}
+
+  defp upsert_entry(user, game, attrs) do
+    case get_entry_for_game(user, game.id) do
+      nil -> create_entry(user, Map.put(attrs, :game_id, game.id))
+      entry -> update_entry(user, entry, attrs)
+    end
+  end
+
+  @doc "Removes a game from the user's library: its entry and every ownership of its releases."
+  def remove_game(%User{id: user_id} = user, %Game{id: game_id}) do
+    Repo.transaction(fn ->
+      Repo.delete_all(
+        from o in Ownership,
+          join: r in Dockd.Catalog.Release,
+          on: r.id == o.release_id,
+          where: o.user_id == ^user_id and r.game_id == ^game_id
+      )
+
+      case get_entry_for_game(user, game_id) do
+        nil -> :ok
+        entry -> Repo.delete!(entry)
+      end
+
+      :ok
+    end)
   end
 
   @doc "Deletes an entry scoped to a user."

@@ -85,4 +85,27 @@ defmodule DockdWeb.LibraryLiveTest do
     refute html =~ "dockd-sidebar"
     assert html =~ ~s(class="dk-bottomnav")
   end
+
+  test "changes a status straight from the grid", %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/")
+
+    view
+    |> element("#shelf-#{ctx.owned.id} .dk-quick button.dk-status--jogando")
+    |> render_click()
+
+    assert has_element?(view, "#shelf-#{ctx.owned.id}[data-status=jogando]")
+    assert has_element?(view, "#library-tabs a", "Jogando 2")
+    refute has_element?(view, "#shelf-#{ctx.owned.id} .dk-quick button.dk-status--quero")
+    refute has_element?(view, "#shelf-#{ctx.wanted.id} .dk-quick button.dk-status--backlog")
+  end
+
+  test "takes a game out of the library", %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/")
+
+    view |> element("#shelf-#{ctx.wanted.id} button.dk-remove") |> render_click()
+
+    refute has_element?(view, "#shelf-#{ctx.wanted.id}")
+    assert has_element?(view, "#library-count", "2 jogos")
+    assert Library.get_entry_for_game(ctx.user, ctx.wanted.id) == nil
+  end
 end

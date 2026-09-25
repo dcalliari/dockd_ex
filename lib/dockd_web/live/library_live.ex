@@ -2,7 +2,7 @@ defmodule DockdWeb.LibraryLive do
   @moduledoc "Biblioteca: every game the owner relates to, one status each, as a grid of covers."
   use DockdWeb, :live_view
 
-  alias Dockd.Accounts
+  alias Dockd.{Accounts, Catalog, Library}
   alias Dockd.Library.Shelf
 
   @filters ~w(tab plat media sort)
@@ -27,6 +27,42 @@ defmodule DockdWeb.LibraryLive do
 
     {:noreply,
      assign(socket, filters: filters, visible: Shelf.filter(socket.assigns.items, filters))}
+  end
+
+  @impl true
+  def handle_event("set_status", %{"game_id" => game_id, "status" => status}, socket) do
+    game = Catalog.get_game!(game_id)
+    status = Enum.find(statuses(), &(Atom.to_string(&1) == status))
+
+    case Library.set_status(socket.assigns.user, game, status) do
+      {:ok, _} -> {:noreply, reload(socket)}
+      {:error, :needs_ownership} -> {:noreply, push_navigate(socket, to: ~p"/jogos/#{game.id}")}
+      {:error, _} -> {:noreply, put_flash(socket, :error, "Não foi possível mudar o status.")}
+    end
+  end
+
+  def handle_event("remove", %{"game_id" => game_id}, socket) do
+    {:ok, :ok} = Library.remove_game(socket.assigns.user, Catalog.get_game!(game_id))
+    {:noreply, reload(socket)}
+  end
+
+  defp reload(socket) do
+    items = Shelf.list(socket.assigns.user)
+
+    assign(socket,
+      items: items,
+      counts: Shelf.counts(items),
+      visible: Shelf.filter(items, socket.assigns.filters)
+    )
+  end
+
+  defp quick_options(item) do
+    owned? = item.ownerships != []
+
+    Enum.reject(statuses(), fn status ->
+      status == item.status or (status == :quero and owned?) or
+        (status == :backlog and not owned?)
+    end)
   end
 
   defp compact(filters),
@@ -86,10 +122,9 @@ defmodule DockdWeb.LibraryLive do
       </div>
 
       <div :if={@visible != []} id="library-grid" class="dk-grid">
-        <.link
+        <div
           :for={item <- @visible}
           id={"shelf-#{item.game.id}"}
-          navigate={~p"/jogos/#{item.game.id}"}
           class="dk-card"
           data-status={item.status}
         >
@@ -98,14 +133,38 @@ defmodule DockdWeb.LibraryLive do
             cover_url={item.game.cover_url}
             status={item.status}
             faded={item.status in [:zerado, :larguei]}
+            navigate={~p"/jogos/#{item.game.id}"}
           />
-          <span class="dk-card__text">
+          <span class="dk-poster__veil">
+            <span class="dk-quick" role="group" aria-label="Mudar status">
+              <button
+                :for={status <- quick_options(item)}
+                type="button"
+                class={["dk-status", "dk-status--sm", "dk-status--#{status}"]}
+                phx-click="set_status"
+                phx-value-game_id={item.game.id}
+                phx-value-status={status}
+              >
+                {status_label(status)}
+              </button>
+            </span>
+            <button
+              type="button"
+              class="dk-remove"
+              phx-click="remove"
+              phx-value-game_id={item.game.id}
+              data-confirm={"Tirar #{item.game.title} da biblioteca?"}
+            >
+              Tirar da biblioteca
+            </button>
+          </span>
+          <.link navigate={~p"/jogos/#{item.game.id}"} class="dk-card__text">
             <span class="dk-card__title">{item.game.title}</span>
             <span class="dk-card__meta">
               {meta([platform_label(item.releases), item.year])}
             </span>
-          </span>
-        </.link>
+          </.link>
+        </div>
       </div>
 
       <.empty_state :if={@visible == [] and @items == []} id="library-empty">
