@@ -302,39 +302,40 @@ defmodule Dockd.Catalog do
   the work is already in the catalog. Returns `{:error, :not_configured}` without credentials.
   """
   def search_igdb(query) when is_binary(query) do
-    with {:ok, %{body: externals}} <- Dockd.IGDB.search(query) do
-      ids = Enum.map(externals, & &1["id"])
+    with {:ok, %{body: externals}} <- Dockd.IGDB.search(query), do: {:ok, igdb_results(externals)}
+  end
 
-      local =
-        Repo.all(from g in Game, where: g.igdb_id in ^ids, preload: :releases)
-        |> Map.new(&{&1.igdb_id, &1})
+  @doc "Upcoming Nintendo releases from IGDB, in the same shape as `search_igdb/1`."
+  def upcoming_igdb do
+    with {:ok, %{body: externals}} <- Dockd.IGDB.upcoming(),
+         do: {:ok, externals |> igdb_results() |> Enum.sort_by(& &1.first_date, Date)}
+  end
 
-      results =
-        externals
-        |> Enum.map(fn external ->
-          releases = release_attributes(external)
+  defp igdb_results(externals) do
+    ids = Enum.map(externals, & &1["id"])
 
-          %{
-            igdb_id: external["id"],
-            title: external["name"],
-            cover_url: cover_url(external),
-            platforms: releases |> Enum.map(& &1.platform) |> Enum.uniq() |> Enum.sort(),
-            year:
-              releases
-              |> Enum.map(& &1.release_date)
-              |> Enum.reject(&is_nil/1)
-              |> case do
-                [] -> nil
-                dates -> dates |> Enum.min(Date) |> Map.fetch!(:year)
-              end,
-            game: Map.get(local, external["id"])
-          }
-        end)
-        |> Enum.reject(&(&1.platforms == []))
-        |> Enum.sort_by(&{-(&1.year || 0), &1.title})
+    local =
+      Repo.all(from g in Game, where: g.igdb_id in ^ids, preload: :releases)
+      |> Map.new(&{&1.igdb_id, &1})
 
-      {:ok, results}
-    end
+    externals
+    |> Enum.map(fn external ->
+      releases = release_attributes(external)
+      dates = releases |> Enum.map(& &1.release_date) |> Enum.reject(&is_nil/1)
+      first = if dates == [], do: nil, else: Enum.min(dates, Date)
+
+      %{
+        igdb_id: external["id"],
+        title: external["name"],
+        cover_url: cover_url(external),
+        platforms: releases |> Enum.map(& &1.platform) |> Enum.uniq() |> Enum.sort(),
+        first_date: first,
+        year: first && first.year,
+        game: Map.get(local, external["id"])
+      }
+    end)
+    |> Enum.reject(&(&1.platforms == []))
+    |> Enum.sort_by(&{-(&1.year || 0), &1.title})
   end
 
   @doc "Imports an IGDB work into the catalog with its Nintendo releases, or returns the existing one."

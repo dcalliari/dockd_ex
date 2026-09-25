@@ -90,19 +90,23 @@ defmodule DockdWeb.LibraryLiveTest do
     {:ok, view, _html} = live(conn, "/")
 
     view
-    |> element("#shelf-#{ctx.owned.id} .dk-quick button.dk-status--jogando")
+    |> element("#status-#{ctx.owned.id} button[phx-value-status=jogando]")
     |> render_click()
 
     assert has_element?(view, "#shelf-#{ctx.owned.id}[data-status=jogando]")
     assert has_element?(view, "#library-tabs a", "Jogando 2")
-    refute has_element?(view, "#shelf-#{ctx.owned.id} .dk-quick button.dk-status--quero")
-    refute has_element?(view, "#shelf-#{ctx.wanted.id} .dk-quick button.dk-status--backlog")
+    assert has_element?(view, "#status-#{ctx.owned.id} button[phx-value-status=quero][disabled]")
+
+    assert has_element?(
+             view,
+             "#status-#{ctx.wanted.id} button[phx-value-status=backlog]:not([disabled])"
+           )
   end
 
   test "takes a game out of the library", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/")
 
-    view |> element("#shelf-#{ctx.wanted.id} button.dk-remove") |> render_click()
+    view |> element("#shelf-#{ctx.wanted.id} button.dk-card__trash") |> render_click()
 
     refute has_element?(view, "#shelf-#{ctx.wanted.id}")
     assert has_element?(view, "#library-count", "2 jogos")

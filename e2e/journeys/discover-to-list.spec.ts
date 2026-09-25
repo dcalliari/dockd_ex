@@ -6,7 +6,8 @@ test("a new game goes from Descobrir to the Biblioteca as Quero and can be start
   const results = page.getByTestId("discover-results").or(page.locator("#discover-results"));
   const candidate = results.locator(".dk-card").filter({ hasText: "Discovery Candidate" });
   await expect(candidate).toBeVisible();
-  await candidate.getByRole("button", { name: "Quero jogar" }).first().click({ force: true });
+  await candidate.locator("summary").click();
+  await candidate.locator("button[phx-value-status=quero]").click();
   await expect(candidate.locator(".dk-status--quero")).toBeVisible();
 
   await page.goto("/?tab=quero");

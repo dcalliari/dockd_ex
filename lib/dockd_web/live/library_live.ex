@@ -56,14 +56,9 @@ defmodule DockdWeb.LibraryLive do
     )
   end
 
-  defp quick_options(item) do
-    owned? = item.ownerships != []
-
-    Enum.reject(statuses(), fn status ->
-      status == item.status or (status == :quero and owned?) or
-        (status == :backlog and not owned?)
-    end)
-  end
+  # Backlog stays available without ownership: the game page asks the version.
+  defp available(%{ownerships: []}), do: statuses()
+  defp available(_owned), do: statuses() -- [:quero]
 
   defp compact(filters),
     do: filters |> Enum.reject(fn {_k, v} -> v in ["", nil, "todos", "titulo"] end) |> Map.new()
@@ -111,8 +106,7 @@ defmodule DockdWeb.LibraryLive do
           />
           <.filter
             id="filter-sort"
-            label="Título"
-            prefix="Ordenar por"
+            label="Ordem"
             value={@filters["sort"] || "titulo"}
             options={[{"titulo", "Título"}, {"lancamento", "Lançamento"}]}
             path={&library_path(@filters, "sort", &1)}
@@ -131,33 +125,25 @@ defmodule DockdWeb.LibraryLive do
           <.poster
             title={item.game.title}
             cover_url={item.game.cover_url}
-            status={item.status}
             faded={item.status in [:zerado, :larguei]}
             navigate={~p"/jogos/#{item.game.id}"}
           />
-          <span class="dk-poster__veil">
-            <span class="dk-quick" role="group" aria-label="Mudar status">
-              <button
-                :for={status <- quick_options(item)}
-                type="button"
-                class={["dk-status", "dk-status--sm", "dk-status--#{status}"]}
-                phx-click="set_status"
-                phx-value-game_id={item.game.id}
-                phx-value-status={status}
-              >
-                {status_label(status)}
-              </button>
-            </span>
-            <button
-              type="button"
-              class="dk-remove"
-              phx-click="remove"
-              phx-value-game_id={item.game.id}
-              data-confirm={"Tirar #{item.game.title} da biblioteca?"}
-            >
-              Tirar da biblioteca
-            </button>
-          </span>
+          <.status_menu
+            id={"status-#{item.game.id}"}
+            status={item.status}
+            available={available(item)}
+            values={%{game_id: item.game.id}}
+          />
+          <button
+            type="button"
+            class="dk-card__trash"
+            aria-label={"Tirar #{item.game.title} da biblioteca"}
+            phx-click="remove"
+            phx-value-game_id={item.game.id}
+            data-confirm={"Tirar #{item.game.title} da biblioteca?"}
+          >
+            <.icon name="hero-trash" />
+          </button>
           <.link navigate={~p"/jogos/#{item.game.id}"} class="dk-card__text">
             <span class="dk-card__title">{item.game.title}</span>
             <span class="dk-card__meta">

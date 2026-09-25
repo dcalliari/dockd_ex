@@ -30,6 +30,19 @@ defmodule Dockd.IGDB do
       else: {:error, :not_configured}
   end
 
+  @doc "Upcoming Switch and Switch 2 releases, soonest first."
+  def upcoming(limit \\ 24) do
+    now = System.os_time(:second)
+
+    if configured?(),
+      do:
+        post(
+          "games",
+          "fields id,name,cover.image_id,platforms.id,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher; where platforms = (#{@switch_id},#{@switch_2_id}) & first_release_date > #{now} & cover != null; sort first_release_date asc; limit #{limit};"
+        ),
+      else: {:error, :not_configured}
+  end
+
   def get_games(ids) when is_list(ids) do
     if configured?(),
       do:

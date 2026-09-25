@@ -19,9 +19,11 @@ defmodule DockdWeb.DiscoverLiveTest do
     %{user: user, candidate: candidate, listed: listed}
   end
 
-  test "starts empty and searches the catalog by title", %{conn: conn} = ctx do
+  test "opens on upcoming releases and searches the catalog by title", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/descobrir")
-    assert has_element?(view, "#discover-hint")
+    assert has_element?(view, "#discover-upcoming", "Próximos lançamentos")
+    assert has_element?(view, "#result-#{ctx.candidate.id}", "05/11/2026")
+    refute has_element?(view, "#result-#{ctx.listed.id}")
 
     view |> form("#nav-search-form", %{"q" => "discovery"}) |> render_change()
     assert_patch(view, "/descobrir?q=discovery")
@@ -32,16 +34,17 @@ defmodule DockdWeb.DiscoverLiveTest do
     refute has_element?(view, "#discover-results", "Something else")
   end
 
-  test "Quero jogar adds the game in one tap and becomes the chip", %{conn: conn} = ctx do
+  test "the add chip sets a status in one tap", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/descobrir?q=candidate")
+    assert has_element?(view, "#result-#{ctx.candidate.id} .dk-status--add")
 
     view
-    |> element("#result-#{ctx.candidate.id} .dk-poster__veil button", "Quero jogar")
+    |> element("#status-result-#{ctx.candidate.id} button[phx-value-status=quero]")
     |> render_click()
 
     assert %{purchase_intent: :want} = Library.get_entry_for_game(ctx.user, ctx.candidate.id)
     assert has_element?(view, "#result-#{ctx.candidate.id}[data-status=quero] .dk-status--quero")
-    refute has_element?(view, "#result-#{ctx.candidate.id} button.discover-want")
+    refute has_element?(view, "#result-#{ctx.candidate.id} .dk-status--add")
   end
 
   test "the navigation search of other screens lands here", %{conn: conn} do

@@ -371,6 +371,50 @@ defmodule DockdWeb.DockdComponents do
     """
   end
 
+  @doc """
+  The status chip as a control: click opens the five statuses in a small menu.
+
+  `status` nil renders an add chip. `available` lists the statuses the caller can apply
+  directly; the others render muted and disabled. Every option emits `set_status` with the
+  given `values` (`phx-value-*` pairs) plus `phx-value-status`.
+  """
+  attr :id, :string, required: true
+  attr :status, :atom, default: nil
+  attr :available, :list, default: @statuses
+  attr :values, :map, default: %{}
+  attr :size, :string, default: "sm", values: ~w(md sm)
+
+  def status_menu(assigns) do
+    ~H"""
+    <details id={@id} class="dk-status-menu">
+      <summary aria-label="Mudar status">
+        <.status_chip :if={@status} status={@status} size={@size} />
+        <span :if={!@status} class={["dk-status", "dk-status--add", @size == "sm" && "dk-status--sm"]}>
+          + Adicionar
+        </span>
+      </summary>
+      <ul class="dk-filter__menu" role="menu">
+        <li :for={option <- statuses()}>
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-current={to_string(option == @status)}
+            disabled={option not in @available}
+            phx-click={
+              Phoenix.LiveView.JS.remove_attribute("open", to: "##{@id}")
+              |> Phoenix.LiveView.JS.push("set_status")
+            }
+            phx-value-status={option}
+            {Map.new(@values, fn {k, v} -> {"phx-value-#{k}", v} end)}
+          >
+            <i class={option}></i>{status_label(option)}
+          </button>
+        </li>
+      </ul>
+    </details>
+    """
+  end
+
   attr :media, :atom, required: true
 
   def media_tag(assigns) do
