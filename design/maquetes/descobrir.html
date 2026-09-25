@@ -178,9 +178,9 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-card--poster { position: relative; gap: var(--space-2); }
 .dk-poster__veil { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--scrim); opacity: 0; transition: opacity 160ms; }
 .dk-poster:hover .dk-poster__veil, .dk-poster:focus-within .dk-poster__veil { opacity: 1; }
-.dk-ribbon { --l: 54px; position: absolute; top: 0; right: 0; width: var(--l); height: var(--l); clip-path: polygon(0 0, 100% 0, 100% 100%); z-index: 1; pointer-events: none; }
-.dk-ribbon span { position: absolute; left: calc(var(--l) * 2 / 3); top: calc(var(--l) / 3); translate: -50% -50%; rotate: 45deg; font-size: 9px; line-height: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
-@media (max-width: 767px) { .dk-ribbon { --l: 46px; } .dk-ribbon span { font-size: 8px; } }
+.dk-ribbon { --l: 50px; position: absolute; top: 0; right: 0; width: var(--l); height: var(--l); clip-path: polygon(0 0, 100% 0, 100% 100%); z-index: 1; pointer-events: none; }
+.dk-ribbon span { position: absolute; left: calc(var(--l) * 0.63); top: calc(var(--l) * 0.37); translate: -50% -50%; rotate: 45deg; font-size: 11px; line-height: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
+@media (max-width: 767px) { .dk-ribbon { --l: 42px; } .dk-ribbon span { font-size: 9px; } }
 .dk-ribbon--quero, .dk-ribbon--jogando { background: var(--red); color: var(--on-red); }
 .dk-ribbon--backlog { background: var(--ink); color: var(--on-ink); }
 .dk-ribbon--zerado { background: var(--surface-sunken); color: var(--ink); }
