@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Biblioteca · dockd.</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
+<style>
+:root, [data-theme="light"]{--surface:#ffffff;--surface-raised:#f4f2f1;--surface-sunken:#ebe8e6;--line:#dedad8;--line-strong:#8f8886;--ink:#161414;--ink-muted:#6a6462;--on-ink:#ffffff;--red:#e60012;--red-hover:#cc0010;--on-red:#ffffff;--red-ink:#d4000f;--warn:#9a5b00;--poster-edge:#0000001f;--focus-ring:var(--red-ink);}
+[data-theme="dark"]{--surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink);}
+:root{--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--radius-sm:3px;--radius-md:6px;--radius-full:999px;--container-max:1120px;--nav-height:56px;--control-height:36px;--thumb-height:44px;--cover-ratio:3 / 4;--cover-min:140px;--font-sans:"Archivo", "Helvetica Neue", Arial, sans-serif;}
+.t-wordmark{font-family:var(--font-sans);font-size:22px;line-height:24px;font-weight:900;letter-spacing:-0.02em;}
+.t-display{font-family:var(--font-sans);font-size:32px;line-height:36px;font-weight:800;letter-spacing:-0.02em;}
+.t-heading{font-family:var(--font-sans);font-size:14px;line-height:18px;font-weight:700;}
+.t-control{font-family:var(--font-sans);font-size:14px;line-height:20px;font-weight:600;}
+.t-body{font-family:var(--font-sans);font-size:15px;line-height:22px;font-weight:400;}
+.t-meta{font-family:var(--font-sans);font-size:12px;line-height:16px;font-weight:400;}
+.t-label{font-family:var(--font-sans);font-size:11px;line-height:16px;font-weight:700;letter-spacing:0.08em;}
+.t-num{font-family:var(--font-sans);font-size:15px;line-height:20px;font-weight:600;}
+.t-num-lg{font-family:var(--font-sans);font-size:20px;line-height:24px;font-weight:800;letter-spacing:-0.02em;}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink); } }
+
+
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+body { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+img { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* type: width axes and numerals the token classes cannot carry */
+.t-wordmark { font-stretch: 125%; }
+.t-display { font-stretch: 110%; }
+.t-label, .t-num-lg { font-stretch: 90%; }
+.t-label { text-transform: uppercase; }
+.t-num, .t-num-lg { font-variant-numeric: tabular-nums; }
+
+.dk-preview { padding: var(--space-4); }
+.dk-stack { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+
+/* Poster */
+.dk-poster { position: relative; display: block; aspect-ratio: 3 / 4; width: 100%; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-sunken); }
+.dk-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dk-poster::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--poster-edge); pointer-events: none; transition: box-shadow 120ms; }
+a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 0 0 0 2px var(--red); }
+.dk-poster--empty { display: flex; align-items: flex-end; padding: var(--space-2); color: var(--ink-muted); font-size: 12px; line-height: 16px; font-weight: 600; }
+.dk-poster__status { position: absolute; left: var(--space-2); top: var(--space-2); z-index: 1; }
+.dk-poster--sm { width: 33px; height: var(--thumb-height); border-radius: var(--radius-sm); }
+
+/* StatusChip */
+.dk-status { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
+.dk-status--sm { height: 18px; padding: 0 6px; font-size: 10px; letter-spacing: .06em; }
+.dk-status--quero { border-color: var(--red-ink); color: var(--red-ink); background: var(--surface); }
+.dk-status--backlog { background: var(--ink); color: var(--on-ink); }
+.dk-status--jogando { background: var(--red); color: var(--on-red); }
+.dk-status--zerado { background: var(--surface-sunken); color: var(--ink); }
+.dk-status--larguei { border-color: var(--line-strong); color: var(--ink-muted); background: var(--surface); }
+
+/* StatusControl: the current chip as a button, plus a menu of the five */
+.dk-status-control { position: relative; display: inline-block; }
+.dk-status-control__button { display: inline-flex; align-items: center; gap: var(--space-2); height: var(--control-height); padding: 0 var(--space-2) 0 var(--space-3); border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); transition: background-color 120ms; }
+.dk-status-control__button:hover { background: var(--surface-raised); }
+.dk-status-control__button svg { width: 16px; height: 16px; color: var(--ink-muted); }
+.dk-status-control__menu { position: absolute; left: 0; top: calc(100% + var(--space-1)); z-index: 2; min-width: 180px; margin: 0; padding: var(--space-1) 0; list-style: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
+.dk-status-control__menu button { display: flex; width: 100%; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink); text-align: left; }
+.dk-status-control__menu button:hover { background: var(--surface-sunken); }
+.dk-status-control__menu button[aria-checked="true"] { color: var(--ink); }
+.dk-status-control__menu .dk-status { width: 78px; justify-content: center; }
+.dk-status-control__menu small { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--ink-muted); }
+
+/* MediaTag */
+.dk-media { display: inline-flex; align-items: center; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); white-space: nowrap; }
+
+/* Button */
+.dk-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; transition: background-color 120ms, border-color 120ms, color 120ms; }
+.dk-btn--primary { background: var(--red); border-color: var(--red); color: var(--on-red); }
+.dk-btn--primary:hover { background: var(--red-hover); border-color: var(--red-hover); }
+.dk-btn--secondary { border-color: var(--line-strong); color: var(--ink); background: var(--surface); }
+.dk-btn--secondary:hover { background: var(--surface-raised); }
+.dk-btn--sm { height: 28px; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; }
+.dk-btn[disabled] { opacity: .45; cursor: default; }
+.dk-link { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--red-ink); }
+.dk-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Tabs */
+.dk-tabs { display: flex; gap: var(--space-5); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.dk-tab { position: relative; display: inline-flex; align-items: baseline; gap: 6px; padding: var(--space-2) 0 10px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; transition: color 120ms; }
+.dk-tab:hover { color: var(--ink); }
+.dk-tab[aria-selected="true"] { color: var(--ink); }
+.dk-tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--red); }
+.dk-tab__count { font-size: 12px; line-height: 16px; font-weight: 400; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+
+/* NavBar (top) and BottomNav (phone) */
+.dk-nav { height: var(--nav-height); display: flex; align-items: center; gap: var(--space-5); padding: 0 var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
+.dk-wordmark { font-size: 22px; line-height: 24px; font-weight: 900; font-stretch: 125%; letter-spacing: -0.02em; color: var(--ink); }
+.dk-wordmark i { font-style: normal; color: var(--red); }
+.dk-nav__links { display: flex; gap: var(--space-4); }
+.dk-nav__link { padding: 4px 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-bottom: 2px solid transparent; transition: color 120ms; }
+.dk-nav__link:hover { color: var(--ink); }
+.dk-nav__link[aria-current="page"] { color: var(--ink); border-bottom-color: var(--red); }
+.dk-nav__search { margin-left: auto; width: 240px; }
+.dk-nav__icon { margin-left: auto; display: inline-flex; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--ink); }
+.dk-nav__icon svg { width: 20px; height: 20px; }
+.dk-bottomnav { height: var(--nav-height); display: flex; align-items: stretch; background: var(--surface); border-top: 1px solid var(--line); }
+.dk-bottomnav a { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-top: 2px solid transparent; margin-top: -1px; }
+.dk-bottomnav a[aria-current="page"] { color: var(--ink); border-top-color: var(--red); }
+
+/* SearchField */
+.dk-search { position: relative; }
+.dk-search input { width: 100%; height: var(--control-height); padding: 0 var(--space-3) 0 36px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; }
+.dk-search input::placeholder { color: var(--ink-muted); }
+.dk-search svg { position: absolute; left: 12px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--ink-muted); pointer-events: none; }
+
+/* GameCard + grid */
+.dk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--space-4) var(--space-3); }
+@media (min-width: 768px) { .dk-grid { grid-template-columns: repeat(auto-fill, minmax(var(--cover-min), 1fr)); } }
+.dk-card { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.dk-card__title { font-size: 14px; line-height: 18px; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.dk-card__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-card__text { display: flex; flex-direction: column; gap: 2px; }
+
+/* GameRow */
+.dk-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }
+.dk-row > :first-child { justify-self: start; }
+.dk-row__title { font-size: 14px; line-height: 18px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-row__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-row__end { display: flex; align-items: center; gap: var(--space-3); justify-self: end; }
+
+/* DateBlock */
+.dk-date { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: var(--thumb-height); height: var(--thumb-height); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--ink); font-stretch: 90%; }
+.dk-date b { font-size: 20px; line-height: 24px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.dk-date small { font-size: 10px; line-height: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
+.dk-date--month b { font-size: 13px; line-height: 16px; letter-spacing: .06em; text-transform: uppercase; }
+.dk-date--year b { font-size: 15px; line-height: 20px; }
+.dk-date--soon { background: var(--red); color: var(--on-red); }
+.dk-date--soon small { color: var(--on-red); }
+
+/* Price */
+.dk-price { display: inline-flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.dk-price b { font-size: 15px; line-height: 20px; font-weight: 600; }
+.dk-price small { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-price--stale small { color: var(--warn); }
+.dk-price--none b { font-weight: 400; color: var(--ink-muted); }
+
+/* EmptyState */
+.dk-empty { margin: 0; padding: var(--space-6) 0; font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+.dk-empty a { color: var(--red-ink); font-weight: 600; }
+
+/* SectionHead */
+.dk-section { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); margin-bottom: var(--space-3); }
+.dk-section h2 { margin: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.dk-section h2 span { margin-left: 6px; font-weight: 400; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.dk-section a { font-size: 14px; line-height: 16px; font-weight: 600; color: var(--red-ink); }
+
+.page { width: min(100%, var(--container-max)); margin: 0 auto; padding: 0 var(--space-4) var(--space-7); }
+@media (min-width: 768px) { .page { padding-inline: var(--space-5); } }
+.dk-nav { position: sticky; top: 0; z-index: 3; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin: var(--space-4) 0; }
+.filters { display: flex; gap: var(--space-2); }
+.filters select { height: 28px; padding: 0 var(--space-2); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; }
+.count { font-size: 12px; line-height: 16px; color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dk-bottomnav { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.dk-empty { display: none; }
+@media (max-width: 767px) {
+  .dk-nav__links, .dk-nav__search { display: none; }
+  .dk-nav__icon { display: inline-flex; }
+  .dk-bottomnav { display: flex; }
+  .page { padding-bottom: calc(var(--nav-height) + var(--space-5)); }
+}
+@media (min-width: 768px) { .dk-nav__icon { display: none; } }
+.dk-card[hidden] { display: none; }
+.dk-card__meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+<header class="dk-nav">
+  <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+  <nav class="dk-nav__links" aria-label="Principal">
+    <a class="dk-nav__link" href="#" aria-current="page">Biblioteca</a>
+    <a class="dk-nav__link" href="#">Comprar</a>
+    <a class="dk-nav__link" href="#">Descobrir</a>
+  </nav>
+  <form class="dk-search dk-nav__search" role="search" onsubmit="return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input id="q" type="search" placeholder="Buscar jogo" aria-label="Buscar jogo" autocomplete="off"></form>
+  <button class="dk-nav__icon" type="button" aria-label="Buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></button>
+</header>
+<main class="page">
+  <nav class="dk-tabs" aria-label="Status" id="tabs"><a class="dk-tab" href="#" data-tab="" aria-selected="true">Todos <span class="dk-tab__count">60</span></a><a class="dk-tab" href="#" data-tab="jogando">Jogando <span class="dk-tab__count">1</span></a><a class="dk-tab" href="#" data-tab="backlog">Backlog <span class="dk-tab__count">21</span></a><a class="dk-tab" href="#" data-tab="quero">Quero <span class="dk-tab__count">38</span></a><a class="dk-tab" href="#" data-tab="zerado">Zerados <span class="dk-tab__count">0</span></a></nav>
+  <div class="toolbar">
+    <div class="filters">
+      <select id="f-plat" aria-label="Plataforma"><option value="">Plataforma</option><option value="switch">Switch</option><option value="switch_2">Switch 2</option></select>
+      <select id="f-media" aria-label="Mídia"><option value="">Mídia</option><option value="physical">Físico</option><option value="digital">Digital</option></select>
+      <select id="f-sort" aria-label="Ordem"><option value="title">Título</option><option value="year">Lançamento</option></select>
+    </div>
+    <span class="count" id="count">60 jogos</span>
+  </div>
+  <div class="dk-grid" id="grid">
+<a class="dk-card" href="#" data-status="quero" data-plat="switch" data-media="" data-title="animal crossing: new horizons"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co3wls.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Animal Crossing: New Horizons</span><span class="dk-card__meta">Switch · 2020</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch,switch_2" data-media="digital" data-title="another crab&#x27;s treasure"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co6mrs.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Another Crab&#x27;s Treasure</span><span class="dk-card__meta">Switch · Switch 2 · 2024</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch" data-media="" data-title="bioshock: the collection"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co1uv1.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">BioShock: The Collection</span><span class="dk-card__meta">Switch · 2020</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="blasphemous"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob0xj.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Blasphemous</span><span class="dk-card__meta">Switch · 2021</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="blasphemous 2"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co6ej3.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Blasphemous 2</span><span class="dk-card__meta">Switch · 2023</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="blue prince"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co9mzd.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Blue Prince</span><span class="dk-card__meta">Switch · Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch" data-media="" data-title="cadence of hyrule"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob88s.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Cadence of Hyrule</span><span class="dk-card__meta">Switch · 2019</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="cairn"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobdqk.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Cairn</span><span class="dk-card__meta">Switch · Switch 2 · 2027</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="celeste"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob9dh.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Celeste</span><span class="dk-card__meta">Switch · 2018</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="cuphead"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co62ao.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Cuphead</span><span class="dk-card__meta">Switch · 2019</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="darwin&#x27;s paradox!"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co9e1h.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Darwin&#x27;s Paradox!</span><span class="dk-card__meta">Switch · Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch,switch_2" data-media="digital" data-title="dave the diver"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocdlv.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Dave the Diver</span><span class="dk-card__meta">Switch · Switch 2 · 2023</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="denshattack!"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coaawz.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Denshattack!</span><span class="dk-card__meta">Switch · Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="jogando" data-plat="switch_2" data-media="physical" data-title="donkey kong bananza"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobd1q.jpg" alt="" loading="lazy"><span class="dk-status dk-status--jogando dk-status--sm dk-poster__status">Jogando</span></span><span class="dk-card__text"><span class="dk-card__title">Donkey Kong Bananza</span><span class="dk-card__meta">Switch 2 · 2025</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="duskfade"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocda0.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Duskfade</span><span class="dk-card__meta">Switch · Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="enter the gungeon"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobl6c.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Enter the Gungeon</span><span class="dk-card__meta">Switch · 2017</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="graveyard keeper"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co1w53.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Graveyard Keeper</span><span class="dk-card__meta">Switch · 2019</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="hades ii"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coaknx.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Hades II</span><span class="dk-card__meta">Switch · Switch 2 · 2025</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch,switch_2" data-media="digital" data-title="hollow knight"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobfzp.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Hollow Knight</span><span class="dk-card__meta">Switch · Switch 2 · 2018</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="hollow knight: silksong"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobebu.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Hollow Knight: Silksong</span><span class="dk-card__meta">Switch · Switch 2 · 2025</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="hyrule warriors: age of calamity definitive edition"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocw1y.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Hyrule Warriors: Age of Calamity Definitive Edition</span><span class="dk-card__meta">Switch · Switch 2 · 2027</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch_2" data-media="" data-title="hyrule warriors: age of imprisonment"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob9n1.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Hyrule Warriors: Age of Imprisonment</span><span class="dk-card__meta">Switch 2 · 2025</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="kingdom come: deliverance"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co4aqi.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Kingdom Come: Deliverance</span><span class="dk-card__meta">Switch · 2024</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="kingdom hearts collection"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocb28.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Kingdom Hearts Collection</span><span class="dk-card__meta">Switch · Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="kingdom hearts iv"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocp35.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Kingdom Hearts IV</span><span class="dk-card__meta">Switch · Switch 2 · 2027</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="kirby and the world beyond"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocvba.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Kirby and the World Beyond</span><span class="dk-card__meta">Switch · Switch 2 · 2027</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch_2" data-media="" data-title="mario kart world"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob9s9.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Mario Kart World</span><span class="dk-card__meta">Switch 2 · 2025</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch_2" data-media="" data-title="mario tennis fever"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coag5n.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Mario Tennis Fever</span><span class="dk-card__meta">Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch,switch_2" data-media="digital" data-title="metal gear solid 4: guns of the patriots"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coblhc.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Metal Gear Solid 4: Guns of the Patriots</span><span class="dk-card__meta">Switch · Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="metal gear solid: master collection vol. 1"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocdmb.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Metal Gear Solid: Master Collection Vol. 1</span><span class="dk-card__meta">Switch · Switch 2 · 2023</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch" data-media="" data-title="metroid dread"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coba9g.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Metroid Dread</span><span class="dk-card__meta">Switch · 2021</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="metroid prime 4: beyond"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob9xh.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Metroid Prime 4: Beyond</span><span class="dk-card__meta">Switch · Switch 2 · 2025</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch" data-media="" data-title="metroid prime remastered"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobbn9.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Metroid Prime Remastered</span><span class="dk-card__meta">Switch · 2023</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="metroid ravenous"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocvge.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Metroid Ravenous</span><span class="dk-card__meta">Switch · Switch 2 · 2027</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="mouse: p.i. for hire"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coaacx.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Mouse: P.I. for Hire</span><span class="dk-card__meta">Switch · Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="oneshot"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co6ldh.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">OneShot</span><span class="dk-card__meta">Switch · 2022</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="orbitals"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coc9r6.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Orbitals</span><span class="dk-card__meta">Switch · Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="ori and the will of the wisps"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocjl7.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Ori and the Will of the Wisps</span><span class="dk-card__meta">Switch · 2020</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch" data-media="" data-title="outer wilds"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co65ac.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Outer Wilds</span><span class="dk-card__meta">Switch · 2023</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch" data-media="" data-title="out of words"><span class="dk-poster dk-poster--empty"><span>Out of Words</span><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Out of Words</span><span class="dk-card__meta">Switch</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch_2" data-media="" data-title="persona 3 reload"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coc4jz.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Persona 3 Reload</span><span class="dk-card__meta">Switch 2 · 2025</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch_2" data-media="" data-title="pokémon pokopia"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobbur.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Pokémon Pokopia</span><span class="dk-card__meta">Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch_2" data-media="" data-title="pokémon ventos"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobo9k.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Pokémon Ventos</span><span class="dk-card__meta">Switch 2 · 2027</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="rayman legends"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co3m8e.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Rayman Legends</span><span class="dk-card__meta">Switch · 2017</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch,switch_2" data-media="digital" data-title="red dead redemption"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co6wrm.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Red Dead Redemption</span><span class="dk-card__meta">Switch · Switch 2 · 2023</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch,switch_2" data-media="digital" data-title="splintered fate"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co6zbi.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Splintered Fate</span><span class="dk-card__meta">Switch · Switch 2 · 2024</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch_2" data-media="" data-title="sports resort"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coc7mb.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Sports Resort</span><span class="dk-card__meta">Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch,switch_2" data-media="digital" data-title="stardew valley"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coa93h.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Stardew Valley</span><span class="dk-card__meta">Switch · Switch 2 · 2017</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="steins;gate reboot"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co90no.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Steins;Gate Reboot</span><span class="dk-card__meta">Switch · Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch" data-media="" data-title="super mario party jamboree"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob9yk.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Super Mario Party Jamboree</span><span class="dk-card__meta">Switch · 2024</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch_2" data-media="" data-title="the duskbloods"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocqn8.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">The Duskbloods</span><span class="dk-card__meta">Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch" data-media="" data-title="the legend of zelda: breath of the wild"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2d.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">The Legend of Zelda: Breath of the Wild</span><span class="dk-card__meta">Switch · 2017</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="the legend of zelda: ocarina of time"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocv5r.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">The Legend of Zelda: Ocarina of Time</span><span class="dk-card__meta">Switch · Switch 2 · 2026</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch" data-media="" data-title="the legend of zelda: tears of the kingdom"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co5vmg.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">The Legend of Zelda: Tears of the Kingdom</span><span class="dk-card__meta">Switch · 2023</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="the swords of ditto"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co27bh.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">The Swords of Ditto</span><span class="dk-card__meta">Switch · 2019</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch,switch_2" data-media="" data-title="tomb raider: legacy of atlantis"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob1kg.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Tomb Raider: Legacy of Atlantis</span><span class="dk-card__meta">Switch · Switch 2 · 2027</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch" data-media="digital" data-title="tony hawk&#x27;s pro skater 3 + 4"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co9hxo.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Tony Hawk&#x27;s Pro Skater 3 + 4</span><span class="dk-card__meta">Switch · 2025</span></span></a>
+<a class="dk-card" href="#" data-status="quero" data-plat="switch_2" data-media="" data-title="yakuza 0"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocbuz.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></span><span class="dk-card__text"><span class="dk-card__title">Yakuza 0</span><span class="dk-card__meta">Switch 2 · 2025</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch,switch_2" data-media="digital" data-title="yakuza kiwami"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob1qh.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Yakuza Kiwami</span><span class="dk-card__meta">Switch · Switch 2 · 2024</span></span></a>
+<a class="dk-card" href="#" data-status="backlog" data-plat="switch,switch_2" data-media="digital" data-title="yakuza kiwami 2"><span class="dk-poster"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob1qc.jpg" alt="" loading="lazy"><span class="dk-status dk-status--backlog dk-status--sm dk-poster__status">Backlog</span></span><span class="dk-card__text"><span class="dk-card__title">Yakuza Kiwami 2</span><span class="dk-card__meta">Switch · Switch 2 · 2025</span></span></a>
+  </div>
+  <p class="dk-empty" id="empty">Nada aqui. <a href="#" id="empty-link">Ver todos</a></p>
+</main>
+<nav class="dk-bottomnav" aria-label="Principal">
+  <a href="#" aria-current="page">Biblioteca</a><a href="#">Comprar</a><a href="#">Descobrir</a>
+</nav>
+<script>
+(function () {
+  var tabs = document.querySelectorAll('#tabs .dk-tab'), cards = Array.prototype.slice.call(document.querySelectorAll('#grid .dk-card'));
+  var state = { tab: '', plat: '', media: '', q: '', sort: 'title' };
+  function apply() {
+    var n = 0;
+    cards.forEach(function (c) {
+      var ok = (!state.tab || c.dataset.status === state.tab) && (!state.plat || c.dataset.plat.split(',').indexOf(state.plat) >= 0) && (!state.media || c.dataset.media === state.media) && (!state.q || c.dataset.title.indexOf(state.q) >= 0);
+      c.hidden = !ok; if (ok) n++;
+    });
+    document.getElementById('count').textContent = n + (n === 1 ? ' jogo' : ' jogos');
+    document.getElementById('empty').style.display = n ? 'none' : 'block';
+    var grid = document.getElementById('grid');
+    cards.slice().sort(function (a, b) {
+      if (state.sort === 'year') { var ya = a.querySelector('.dk-card__meta').textContent.slice(-4), yb = b.querySelector('.dk-card__meta').textContent.slice(-4); if (ya !== yb) return yb.localeCompare(ya); }
+      return a.dataset.title.localeCompare(b.dataset.title);
+    }).forEach(function (c) { grid.appendChild(c); });
+  }
+  tabs.forEach(function (t) { t.addEventListener('click', function (e) { e.preventDefault(); tabs.forEach(function (x) { x.removeAttribute('aria-selected'); }); t.setAttribute('aria-selected', 'true'); state.tab = t.dataset.tab; apply(); }); });
+  document.getElementById('f-plat').addEventListener('change', function (e) { state.plat = e.target.value; apply(); });
+  document.getElementById('f-media').addEventListener('change', function (e) { state.media = e.target.value; apply(); });
+  document.getElementById('f-sort').addEventListener('change', function (e) { state.sort = e.target.value; apply(); });
+  document.getElementById('q').addEventListener('input', function (e) { state.q = e.target.value.trim().toLowerCase(); apply(); });
+  document.getElementById('empty-link').addEventListener('click', function (e) { e.preventDefault(); tabs[0].click(); });
+})();
+</script>
+</body>
+</html>
