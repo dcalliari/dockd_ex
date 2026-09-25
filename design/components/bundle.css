@@ -29,6 +29,8 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-poster--empty { display: flex; align-items: flex-end; padding: var(--space-2); color: var(--ink-muted); font-size: 12px; line-height: 16px; font-weight: 600; }
 .dk-poster__status { position: absolute; left: var(--space-2); top: var(--space-2); z-index: 1; }
 .dk-poster--sm { width: 33px; height: var(--thumb-height); border-radius: var(--radius-sm); }
+.dk-poster-caption { display: flex; justify-content: space-between; gap: var(--space-2); margin: var(--space-2) 0 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.dk-poster-caption__mark { color: var(--red-ink); }
 
 /* StatusChip */
 .dk-status { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
@@ -39,17 +41,16 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-status--zerado { background: var(--surface-sunken); color: var(--ink); }
 .dk-status--larguei { border-color: var(--line-strong); color: var(--ink-muted); background: var(--surface); }
 
-/* StatusControl: the current chip as a button, plus a menu of the five */
-.dk-status-control { position: relative; display: inline-block; }
-.dk-status-control__button { display: inline-flex; align-items: center; gap: var(--space-2); height: var(--control-height); padding: 0 var(--space-2) 0 var(--space-3); border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); transition: background-color 120ms; }
-.dk-status-control__button:hover { background: var(--surface-raised); }
-.dk-status-control__button svg { width: 16px; height: 16px; color: var(--ink-muted); }
-.dk-status-control__menu { position: absolute; left: 0; top: calc(100% + var(--space-1)); z-index: 2; min-width: 180px; margin: 0; padding: var(--space-1) 0; list-style: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
-.dk-status-control__menu button { display: flex; width: 100%; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink); text-align: left; }
-.dk-status-control__menu button:hover { background: var(--surface-sunken); }
-.dk-status-control__menu button[aria-checked="true"] { color: var(--ink); }
-.dk-status-control__menu .dk-status { width: 78px; justify-content: center; }
-.dk-status-control__menu small { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--ink-muted); }
+/* StatusControl: the current chip is the control; the other four appear beside it on hover, tap or focus */
+.dk-status-control { position: relative; display: flex; align-items: center; gap: var(--space-2); min-height: 22px; }
+.dk-status-control .dk-status { cursor: pointer; }
+.dk-status-control__since { font-size: 12px; line-height: 16px; color: var(--ink-muted); transition: opacity 120ms; }
+.dk-status-control__options { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: var(--space-2); padding-left: var(--dk-tray-offset, 88px); opacity: 0; pointer-events: none; transition: opacity 120ms; }
+.dk-status-control__options .dk-status { opacity: .55; transition: opacity 120ms; }
+.dk-status-control__options .dk-status:hover, .dk-status-control__options .dk-status:focus-visible { opacity: 1; }
+.dk-status-control:hover .dk-status-control__options, .dk-status-control:focus-within .dk-status-control__options, .dk-status-control.is-open .dk-status-control__options { opacity: 1; pointer-events: auto; }
+.dk-status-control:hover .dk-status-control__since, .dk-status-control:focus-within .dk-status-control__since, .dk-status-control.is-open .dk-status-control__since { opacity: 0; }
+@media (hover: none) { .dk-status-control:hover:not(.is-open) .dk-status-control__options { opacity: 0; pointer-events: none; } .dk-status-control:hover:not(.is-open) .dk-status-control__since { opacity: 1; } }
 
 /* MediaTag */
 .dk-media { display: inline-flex; align-items: center; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); white-space: nowrap; }
@@ -134,3 +135,14 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-section h2 { margin: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
 .dk-section h2 span { margin-left: 6px; font-weight: 400; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .dk-section a { font-size: 14px; line-height: 16px; font-weight: 600; color: var(--red-ink); }
+
+/* History: a rail of past actions, newest first */
+.dk-history { position: relative; padding-left: 24px; margin: 0; list-style: none; }
+.dk-history::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 1px; background: var(--line-strong); }
+.dk-history__item { position: relative; padding: 0 0 var(--space-4); }
+.dk-history__item:last-child { padding-bottom: 0; }
+.dk-history__item::before { content: ""; position: absolute; left: -24px; top: 6px; width: 9px; height: 9px; border-radius: 2px; background: var(--ink); }
+.dk-history__item--current::before { background: var(--red); }
+.dk-history__what { font-size: 15px; line-height: 22px; font-weight: 700; }
+.dk-history__what small { margin-left: var(--space-2); font-size: 13px; font-weight: 400; color: var(--ink-muted); }
+.dk-history__who { font-size: 12px; line-height: 16px; color: var(--ink-muted); }

@@ -62,6 +62,12 @@ Um jogo tem um status visível, derivado do domínio (`ownerships` e `entries.pl
 
 A mídia é um segundo eixo, por versão: Físico, Digital ou Key card, sempre como MediaTag em `t-label`, nunca como cor nem como ícone.
 
+Na página do jogo o status é trocado pelo StatusControl: o chip atual é o controle, sem borda nem seta, e os outros quatro aparecem ao lado ao passar o mouse ou tocar. Plataforma e exclusividade da obra não vão no texto do herói: ficam na legenda da capa, `SWITCH 2` à esquerda e `EXCLUSIVO` em `red-ink` à direita, e só quando a obra é exclusiva.
+
+## Histórico
+
+O log de eventos vira um trilho vertical, do mais recente ao mais antigo, uma linha por ação: verbo em negrito, tempo relativo em `ink-muted` ao lado (`há 3 dias`), data exata e versão embaixo em `t-meta`. Dois marcadores e só: `red` na ação que definiu o estado atual, `ink` nas demais. Sem ícone por tipo de ação, sem agrupamento por mês. Ver History.
+
 ## Ícones
 
 Heroicons outline em 24px, os mesmos que o projeto já carrega, em `currentColor`, inseridos inline pelo componente `<.icon>` do Phoenix. Um ícone entra só quando substitui a palavra que caberia ali, e são cinco casos: lupa na busca, seta para voltar, x para fechar, chevron no seletor de status, mais para adicionar. Nenhum ícone em chip, tag, botão com rótulo ou destino de navegação. Sem emoji.
