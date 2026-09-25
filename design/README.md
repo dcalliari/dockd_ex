@@ -6,7 +6,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 
 1. **Um estado é sempre um StatusChip.** Onde quer que o status de um jogo apareça, sobre a capa, numa linha, no seletor da página do jogo, ele tem a mesma forma e as mesmas palavras. Não existe versão em texto solto, em cor de fundo ou em ícone.
 2. **Uma ação é sempre um Button.** Primário só uma vez por tela, vermelho. Dentro de linha e de cartão, só secundário pequeno. Um link em `red-ink` é navegação, não ação.
-3. **Dois preenchimentos sólidos: `red` e `ink`.** Todo o resto é superfície, fio ou texto. Nenhuma outra cor cheia entra na tela.
+3. **Três preenchimentos sólidos: `red`, `ink` e `gold`.** `gold` existe só no chip Quero. Todo o resto é superfície, fio ou texto.
 4. **Borda tem 1px e é `line-strong` quando é controle, `line` quando é separação.** Não existe 1,5px, não existe 2px, exceto o indicador de aba ativa.
 5. **Número é tabular e alinhado à direita, com a data ao lado.** Dinheiro sem data não existe.
 
@@ -26,7 +26,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 - A página é `surface`; o texto é `ink`; o metadado é `ink-muted`. Não existe um terceiro nível de cinza: se algo não merece `ink-muted`, não merece estar na tela.
 - `red` é preenchimento em quatro lugares e só neles: o botão primário da tela, o chip Jogando, o indicador da aba e do destino ativos, o ponto do wordmark. Como texto e contorno, use `red-ink`, que escurece no claro e clareia no escuro para manter contraste.
 - Texto sobre `red` é `on-red`; sobre `ink` é `on-ink`. Nunca `#fff` literal.
-- Os cinco status se distinguem por forma dentro da paleta: contorno vermelho, preenchimento preto, preenchimento vermelho, preenchimento cinza, contorno cinza. Ver StatusChip.
+- Os cinco status são preenchimentos: amarelo Quero, preto Backlog, vermelho Jogando, cinza claro Zerado, cinza escuro Larguei. Zerado e Larguei ficam a 75% e apagam a capa a 55%, como o Letterboxd faz com o que já foi visto. Ver StatusChip.
 - `warn` tem um único uso: preço desatualizado. Não há verde de sucesso nem azul de informação. Uma ação bem-sucedida se mostra no próprio controle mudando de estado, não em um aviso.
 - Cartão só quando delimita algo de verdade. Separe com espaço e com `line`.
 - Foco de teclado: `focus-ring` em 2px sólidos, afastados 2px, em todo controle e link de capa.
@@ -43,6 +43,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 - `radius-sm` em tudo que se toca; `radius-md` só na capa em grade e na página do jogo. `radius-full` está reservado e não é usado.
 - A coluna esquerda de toda linha tem `thumb-height`: capa de 33 por 44 ou bloco de data de 44 por 44. Assim todas as linhas de uma lista têm a mesma altura, com ou sem capa.
 - A grade de capas usa `repeat(auto-fill, minmax(cover-min, 1fr))`, gap `space-4` por `space-3`. A capa é sempre `cover-ratio` com `poster-edge` interno; sem imagem, é `surface-sunken` com o título em `t-meta` no canto inferior. Nunca gradiente, nunca iniciais.
+- Em Descobrir, passar o mouse sobre a capa cobre a arte inteira com `scrim` em 160ms e centraliza a ação `Quero jogar`; um balão em `ink` acima da capa mostra plataforma e ano. Em tela de toque não há hover: a ação fica embaixo da capa. O título fica sempre embaixo da capa.
 
 ## Navegação
 
@@ -54,11 +55,11 @@ Um jogo tem um status visível, derivado do domínio (`ownerships` e `entries.pl
 
 | Status | Quando | Chip |
 | --- | --- | --- |
-| Quero | sem posse e `purchase_intent` em want, planned ou preordered | contorno `red-ink` |
+| Quero | sem posse e `purchase_intent` em want, planned ou preordered | preenchimento `gold`, texto `on-gold` |
 | Backlog | com posse e `play_state` unplayed | preenchimento `ink` |
 | Jogando | `play_state` playing ou paused | preenchimento `red` |
-| Zerado | `play_state` finished | preenchimento `surface-sunken` |
-| Larguei | `play_state` abandoned | contorno `line-strong`, texto `ink-muted` |
+| Zerado | `play_state` finished | preenchimento `surface-sunken`, chip a 75%, capa a 55% |
+| Larguei | `play_state` abandoned | preenchimento `line-strong`, texto `surface`, chip a 75%, capa a 55% |
 
 A mídia é um segundo eixo, por versão: Físico, Digital ou Key card, sempre como MediaTag em `t-label`, nunca como cor nem como ícone.
 

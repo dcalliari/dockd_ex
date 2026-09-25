@@ -32,6 +32,15 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-poster-caption { display: flex; justify-content: space-between; gap: var(--space-2); margin: var(--space-2) 0 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
 .dk-poster-caption__mark { color: var(--red-ink); }
 
+.dk-poster__veil { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--scrim); opacity: 0; transition: opacity 160ms; }
+.dk-poster:hover .dk-poster__veil, .dk-poster:focus-within .dk-poster__veil { opacity: 1; }
+.dk-tip { position: absolute; left: 50%; top: -32px; translate: -50% 0; z-index: 2; padding: 4px 8px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 12px; line-height: 16px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 120ms; }
+.dk-tip::after { content: ""; position: absolute; left: 50%; top: 100%; translate: -50% -4px; width: 8px; height: 8px; rotate: 45deg; background: var(--ink); }
+.dk-card--poster { position: relative; }
+.dk-card--poster .dk-poster:hover ~ .dk-tip, .dk-card--poster .dk-poster:focus-within ~ .dk-tip { opacity: 1; }
+.dk-card__action--touch { display: none; }
+@media (hover: none) { .dk-poster__veil, .dk-tip { display: none; } .dk-card__action--touch { display: inline-flex; align-self: flex-start; } }
+
 /* StatusChip */
 .dk-status { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
 .dk-status--sm { height: 18px; padding: 0 6px; font-size: 10px; letter-spacing: .06em; }
