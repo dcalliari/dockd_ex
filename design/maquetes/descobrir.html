@@ -55,11 +55,12 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 /* StatusChip */
 .dk-status { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
 .dk-status--sm { height: 18px; padding: 0 6px; font-size: 10px; letter-spacing: .06em; }
-.dk-status--quero { border-color: var(--red-ink); color: var(--red-ink); background: var(--surface); }
+.dk-status--quero { background: var(--gold); color: var(--on-gold); }
 .dk-status--backlog { background: var(--ink); color: var(--on-ink); }
 .dk-status--jogando { background: var(--red); color: var(--on-red); }
-.dk-status--zerado { background: var(--surface-sunken); color: var(--ink); }
-.dk-status--larguei { border-color: var(--line-strong); color: var(--ink-muted); background: var(--surface); }
+.dk-status--zerado { background: var(--surface-sunken); color: var(--ink); opacity: .75; }
+.dk-status--larguei { background: var(--line-strong); color: var(--surface); opacity: .75; }
+.dk-poster--faded img { opacity: .55; }
 
 /* StatusControl: the current chip is the control; the other four appear beside it on hover, tap or focus */
 .dk-status-control { position: relative; display: flex; align-items: center; gap: var(--space-2); min-height: 22px; }
@@ -178,13 +179,6 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-card--poster { position: relative; gap: var(--space-2); }
 .dk-poster__veil { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--scrim); opacity: 0; transition: opacity 160ms; }
 .dk-poster:hover .dk-poster__veil, .dk-poster:focus-within .dk-poster__veil { opacity: 1; }
-.dk-ribbon { --l: 50px; position: absolute; top: 0; right: 0; width: var(--l); height: var(--l); clip-path: polygon(0 0, 100% 0, 100% 100%); z-index: 1; pointer-events: none; }
-.dk-ribbon span { position: absolute; left: calc(var(--l) * 0.63); top: calc(var(--l) * 0.37); translate: -50% -50%; rotate: 45deg; font-size: 11px; line-height: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
-@media (max-width: 767px) { .dk-ribbon { --l: 42px; } .dk-ribbon span { font-size: 9px; } }
-.dk-ribbon--quero, .dk-ribbon--jogando { background: var(--red); color: var(--on-red); }
-.dk-ribbon--backlog { background: var(--ink); color: var(--on-ink); }
-.dk-ribbon--zerado { background: var(--surface-sunken); color: var(--ink); }
-.dk-ribbon--larguei { background: var(--surface-raised); color: var(--ink-muted); }
 .dk-tip { position: absolute; left: 50%; bottom: calc(100% + 8px); translate: -50% 0; z-index: 2; padding: 4px 8px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 12px; line-height: 16px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 120ms; }
 .dk-tip::after { content: ""; position: absolute; left: 50%; top: 100%; translate: -50% -4px; width: 8px; height: 8px; rotate: 45deg; background: var(--ink); }
 .dk-card--poster .dk-poster:hover ~ .dk-tip, .dk-card--poster .dk-poster:focus-within ~ .dk-tip { opacity: 1; }
@@ -207,15 +201,15 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
   <form class="dk-search discover-search" role="search" onsubmit="return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input id="q" type="search" value="zelda" placeholder="Buscar no catálogo" aria-label="Buscar no catálogo" autocomplete="off"></form>
   <div class="result-line"><span>9 jogos para “zelda”</span></div>
   <div class="dk-grid">
-<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocw1y.jpg" alt="" loading="lazy"><span class="dk-ribbon dk-ribbon--quero"><span>Quero</span></span></a><span class="dk-tip" role="tooltip">Switch · Switch 2 · 2027</span><a class="dk-card__title" href="#">Hyrule Warriors: Age of Calamity Definitive Edition</a></div>
-<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocv5r.jpg" alt="" loading="lazy"><span class="dk-ribbon dk-ribbon--quero"><span>Quero</span></span></a><span class="dk-tip" role="tooltip">Switch · Switch 2 · 2026</span><a class="dk-card__title" href="#">The Legend of Zelda: Ocarina of Time</a></div>
-<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob9n1.jpg" alt="" loading="lazy"><span class="dk-ribbon dk-ribbon--quero"><span>Quero</span></span></a><span class="dk-tip" role="tooltip">Switch 2 · 2025</span><a class="dk-card__title" href="#">Hyrule Warriors: Age of Imprisonment</a></div>
+<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocw1y.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></a><span class="dk-tip" role="tooltip">Switch · Switch 2 · 2027</span><a class="dk-card__title" href="#">Hyrule Warriors: Age of Calamity Definitive Edition</a></div>
+<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocv5r.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></a><span class="dk-tip" role="tooltip">Switch · Switch 2 · 2026</span><a class="dk-card__title" href="#">The Legend of Zelda: Ocarina of Time</a></div>
+<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob9n1.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></a><span class="dk-tip" role="tooltip">Switch 2 · 2025</span><a class="dk-card__title" href="#">Hyrule Warriors: Age of Imprisonment</a></div>
 <div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co8d9b.jpg" alt="" loading="lazy"><span class="dk-poster__veil"><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-card__action">Quero jogar</button></span></a><span class="dk-tip" role="tooltip">Switch · Switch 2 · 2024</span><a class="dk-card__title" href="#">The Legend of Zelda: Echoes of Wisdom</a><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-card__action dk-card__action--touch">Quero jogar</button></div>
-<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co5vmg.jpg" alt="" loading="lazy"><span class="dk-ribbon dk-ribbon--quero"><span>Quero</span></span></a><span class="dk-tip" role="tooltip">Switch · 2023</span><a class="dk-card__title" href="#">The Legend of Zelda: Tears of the Kingdom</a></div>
+<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co5vmg.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></a><span class="dk-tip" role="tooltip">Switch · 2023</span><a class="dk-card__title" href="#">The Legend of Zelda: Tears of the Kingdom</a></div>
 <div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob8lb.jpg" alt="" loading="lazy"><span class="dk-poster__veil"><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-card__action">Quero jogar</button></span></a><span class="dk-tip" role="tooltip">Switch · 2021</span><a class="dk-card__title" href="#">The Legend of Zelda: Skyward Sword HD</a><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-card__action dk-card__action--touch">Quero jogar</button></div>
 <div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co1qve.jpg" alt="" loading="lazy"><span class="dk-poster__veil"><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-card__action">Quero jogar</button></span></a><span class="dk-tip" role="tooltip">Switch · Switch 2 · 2019</span><a class="dk-card__title" href="#">The Legend of Zelda: Link&#x27;s Awakening</a><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-card__action dk-card__action--touch">Quero jogar</button></div>
-<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob88s.jpg" alt="" loading="lazy"><span class="dk-ribbon dk-ribbon--quero"><span>Quero</span></span></a><span class="dk-tip" role="tooltip">Switch · 2019</span><a class="dk-card__title" href="#">Cadence of Hyrule</a></div>
-<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2d.jpg" alt="" loading="lazy"><span class="dk-ribbon dk-ribbon--quero"><span>Quero</span></span></a><span class="dk-tip" role="tooltip">Switch · 2017</span><a class="dk-card__title" href="#">The Legend of Zelda: Breath of the Wild</a></div>
+<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob88s.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></a><span class="dk-tip" role="tooltip">Switch · 2019</span><a class="dk-card__title" href="#">Cadence of Hyrule</a></div>
+<div class="dk-card dk-card--poster"><a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2d.jpg" alt="" loading="lazy"><span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span></a><span class="dk-tip" role="tooltip">Switch · 2017</span><a class="dk-card__title" href="#">The Legend of Zelda: Breath of the Wild</a></div>
   </div>
   <p class="t-meta" style="margin:var(--space-7) 0 0;color:var(--ink-muted)">Dados de jogos por <a href="https://www.igdb.com" style="text-decoration:underline;text-underline-offset:3px">IGDB</a></p>
 </main>
@@ -224,7 +218,7 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 document.querySelectorAll('.dk-card__action').forEach(function (b) {
   b.addEventListener('click', function () {
     var card = b.closest('.dk-card'), poster = card.querySelector('.dk-poster');
-    poster.insertAdjacentHTML('beforeend', '<span class="dk-ribbon dk-ribbon--quero"><span>Quero</span></span>');
+    poster.insertAdjacentHTML('beforeend', '<span class="dk-status dk-status--quero dk-status--sm dk-poster__status">Quero</span>');
     b.outerHTML = '';
   });
 });

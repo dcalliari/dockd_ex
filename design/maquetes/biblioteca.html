@@ -54,11 +54,12 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 /* StatusChip */
 .dk-status { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
 .dk-status--sm { height: 18px; padding: 0 6px; font-size: 10px; letter-spacing: .06em; }
-.dk-status--quero { border-color: var(--red-ink); color: var(--red-ink); background: var(--surface); }
+.dk-status--quero { background: var(--gold); color: var(--on-gold); }
 .dk-status--backlog { background: var(--ink); color: var(--on-ink); }
 .dk-status--jogando { background: var(--red); color: var(--on-red); }
-.dk-status--zerado { background: var(--surface-sunken); color: var(--ink); }
-.dk-status--larguei { border-color: var(--line-strong); color: var(--ink-muted); background: var(--surface); }
+.dk-status--zerado { background: var(--surface-sunken); color: var(--ink); opacity: .75; }
+.dk-status--larguei { background: var(--line-strong); color: var(--surface); opacity: .75; }
+.dk-poster--faded img { opacity: .55; }
 
 /* StatusControl: the current chip as a button, plus a menu of the five */
 .dk-status-control { position: relative; display: inline-block; }
