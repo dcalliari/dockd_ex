@@ -5,7 +5,8 @@ test("a visitor signs in with the right password and out again", async ({ page }
   await page.goto("/comprar");
   await expect(page).toHaveURL("http://localhost:4460/entrar");
   await expect(page.locator(".dk-nav__guest a[aria-current=page]")).toHaveText("Entrar");
-  await expect(page.locator("#entrar-shelf .dk-poster").first()).toBeVisible();
+  await expect(page.locator("#entrar-wall .dk-poster").first()).toBeVisible();
+  await expect(page.locator(".dk-auth-panel #entrar-form")).toBeVisible();
 
   await fillEntrar(page, "senha errada de novo");
   await expect(page.locator(".dk-field.is-error .dk-field__error")).toHaveText("E-mail ou senha errados");

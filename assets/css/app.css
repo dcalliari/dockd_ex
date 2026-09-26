@@ -175,14 +175,15 @@ img { display: block; max-width: 100%; }
 .dk-auth .dk-btn { width: 100%; }
 .dk-auth__links { display: flex; justify-content: center; gap: var(--space-5); }
 @media (min-width: 768px) { .dk-auth { margin-top: 88px; } }
-/* Entrar, caminho A: uma prateleira de capas do catálogo sai pelas duas bordas, com etiquetas ilustrativas (design/maquetes/entrar-v2.html) */
-.dk-auth-shelf { display: grid; grid-auto-flow: column; grid-auto-columns: 112px; gap: var(--space-2); justify-content: unsafe center; margin-top: var(--space-4); overflow: hidden; }
-.dk-auth-shelf .dk-status--sm { font-size: 9px; padding: 0 4px; }
-.dk-auth-shelf + .dk-page .dk-auth { margin-top: var(--space-6); }
+/* Entrar, caminho C: capas do catálogo cobrem a tela sob o véu e o formulário fica num painel, o único cartão da tela; no celular o painel desce para a base (design/maquetes/entrar-v2.html) */
+.dk-auth-backdrop { position: relative; height: calc(100dvh - var(--nav-height)); min-height: 440px; overflow: hidden; }
+.dk-auth-backdrop__wall { position: absolute; inset: calc(-1 * var(--space-5)); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); grid-auto-rows: max-content; align-content: start; }
+.dk-auth-backdrop::after { content: ""; position: absolute; inset: 0; background: var(--scrim); }
+.dk-auth-panel { position: absolute; z-index: 1; left: 50%; bottom: var(--space-4); translate: -50% 0; width: min(calc(100% - 2 * var(--space-4)), 368px); padding: var(--space-5); background: var(--surface); border-radius: var(--radius-md); }
+.dk-auth-panel .dk-auth { margin: 0; width: 100%; }
 @media (min-width: 768px) {
-  .dk-auth-shelf { grid-auto-columns: 176px; gap: var(--space-3); margin-top: var(--space-5); }
-  .dk-auth-shelf .dk-status--sm { font-size: 10px; padding: 0 6px; }
-  .dk-auth-shelf + .dk-page .dk-auth { margin-top: var(--space-7); }
+  .dk-auth-backdrop__wall { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .dk-auth-panel { top: 50%; bottom: auto; translate: -50% -50%; }
 }
 
 /* TextField: o SearchField sem lupa. O erro fica embaixo do campo, em red-ink. */

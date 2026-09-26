@@ -18,7 +18,7 @@ defmodule DockdWeb.Layouts do
   attr :search_live, :boolean, default: false
   attr :current_scope, :map, default: nil
   attr :igdb_url, :string, default: nil
-  slot :bleed, doc: "full-width content between the NavBar and the page, like the Entrar shelf"
+  slot :bleed, doc: "full-width content between the NavBar and the page, like the Entrar covers"
   slot :inner_block, required: true
 
   def app(assigns) do

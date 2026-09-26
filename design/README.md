@@ -44,6 +44,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 - A coluna esquerda de toda linha tem `thumb-height`: capa de 33 por 44 ou bloco de data de 44 por 44. Assim todas as linhas de uma lista têm a mesma altura, com ou sem capa.
 - A grade de capas usa `repeat(auto-fill, minmax(cover-min, 1fr))`, gap `space-4` por `space-3`. A capa é sempre `cover-ratio` com `poster-edge` interno; sem imagem, é `surface-sunken` com o título em `t-meta` no canto inferior. Nunca gradiente, nunca iniciais.
 - Em Descobrir, passar o mouse sobre a capa cobre a arte inteira com `scrim` em 160ms e centraliza a ação `Quero jogar`; um balão em `ink` acima da capa mostra plataforma e ano. Em tela de toque não há hover: a ação fica embaixo da capa. O título fica sempre embaixo da capa.
+- Entrar e Criar conta são a única tela com capas de fundo: as do catálogo cobrem a tela sob `scrim`, sem etiqueta, e o formulário fica num painel `surface` com `radius-md`, o único cartão da tela, no centro acima de 768px e na base no celular. Maquete `maquetes/entrar-v2.html`, caminho C.
 
 ## Navegação
 

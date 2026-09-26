@@ -10,7 +10,7 @@ Todas as mudanças relevantes do Dockd são documentadas neste arquivo.
 - Menu da conta na barra, com o e-mail, `Copiar token da API` e `Sair`.
 - A biblioteca anterior às contas recebe e-mail e senha por `Dockd.Release.claim_owner/2`; senha esquecida se troca por `Dockd.Release.reset_password/2`.
 - Área pública: sem conta, `/` é a vitrine do catálogo em três faixas, e Descobrir e a página do jogo mostram só o catálogo. A etiqueta de status do visitante leva ao Entrar e volta à mesma capa com o menu aberto. As listas do IGDB ficam em cache por uma hora.
-- Entrar e Criar conta (`/criar-conta`) ganham a prateleira de capas do catálogo, com a barra do visitante.
+- Entrar e Criar conta (`/criar-conta`) ganham a barra do visitante e o formulário num painel sobre as capas do catálogo, escurecidas pelo véu.
 
 ### Alterado
 

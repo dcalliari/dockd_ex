@@ -1,8 +1,8 @@
 defmodule DockdWeb.SignInLive do
   @moduledoc """
-  Entrar and Criar conta (design/maquetes/entrar.html, path C, in the shelf layout A of
-  design/maquetes/entrar-v2.html): email and password, with Criar conta and, when SMTP is
-  configured, Entrar por link. The mode changes in place; Criar conta also has its own
+  Entrar and Criar conta (design/maquetes/entrar.html, path C, in the panel over covers,
+  path C of design/maquetes/entrar-v2.html): email and password, with Criar conta and,
+  when SMTP is configured, Entrar por link. The mode changes in place; Criar conta also has its own
   address for the NavBar. `volta` is the page to come back to after signing in.
 
   Credentials are checked here so a wrong password shows under the field; only then the
@@ -14,18 +14,8 @@ defmodule DockdWeb.SignInLive do
   alias Dockd.Accounts.User
   alias DockdWeb.UserAuth
 
-  # Illustrative statuses for the shelf covers: no one's library is read here.
-  @shelf_statuses [
-    :jogando,
-    :backlog,
-    :quero,
-    :zerado,
-    :backlog,
-    :quero,
-    :larguei,
-    :jogando,
-    :quero
-  ]
+  # Enough covers to fill a large screen under the veil, repeating a short list.
+  @wall_size 40
 
   @impl true
   def mount(params, _session, %{assigns: %{current_scope: %{user: %User{}}}} = socket),
@@ -54,7 +44,7 @@ defmodule DockdWeb.SignInLive do
        link_enabled: Accounts.magic_link_enabled?(),
        link_sent: false,
        trigger_submit: false,
-       shelf: shelf()
+       wall: wall()
      )
      |> assign_form(%{"email" => Phoenix.Flash.get(flash, :email)}, errors)}
   end
@@ -125,11 +115,11 @@ defmodule DockdWeb.SignInLive do
   end
 
   # Covers of the most followed works of the year: the same list as the Em alta strip.
-  defp shelf do
-    :popular
-    |> Catalog.showcase()
-    |> Enum.filter(& &1.cover_url)
-    |> Enum.zip(@shelf_statuses)
+  defp wall do
+    case :popular |> Catalog.showcase() |> Enum.filter(& &1.cover_url) do
+      [] -> []
+      results -> results |> Stream.cycle() |> Enum.take(@wall_size)
+    end
   end
 
   defp switch_mode(socket, mode) do
@@ -159,75 +149,73 @@ defmodule DockdWeb.SignInLive do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope} current={page_title(@mode)}>
       <:bleed>
-        <div :if={@shelf != []} id="entrar-shelf" class="dk-auth-shelf" aria-hidden="true">
-          <.poster
-            :for={{result, status} <- @shelf}
-            title={result.title}
-            cover_url={result.cover_url}
-            status={status}
-            faded={status in [:zerado, :larguei]}
-          />
+        <div id="entrar-backdrop" class="dk-auth-backdrop">
+          <div :if={@wall != []} id="entrar-wall" class="dk-auth-backdrop__wall" aria-hidden="true">
+            <.poster :for={result <- @wall} title={result.title} cover_url={result.cover_url} />
+          </div>
+          <div class="dk-auth-panel">
+            <.form
+              for={@form}
+              id="entrar-form"
+              class="dk-auth"
+              action={~p"/entrar"}
+              phx-change="change"
+              phx-submit="submit"
+              phx-trigger-action={@trigger_submit}
+            >
+              <input :if={@volta} type="hidden" name="volta" value={@volta} />
+              <.text_field
+                field={@form[:email]}
+                type="email"
+                placeholder="E-mail"
+                autocomplete="username"
+                required
+                phx-mounted={JS.focus()}
+              />
+              <.text_field
+                :if={@mode != :link}
+                field={@form[:password]}
+                type="password"
+                placeholder="Senha"
+                autocomplete={if(@mode == :register, do: "new-password", else: "current-password")}
+                required
+              />
+              <button
+                id="entrar-submit"
+                class="dk-btn dk-btn--primary"
+                type="submit"
+                disabled={@link_sent}
+              >
+                {submit_label(@mode, @link_sent)}
+              </button>
+              <span class="dk-auth__links">
+                <.link
+                  :if={@mode == :password}
+                  id="entrar-register"
+                  patch={mode_path(:register, @volta)}
+                  class="dk-link"
+                >
+                  Criar conta
+                </.link>
+                <.mode_link :if={@mode == :password and @link_enabled} id="entrar-link" mode="link">
+                  Entrar por link
+                </.mode_link>
+                <.link
+                  :if={@mode == :register}
+                  id="entrar-password"
+                  patch={mode_path(:password, @volta)}
+                  class="dk-link"
+                >
+                  Já tenho conta
+                </.link>
+                <.mode_link :if={@mode == :link} id="entrar-password" mode="password">
+                  Entrar com senha
+                </.mode_link>
+              </span>
+            </.form>
+          </div>
         </div>
       </:bleed>
-      <.form
-        for={@form}
-        id="entrar-form"
-        class="dk-auth"
-        action={~p"/entrar"}
-        phx-change="change"
-        phx-submit="submit"
-        phx-trigger-action={@trigger_submit}
-      >
-        <input :if={@volta} type="hidden" name="volta" value={@volta} />
-        <.text_field
-          field={@form[:email]}
-          type="email"
-          placeholder="E-mail"
-          autocomplete="username"
-          required
-          phx-mounted={JS.focus()}
-        />
-        <.text_field
-          :if={@mode != :link}
-          field={@form[:password]}
-          type="password"
-          placeholder="Senha"
-          autocomplete={if(@mode == :register, do: "new-password", else: "current-password")}
-          required
-        />
-        <button
-          id="entrar-submit"
-          class="dk-btn dk-btn--primary"
-          type="submit"
-          disabled={@link_sent}
-        >
-          {submit_label(@mode, @link_sent)}
-        </button>
-        <span class="dk-auth__links">
-          <.link
-            :if={@mode == :password}
-            id="entrar-register"
-            patch={mode_path(:register, @volta)}
-            class="dk-link"
-          >
-            Criar conta
-          </.link>
-          <.mode_link :if={@mode == :password and @link_enabled} id="entrar-link" mode="link">
-            Entrar por link
-          </.mode_link>
-          <.link
-            :if={@mode == :register}
-            id="entrar-password"
-            patch={mode_path(:password, @volta)}
-            class="dk-link"
-          >
-            Já tenho conta
-          </.link>
-          <.mode_link :if={@mode == :link} id="entrar-password" mode="password">
-            Entrar com senha
-          </.mode_link>
-        </span>
-      </.form>
     </Layouts.app>
     """
   end

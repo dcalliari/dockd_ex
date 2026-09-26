@@ -14,7 +14,7 @@ defmodule DockdWeb.SignInLiveTest do
       assert {:ok, _, _} = live(conn, "/descobrir")
     end
 
-    test "Entrar shows the visitor bar and the shelf of catalog covers", %{conn: conn} do
+    test "Entrar shows the visitor bar and the form over catalog covers", %{conn: conn} do
       game =
         Dockd.DomainFixtures.game_fixture(%{title: "Capa Real", cover_url: "https://c/1.jpg"})
 
@@ -25,8 +25,9 @@ defmodule DockdWeb.SignInLiveTest do
       assert has_element?(view, ".dk-nav__guest a[aria-current=page]", "Entrar")
       refute has_element?(view, "#account-menu")
       refute has_element?(view, ".dk-bottomnav")
-      assert has_element?(view, "#entrar-shelf[aria-hidden=true] img[src='#{game.cover_url}']")
-      assert has_element?(view, "#entrar-shelf .dk-poster__status")
+      assert has_element?(view, "#entrar-wall[aria-hidden=true] img[src='#{game.cover_url}']")
+      refute has_element?(view, "#entrar-wall .dk-poster__status")
+      assert has_element?(view, "#entrar-backdrop .dk-auth-panel #entrar-form")
     end
 
     test "Criar conta has its own address in the bar", %{conn: conn} do
