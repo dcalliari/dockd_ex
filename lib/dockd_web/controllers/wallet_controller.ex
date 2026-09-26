@@ -1,7 +1,6 @@
 defmodule DockdWeb.WalletController do
   use DockdWeb, :controller
   use OpenApiSpex.ControllerSpecs
-  alias Dockd.Accounts
   alias Dockd.Wallet
 
   operation(:balances,
@@ -45,10 +44,13 @@ defmodule DockdWeb.WalletController do
   )
 
   def balances(conn, _),
-    do: json(conn, %{data: Enum.map(Wallet.list_balances(Accounts.default_owner()), &encode/1)})
+    do:
+      json(conn, %{
+        data: Enum.map(Wallet.list_balances(conn.assigns.current_scope.user), &encode/1)
+      })
 
   def create_balance(conn, %{"balance" => attrs}) do
-    case Wallet.create_balance(Accounts.default_owner(), attrs) do
+    case Wallet.create_balance(conn.assigns.current_scope.user, attrs) do
       {:ok, balance} ->
         conn |> put_status(:created) |> json(%{data: encode(balance)})
 
@@ -59,10 +61,12 @@ defmodule DockdWeb.WalletController do
 
   def reservations(conn, _),
     do:
-      json(conn, %{data: Enum.map(Wallet.list_reservations(Accounts.default_owner()), &encode/1)})
+      json(conn, %{
+        data: Enum.map(Wallet.list_reservations(conn.assigns.current_scope.user), &encode/1)
+      })
 
   def create_reservation(conn, %{"reservation" => attrs}) do
-    case Wallet.create_reservation(Accounts.default_owner(), attrs) do
+    case Wallet.create_reservation(conn.assigns.current_scope.user, attrs) do
       {:ok, reservation} ->
         conn |> put_status(:created) |> json(%{data: encode(reservation)})
 
@@ -72,7 +76,7 @@ defmodule DockdWeb.WalletController do
   end
 
   def update_balance(conn, %{"id" => id, "balance" => attrs}) do
-    owner = Accounts.default_owner()
+    owner = conn.assigns.current_scope.user
 
     with balance when not is_nil(balance) <- Wallet.get_balance!(owner, id),
          {:ok, balance} <- Wallet.update_balance(owner, balance, attrs),
@@ -80,7 +84,7 @@ defmodule DockdWeb.WalletController do
   end
 
   def delete_balance(conn, %{"id" => id}) do
-    owner = Accounts.default_owner()
+    owner = conn.assigns.current_scope.user
 
     :ok =
       case Wallet.delete_balance(owner, Wallet.get_balance!(owner, id)) do
@@ -91,14 +95,14 @@ defmodule DockdWeb.WalletController do
   end
 
   def update_reservation(conn, %{"id" => id, "reservation" => attrs}) do
-    owner = Accounts.default_owner()
+    owner = conn.assigns.current_scope.user
     reservation = Wallet.get_reservation!(owner, id)
     {:ok, reservation} = Wallet.update_reservation(owner, reservation, attrs)
     json(conn, %{data: encode(reservation)})
   end
 
   def delete_reservation(conn, %{"id" => id}) do
-    owner = Accounts.default_owner()
+    owner = conn.assigns.current_scope.user
     {:ok, _} = Wallet.delete_reservation(owner, Wallet.get_reservation!(owner, id))
     send_resp(conn, :no_content, "")
   end

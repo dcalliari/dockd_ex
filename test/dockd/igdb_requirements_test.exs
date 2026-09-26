@@ -246,7 +246,7 @@ defmodule Dockd.IGDBRequirementsTest do
       end
     end)
 
-    conn = build_conn() |> put_req_header("content-type", "application/json")
+    conn = api_conn() |> put_req_header("content-type", "application/json")
 
     assert_schema(
       get(conn, "/api/v1/igdb/search?q=Imported") |> json_response(200),
@@ -255,41 +255,41 @@ defmodule Dockd.IGDBRequirementsTest do
     )
 
     assert_schema(
-      post(build_conn(), "/api/v1/igdb/games/99/import", %{}) |> json_response(201),
+      post(api_conn(), "/api/v1/igdb/games/99/import", %{}) |> json_response(201),
       "GameResponse",
       ApiSpec.spec()
     )
 
     assert_schema(
-      post(build_conn(), "/api/v1/igdb/sync", %{}) |> json_response(200),
+      post(api_conn(), "/api/v1/igdb/sync", %{}) |> json_response(200),
       "IGDBSyncResponse",
       ApiSpec.spec()
     )
 
     assert_schema(
-      post(build_conn(), "/api/v1/igdb/match", %{}) |> json_response(200),
+      post(api_conn(), "/api/v1/igdb/match", %{}) |> json_response(200),
       "IGDBMatchResponse",
       ApiSpec.spec()
     )
 
     Application.put_env(:dockd, :igdb, client_id: nil, client_secret: nil)
 
-    assert json_response(get(build_conn(), "/api/v1/igdb/search?q=x"), 503)["error"]["type"] ==
+    assert json_response(get(api_conn(), "/api/v1/igdb/search?q=x"), 503)["error"]["type"] ==
              "not_configured"
 
-    assert json_response(post(build_conn(), "/api/v1/igdb/games/100/import", %{}), 503)["error"][
+    assert json_response(post(api_conn(), "/api/v1/igdb/games/100/import", %{}), 503)["error"][
              "type"
            ] == "not_configured"
 
-    assert json_response(post(build_conn(), "/api/v1/igdb/sync", %{}), 503)["error"]["type"] ==
+    assert json_response(post(api_conn(), "/api/v1/igdb/sync", %{}), 503)["error"]["type"] ==
              "not_configured"
 
-    assert json_response(post(build_conn(), "/api/v1/igdb/match", %{}), 503)["error"]["type"] ==
+    assert json_response(post(api_conn(), "/api/v1/igdb/match", %{}), 503)["error"]["type"] ==
              "not_configured"
   end
 
   defp import_game do
-    conn = build_conn() |> put_req_header("content-type", "application/json")
+    conn = api_conn() |> put_req_header("content-type", "application/json")
     {:created, post(conn, "/api/v1/igdb/games/43/import", %{}) |> json_response(201)}
   end
 
@@ -318,4 +318,7 @@ defmodule Dockd.IGDBRequirementsTest do
       "platforms" => [%{"id" => 130}],
       "release_dates" => []
     }
+
+  defp api_conn,
+    do: DockdWeb.ConnCase.authorize_api(build_conn(), Dockd.AccountsFixtures.user_fixture())
 end

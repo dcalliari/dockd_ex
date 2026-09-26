@@ -1,7 +1,6 @@
 defmodule DockdWeb.PlannerController do
   use DockdWeb, :controller
   use OpenApiSpex.ControllerSpecs
-  alias Dockd.Accounts
   alias Dockd.Planner
 
   operation(:show,
@@ -10,7 +9,7 @@ defmodule DockdWeb.PlannerController do
   )
 
   def show(conn, _params) do
-    summary = Planner.summary(Accounts.default_owner())
+    summary = Planner.summary(conn.assigns.current_scope.user)
 
     json(conn, %{
       money: summary.money,

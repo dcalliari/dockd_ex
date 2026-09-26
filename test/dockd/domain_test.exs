@@ -1,7 +1,7 @@
 defmodule Dockd.DomainTest do
   use Dockd.DataCase, async: false
   import Dockd.DomainFixtures
-  alias Dockd.{Accounts, Activity, Library, Purchasing, Wallet}
+  alias Dockd.{Activity, Library, Purchasing, Wallet}
   alias Dockd.Activity.Event
 
   setup do
@@ -157,7 +157,6 @@ defmodule Dockd.DomainTest do
     user: user,
     release: release
   } do
-    assert Accounts.default_owner().id == Accounts.default_owner().id
     old = DateTime.add(DateTime.utc_now(), -8, :day)
 
     {:ok, observation} =

@@ -44,7 +44,7 @@ defmodule Dockd.CatalogTest do
   test "refuses to delete a release with ownership" do
     {:ok, game} = Catalog.create_game(%{title: "Owned game", availability: :nintendo_exclusive})
     {:ok, release} = Catalog.create_release(game.id, %{platform: :switch})
-    user = Dockd.Accounts.default_owner()
+    {:ok, user} = Dockd.DomainFixtures.user_fixture()
 
     assert {:ok, _ownership} =
              Dockd.Library.create_ownership(user, %{

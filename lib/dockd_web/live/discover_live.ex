@@ -7,12 +7,12 @@ defmodule DockdWeb.DiscoverLive do
   """
   use DockdWeb, :live_view
 
-  alias Dockd.{Accounts, Catalog, Library}
+  alias Dockd.{Catalog, Library}
   alias Dockd.Library.Shelf
 
   @impl true
   def mount(_params, _session, socket),
-    do: {:ok, assign(socket, page_title: "Descobrir", user: Accounts.default_owner())}
+    do: {:ok, assign(socket, page_title: "Descobrir", user: socket.assigns.current_scope.user)}
 
   @impl true
   def handle_params(params, _uri, socket) do
@@ -130,7 +130,13 @@ defmodule DockdWeb.DiscoverLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current="Descobrir" search={@q} search_live>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      current="Descobrir"
+      search={@q}
+      search_live
+    >
       <.section_head
         :if={@source == :upcoming and @results != []}
         id="discover-upcoming"

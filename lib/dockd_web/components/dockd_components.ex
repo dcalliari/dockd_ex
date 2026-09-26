@@ -7,7 +7,8 @@ defmodule DockdWeb.DockdComponents do
   """
 
   use Phoenix.Component
-  import DockdWeb.CoreComponents, only: [icon: 1]
+  use DockdWeb, :verified_routes
+  import DockdWeb.CoreComponents, only: [icon: 1, translate_error: 1]
 
   @statuses [:quero, :backlog, :jogando, :zerado, :larguei]
   @status_labels %{
@@ -137,12 +138,21 @@ defmodule DockdWeb.DockdComponents do
   # ---------------------------------------------------------------------------
   # Navigation
 
+  attr :current_scope, :map, required: true, doc: "nil when signed out: only the wordmark"
   attr :current, :string, default: nil
   attr :search, :string, default: ""
 
   attr :search_live, :boolean,
     default: false,
     doc: "true on Descobrir, where the same field searches as you type"
+
+  def nav_bar(%{current_scope: nil} = assigns) do
+    ~H"""
+    <header class="dk-nav">
+      <.link navigate="/" class="dk-wordmark" aria-label="Dockd, início">dockd<i>.</i></.link>
+    </header>
+    """
+  end
 
   def nav_bar(assigns) do
     ~H"""
@@ -188,7 +198,75 @@ defmodule DockdWeb.DockdComponents do
       >
         <.icon name="hero-magnifying-glass" />
       </button>
+      <.account_menu user={@current_scope.user} />
     </header>
+    """
+  end
+
+  @doc """
+  The account item of the NavBar: the name opens a menu, like a FilterBar menu, with the
+  email, the API token and Sair. Copying the token swaps its label in place.
+  """
+  attr :user, :map, required: true
+
+  def account_menu(assigns) do
+    ~H"""
+    <details id="account-menu" class="dk-account">
+      <summary>{@user.name} <.icon name="hero-chevron-down" /></summary>
+      <ul class="dk-filter__menu">
+        <li class="dk-account__who">{@user.email}</li>
+        <li>
+          <button
+            id="account-api-token"
+            type="button"
+            phx-click="copy_api_token"
+            phx-hook=".CopyApiToken"
+            phx-update="ignore"
+          >
+            Copiar token da API
+          </button>
+        </li>
+        <li><.link id="account-sign-out" href={~p"/sair"} method="delete">Sair</.link></li>
+      </ul>
+    </details>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".CopyApiToken">
+      export default {
+        mounted() {
+          this.handleEvent("copy_api_token", ({token}) => {
+            navigator.clipboard.writeText(token).then(() => { this.el.textContent = "Token copiado" })
+          })
+        }
+      }
+    </script>
+    """
+  end
+
+  @doc """
+  TextField: the SearchField without the magnifier. No visible label: the placeholder
+  says what to type and the `aria-label` repeats it. The error goes under the field.
+  """
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :type, :string, default: "text"
+  attr :placeholder, :string, required: true
+  attr :rest, :global, include: ~w(autocomplete disabled readonly required)
+
+  def text_field(assigns) do
+    assigns = assign(assigns, :errors, Enum.map(assigns.field.errors, &translate_error/1))
+
+    ~H"""
+    <label class={["dk-field", @errors != [] && "is-error"]}>
+      <input
+        type={@type}
+        id={@field.id}
+        name={@field.name}
+        value={if(@type != "password", do: @field.value)}
+        placeholder={@placeholder}
+        aria-label={@placeholder}
+        aria-invalid={to_string(@errors != [])}
+        {@rest}
+      />
+      <span :for={error <- @errors} class="dk-field__error">{error}</span>
+    </label>
     """
   end
 

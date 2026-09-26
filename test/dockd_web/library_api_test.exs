@@ -2,8 +2,9 @@ defmodule DockdWeb.LibraryApiTest do
   use DockdWeb.ConnCase, async: false
   import Dockd.DomainFixtures
   import Phoenix.ConnTest
-  alias Dockd.Accounts
   alias Dockd.Library
+
+  setup :register_api_user
 
   setup %{conn: conn} do
     game = game_fixture(%{title: "Super Mario Bros. Wonder"})
@@ -30,7 +31,7 @@ defmodule DockdWeb.LibraryApiTest do
              conn |> post("/api/v1/entries", Jason.encode!(%{entry: %{}})) |> json_response(422)
   end
 
-  test "ownerships CRUD and validation", %{conn: conn, game: game} do
+  test "ownerships CRUD and validation", %{conn: conn, user: user, game: game} do
     release = release_fixture(game)
 
     attrs = %{
@@ -60,7 +61,6 @@ defmodule DockdWeb.LibraryApiTest do
              |> post("/api/v1/ownerships", Jason.encode!(%{ownership: %{}}))
              |> json_response(422)
 
-    assert Accounts.default_owner()
-    assert Library.list_ownerships(Accounts.default_owner()) == []
+    assert Library.list_ownerships(user) == []
   end
 end

@@ -1,10 +1,11 @@
 defmodule Dockd.DomainFixtures do
   @moduledoc "Fixtures for domain context tests."
-  alias Dockd.{Accounts, Catalog, Library, Purchasing, Wallet}
+  alias Dockd.Accounts.User
+  alias Dockd.{Catalog, Library, Purchasing, Wallet}
 
-  @doc "Creates the default owner for context tests."
+  @doc "Creates a library owner for context tests; the domain does not need a login."
   def user_fixture(attrs \\ %{}),
-    do: Accounts.create_user(Map.merge(%{name: "Test owner"}, attrs))
+    do: Dockd.Repo.insert(%User{name: Map.get(attrs, :name, "Test owner")})
 
   @doc "Creates a catalog game for context tests."
   def game_fixture(attrs \\ %{}) do

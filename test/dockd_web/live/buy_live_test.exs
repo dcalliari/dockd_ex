@@ -4,11 +4,12 @@ defmodule DockdWeb.BuyLiveTest do
   import Phoenix.LiveViewTest
   import Dockd.DomainFixtures
 
-  alias Dockd.{Accounts, Purchasing, Wallet}
   alias Dockd.Library.Shelf
+  alias Dockd.{Purchasing, Wallet}
 
-  setup do
-    user = Accounts.default_owner()
+  setup :register_and_log_in_user
+
+  setup %{user: user} do
     today = Date.utc_today()
 
     upcoming = game_fixture(%{title: "Upcoming Exclusive"})

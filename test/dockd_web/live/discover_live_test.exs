@@ -4,10 +4,11 @@ defmodule DockdWeb.DiscoverLiveTest do
   import Phoenix.LiveViewTest
   import Dockd.DomainFixtures
 
-  alias Dockd.{Accounts, Library}
+  alias Dockd.Library
 
-  setup do
-    user = Accounts.default_owner()
+  setup :register_and_log_in_user
+
+  setup %{user: user} do
     candidate = game_fixture(%{title: "Discovery Candidate"})
     release_fixture(candidate, %{platform: :switch_2, release_date: ~D[2026-11-05]})
 

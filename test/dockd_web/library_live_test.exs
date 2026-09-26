@@ -4,10 +4,11 @@ defmodule DockdWeb.LibraryLiveTest do
   import Phoenix.LiveViewTest
   import Dockd.DomainFixtures
 
-  alias Dockd.{Accounts, Library}
+  alias Dockd.Library
 
-  setup do
-    user = Accounts.default_owner()
+  setup :register_and_log_in_user
+
+  setup %{user: user} do
     wanted = game_fixture(%{title: "Kirby and the Forgotten Land"})
     release_fixture(wanted, %{platform: :switch_2, release_date: ~D[2027-04-01]})
     {:ok, _} = entry_fixture(user, wanted, %{purchase_intent: :want})

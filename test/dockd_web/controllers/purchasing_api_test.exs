@@ -1,7 +1,9 @@
 defmodule DockdWeb.PurchasingApiTest do
   use DockdWeb.ConnCase, async: false
   import OpenApiSpex.TestAssertions
-  alias Dockd.{Accounts, Activity, Catalog, Library, Purchasing, Repo, Wallet}
+  alias Dockd.{Activity, Catalog, Library, Purchasing, Repo, Wallet}
+
+  setup :register_api_user
 
   setup do
     {:ok, game} = Catalog.create_game(%{title: "Pikmin", availability: :nintendo_exclusive})
@@ -42,12 +44,12 @@ defmodule DockdWeb.PurchasingApiTest do
       |> json_response(201)
 
     assert_schema(veto, "PurchasingResponse", DockdWeb.ApiSpec.spec())
-    assert Accounts.default_owner()
   end
 
-  test "purchase closes the intent, credit, reservation, and event cycle", %{release: release} do
-    user = Accounts.default_owner()
-
+  test "purchase closes the intent, credit, reservation, and event cycle", %{
+    release: release,
+    user: user
+  } do
     {:ok, entry} =
       Library.create_entry(user, %{game_id: release.game_id, purchase_intent: :want, backlog: :no})
 

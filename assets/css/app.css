@@ -148,10 +148,36 @@ img { display: block; max-width: 100%; }
   .dk-nav__links, .dk-nav__search { display: none; }
   .dk-nav__icon { display: inline-flex; }
   .dk-nav--searching .dk-nav__search { display: block; position: absolute; left: var(--space-4); right: var(--space-4); width: auto; }
-  .dk-nav--searching .dk-wordmark, .dk-nav--searching .dk-nav__icon { visibility: hidden; }
+  .dk-nav--searching .dk-wordmark, .dk-nav--searching .dk-nav__icon, .dk-nav--searching .dk-account { visibility: hidden; }
   .dk-bottomnav { display: flex; }
   .dk-page { padding-bottom: calc(var(--nav-height) + var(--space-6)); }
 }
+
+/* AccountMenu: o nome na barra abre o menu no padrão dos filtros (design/maquetes/entrar.html) */
+.dk-account { position: relative; }
+.dk-account > summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 0; cursor: pointer; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; transition: color 120ms; }
+.dk-account > summary::-webkit-details-marker { display: none; }
+.dk-account > summary:hover, .dk-account[open] > summary { color: var(--ink); }
+.dk-account > summary [class*="hero-"] { width: 12px; height: 12px; }
+.dk-account .dk-filter__menu { left: auto; right: 0; min-width: 200px; }
+.dk-account .dk-filter__menu button, .dk-account .dk-filter__menu a { display: flex; width: 100%; padding: 6px var(--space-3); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink); text-align: left; white-space: nowrap; }
+.dk-account .dk-filter__menu button:hover, .dk-account .dk-filter__menu a:hover { background: var(--surface-sunken); }
+.dk-account__who { padding: 6px var(--space-3) var(--space-2); margin-bottom: var(--space-1); border-bottom: 1px solid var(--line); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+@media (max-width: 767px) { .dk-account { margin-left: calc(-1 * var(--space-2)); } }
+
+/* AuthForm: a tela Entrar. Uma coluna, sem título; o botão diz o que acontece. */
+.dk-auth { display: flex; flex-direction: column; gap: var(--space-3); width: min(100%, 320px); margin: var(--space-7) auto 0; }
+.dk-auth .dk-btn { width: 100%; }
+.dk-auth__links { display: flex; justify-content: center; gap: var(--space-5); }
+@media (min-width: 768px) { .dk-auth { margin-top: 88px; } }
+
+/* TextField: o SearchField sem lupa. O erro fica embaixo do campo, em red-ink. */
+.dk-field { display: flex; flex-direction: column; gap: var(--space-1); }
+.dk-field input { width: 100%; height: var(--control-height); padding: 0 var(--space-3); border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-size: 14px; transition: border-color 120ms; }
+.dk-field input::placeholder { color: var(--ink-muted); }
+.dk-field input[readonly] { color: var(--ink-muted); }
+.dk-field.is-error input { border-color: var(--red-ink); }
+.dk-field__error { font-size: 12px; line-height: 16px; color: var(--red-ink); }
 
 /* SearchField */
 .dk-search { position: relative; }

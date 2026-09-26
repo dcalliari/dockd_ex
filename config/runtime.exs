@@ -129,21 +129,38 @@ if config_env() == :prod do
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
 
-  # ## Configuring the mailer
-  #
-  # In production you need to configure the mailer to use a different adapter.
-  # Here is an example configuration for Mailgun:
-  #
-  #     config :dockd, Dockd.Mailer,
-  #       adapter: Swoosh.Adapters.Mailgun,
-  #       api_key: System.get_env("MAILGUN_API_KEY"),
-  #       domain: System.get_env("MAILGUN_DOMAIN")
-  #
-  # Most non-SMTP adapters require an API client. Swoosh supports Req, Hackney,
-  # and Finch out-of-the-box. This configuration is typically done at
-  # compile-time in your config/prod.exs:
-  #
-  #     config :swoosh, :api_client, Swoosh.ApiClient.Req
-  #
-  # See https://swoosh.hexdocs.pm/Swoosh.html#module-installation for details.
+  # Mailer: SMTP, only when SMTP_HOST is set. Without it the sign-in screen offers
+  # email and password only. Port 465 uses implicit TLS; any other port, STARTTLS.
+  case System.get_env("SMTP_HOST") do
+    host when host in [nil, ""] ->
+      :ok
+
+    smtp_host ->
+      smtp_port = env_integer.("SMTP_PORT", 587)
+
+      tls_options = [
+        verify: :verify_peer,
+        cacerts: :public_key.cacerts_get(),
+        server_name_indication: String.to_charlist(smtp_host),
+        depth: 99,
+        customize_hostname_check: [
+          match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+        ]
+      ]
+
+      config :dockd, Dockd.Mailer,
+        adapter: Swoosh.Adapters.SMTP,
+        relay: smtp_host,
+        port: smtp_port,
+        username: System.fetch_env!("SMTP_USERNAME"),
+        password: System.fetch_env!("SMTP_PASSWORD"),
+        auth: :always,
+        ssl: smtp_port == 465,
+        sockopts: if(smtp_port == 465, do: tls_options, else: []),
+        tls: if(smtp_port == 465, do: :never, else: :always),
+        tls_options: tls_options
+
+      config :dockd, :mail_from, {"Dockd", System.fetch_env!("SMTP_FROM")}
+      config :dockd, :magic_link, true
+  end
 end

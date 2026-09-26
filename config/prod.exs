@@ -25,6 +25,9 @@ config :swoosh, api_client: Swoosh.ApiClient.Req
 # Disable Swoosh Local Memory Storage
 config :swoosh, local: false
 
+# Sign-in by link stays off until config/runtime.exs finds the SMTP variables.
+config :dockd, :magic_link, false
+
 # Do not print debug messages in production
 config :logger, level: :info
 

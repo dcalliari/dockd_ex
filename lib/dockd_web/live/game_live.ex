@@ -2,12 +2,12 @@ defmodule DockdWeb.GameLive do
   @moduledoc "Página do jogo: capa, um controle de status, versões com preço e o histórico."
   use DockdWeb, :live_view
 
-  alias Dockd.{Accounts, Activity, Catalog, Library, Purchasing}
+  alias Dockd.{Activity, Catalog, Library, Purchasing}
   alias Dockd.Library.Shelf
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    user = Accounts.default_owner()
+    user = socket.assigns.current_scope.user
     game = Catalog.get_game!(id)
 
     {:ok,
@@ -228,7 +228,12 @@ defmodule DockdWeb.GameLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current="Biblioteca" igdb_url={igdb_url(@game)}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      current="Biblioteca"
+      igdb_url={igdb_url(@game)}
+    >
       <p class="dk-back">
         <.link id="game-back" navigate={~p"/"} class="dk-link">
           <.icon name="hero-arrow-left" /> Biblioteca

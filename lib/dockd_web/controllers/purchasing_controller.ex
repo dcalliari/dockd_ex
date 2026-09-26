@@ -2,7 +2,7 @@ defmodule DockdWeb.PurchasingController do
   use DockdWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Dockd.{Accounts, Library, Purchasing}
+  alias Dockd.{Library, Purchasing}
   alias Dockd.Library.ReleaseVeto
   alias Dockd.Purchasing.{PriceObservation, Purchase}
   alias DockdWeb.ApiSchemas
@@ -66,7 +66,7 @@ defmodule DockdWeb.PurchasingController do
   )
 
   def index_purchases(conn, params) do
-    user = Accounts.default_owner()
+    user = conn.assigns.current_scope.user
 
     purchases =
       case params[:game_id] || params["game_id"] do
@@ -80,7 +80,7 @@ defmodule DockdWeb.PurchasingController do
   def index_observations(conn, params) do
     observations =
       Purchasing.list_price_observations(
-        Accounts.default_owner(),
+        conn.assigns.current_scope.user,
         release_param(params, :release_id)
       )
 
@@ -88,10 +88,13 @@ defmodule DockdWeb.PurchasingController do
   end
 
   def index_vetoes(conn, _),
-    do: json(conn, %{data: Enum.map(Library.list_vetoes(Accounts.default_owner()), &veto_json/1)})
+    do:
+      json(conn, %{
+        data: Enum.map(Library.list_vetoes(conn.assigns.current_scope.user), &veto_json/1)
+      })
 
   def delete_veto(conn, params) do
-    user = Accounts.default_owner()
+    user = conn.assigns.current_scope.user
     veto = Library.get_veto!(user, params[:id] || params["id"])
     {:ok, _} = Library.delete_veto(user, veto)
     send_resp(conn, :no_content, "")
@@ -99,17 +102,17 @@ defmodule DockdWeb.PurchasingController do
 
   def create_observation(conn, params) do
     attrs = body_attrs(conn) |> Map.put("release_id", release_param(params, :release_id))
-    respond(conn, Purchasing.create_price_observation(Accounts.default_owner(), attrs))
+    respond(conn, Purchasing.create_price_observation(conn.assigns.current_scope.user, attrs))
   end
 
   def create_purchase(conn, params) do
     attrs = body_attrs(conn) |> Map.put("release_id", release_param(params, :release_id))
-    respond(conn, Purchasing.create_purchase(Accounts.default_owner(), attrs))
+    respond(conn, Purchasing.create_purchase(conn.assigns.current_scope.user, attrs))
   end
 
   def create_veto(conn, params) do
     attrs = body_attrs(conn) |> Map.put("release_id", release_param(params, :release_id))
-    respond(conn, Library.create_veto(Accounts.default_owner(), attrs))
+    respond(conn, Library.create_veto(conn.assigns.current_scope.user, attrs))
   end
 
   defp release_param(params, key),

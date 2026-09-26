@@ -2,6 +2,8 @@ defmodule DockdWeb.PlannerWalletApiTest do
   use DockdWeb.ConnCase
   alias Dockd.Catalog
 
+  setup :register_api_user
+
   test "planner summary endpoint returns money, calendar and backlog", %{conn: conn} do
     response = conn |> get("/api/v1/planner") |> json_response(200)
     assert Map.has_key?(response, "money")

@@ -4,8 +4,10 @@ defmodule DockdWeb.GameLiveTest do
   import Phoenix.LiveViewTest
   import Dockd.DomainFixtures
 
-  alias Dockd.{Accounts, Library, Purchasing}
+  alias Dockd.{Library, Purchasing}
   alias Dockd.Library.Shelf
+
+  setup :register_and_log_in_user
 
   setup do
     game = game_fixture(%{title: "Metroid Prime 4", developer: "Retro Studios"})
@@ -18,7 +20,7 @@ defmodule DockdWeb.GameLiveTest do
         release_date_precision: :year
       })
 
-    %{game: game, release: release, release_2: release_2, user: Accounts.default_owner()}
+    %{game: game, release: release, release_2: release_2}
   end
 
   test "shows the hero, the caption and the versions", %{conn: conn} = ctx do

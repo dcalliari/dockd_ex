@@ -2,7 +2,6 @@ defmodule DockdWeb.LibraryController do
   use DockdWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Dockd.Accounts
   alias Dockd.Library
   alias Dockd.Library.{Entry, Ownership}
   alias DockdWeb.ApiSchemas
@@ -47,21 +46,23 @@ defmodule DockdWeb.LibraryController do
 
   def index(conn, _),
     do:
-      json(conn, %{data: Enum.map(Library.list_entries(Accounts.default_owner()), &entry_json/1)})
+      json(conn, %{
+        data: Enum.map(Library.list_entries(conn.assigns.current_scope.user), &entry_json/1)
+      })
 
   def show(conn, params),
     do:
       render_entry(
         conn,
-        Library.get_entry!(Accounts.default_owner(), params[:id] || params["id"])
+        Library.get_entry!(conn.assigns.current_scope.user, params[:id] || params["id"])
       )
 
   def create(conn, _) do
-    case Library.create_entry(Accounts.default_owner(), attrs(conn, "entry")) do
+    case Library.create_entry(conn.assigns.current_scope.user, attrs(conn, "entry")) do
       {:ok, entry} ->
         conn
         |> put_status(:created)
-        |> render_entry(Library.get_entry!(Accounts.default_owner(), entry.id))
+        |> render_entry(Library.get_entry!(conn.assigns.current_scope.user, entry.id))
 
       {:error, changeset} ->
         validation_error(conn, changeset)
@@ -69,7 +70,7 @@ defmodule DockdWeb.LibraryController do
   end
 
   def update(conn, params) do
-    user = Accounts.default_owner()
+    user = conn.assigns.current_scope.user
     entry = Library.get_entry!(user, params[:id] || params["id"])
 
     case Library.update_entry(user, entry, attrs(conn, "entry")) do
@@ -79,7 +80,7 @@ defmodule DockdWeb.LibraryController do
   end
 
   def delete(conn, params) do
-    user = Accounts.default_owner()
+    user = conn.assigns.current_scope.user
 
     :ok =
       Library.delete_entry(user, Library.get_entry!(user, params[:id] || params["id"]))
@@ -136,7 +137,6 @@ end
 defmodule DockdWeb.OwnershipController do
   use DockdWeb, :controller
   use OpenApiSpex.ControllerSpecs
-  alias Dockd.Accounts
   alias Dockd.Library
   alias Dockd.Library.Ownership
   alias DockdWeb.ApiSchemas
@@ -180,14 +180,15 @@ defmodule DockdWeb.OwnershipController do
   def index(conn, _),
     do:
       json(conn, %{
-        data: Enum.map(Library.list_ownerships(Accounts.default_owner()), &ownership_json/1)
+        data:
+          Enum.map(Library.list_ownerships(conn.assigns.current_scope.user), &ownership_json/1)
       })
 
   def show(conn, params),
     do:
       render_ownership(
         conn,
-        Library.get_ownership!(Accounts.default_owner(), params[:id] || params["id"])
+        Library.get_ownership!(conn.assigns.current_scope.user, params[:id] || params["id"])
       )
 
   def create(conn, _), do: save(conn, :create, nil)
@@ -197,26 +198,26 @@ defmodule DockdWeb.OwnershipController do
       save(
         conn,
         :update,
-        Library.get_ownership!(Accounts.default_owner(), params[:id] || params["id"])
+        Library.get_ownership!(conn.assigns.current_scope.user, params[:id] || params["id"])
       )
 
   def delete(conn, params),
     do:
       Library.delete_ownership(
-        Accounts.default_owner(),
-        Library.get_ownership!(Accounts.default_owner(), params[:id] || params["id"])
+        conn.assigns.current_scope.user,
+        Library.get_ownership!(conn.assigns.current_scope.user, params[:id] || params["id"])
       )
       |> then(fn _ -> send_resp(conn, :no_content, "") end)
 
   defp save(conn, :create, _) do
-    case Library.create_ownership(Accounts.default_owner(), body(conn)) do
+    case Library.create_ownership(conn.assigns.current_scope.user, body(conn)) do
       {:ok, o} -> conn |> put_status(:created) |> render_ownership(o)
       {:error, cs} -> error(conn, cs)
     end
   end
 
   defp save(conn, :update, o) do
-    case Library.update_ownership(Accounts.default_owner(), o, body(conn)) do
+    case Library.update_ownership(conn.assigns.current_scope.user, o, body(conn)) do
       {:ok, o} -> render_ownership(conn, o)
       {:error, cs} -> error(conn, cs)
     end

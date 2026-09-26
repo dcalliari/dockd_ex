@@ -7,10 +7,10 @@ alias Dockd.Wallet
 
 Ecto.Adapters.SQL.query!(
   Repo,
-  "TRUNCATE events, balance_reservations, store_balances, price_observations, purchases, ownerships, release_vetoes, entries, releases, games, users RESTART IDENTITY CASCADE"
+  "TRUNCATE users_tokens, events, balance_reservations, store_balances, price_observations, purchases, ownerships, release_vetoes, entries, releases, games, users RESTART IDENTITY CASCADE"
 )
 
-owner = Accounts.default_owner()
+{:ok, owner} = Accounts.register_user(%{email: "e2e@dockd.local", password: "senha-da-jornada-e2e"})
 today = Date.utc_today()
 cover_url = "/images/e2e-cover.svg"
 

@@ -3,7 +3,9 @@ defmodule DockdWeb.CatalogApiTest do
   import OpenApiSpex.TestAssertions
   alias Dockd.Catalog
 
-  test "game routes return the catalog contract", %{conn: conn} do
+  setup :register_api_user
+
+  test "game routes return the catalog contract", %{conn: conn, user: user} do
     params = %{
       game: %{title: "Splatoon", availability: "multiplatform", other_platforms: ["Wii U"]}
     }
@@ -37,19 +39,21 @@ defmodule DockdWeb.CatalogApiTest do
 
     shown = get(conn, ~p"/api/v1/games/#{id}") |> json_response(200)
     assert_schema(shown, "GameResponse", DockdWeb.ApiSpec.spec())
-    listed = get(build_conn(), ~p"/api/v1/games") |> json_response(200)
+    listed = get(authorize_api(build_conn(), user), ~p"/api/v1/games") |> json_response(200)
     assert_schema(listed, "GameListResponse", DockdWeb.ApiSpec.spec())
     assert %{"data" => [%{"id" => ^id}]} = listed
 
     invalid =
-      post(build_conn(), ~p"/api/v1/games", %{game: %{availability: "multiplatform"}})
+      post(authorize_api(build_conn(), user), ~p"/api/v1/games", %{
+        game: %{availability: "multiplatform"}
+      })
       |> json_response(422)
 
     assert_schema(invalid, "ValidationError", DockdWeb.ApiSpec.spec())
     assert %{"error" => %{"type" => "validation"}} = invalid
   end
 
-  test "nested release routes return contract and validation errors", %{conn: conn} do
+  test "nested release routes return contract and validation errors", %{conn: conn, user: user} do
     {:ok, game} = Catalog.create_game(%{title: "Metroid", availability: :nintendo_exclusive})
     conn = put_req_header(conn, "content-type", "application/json")
 
@@ -72,12 +76,18 @@ defmodule DockdWeb.CatalogApiTest do
     shown = get(conn, ~p"/api/v1/games/#{game.id}/releases/#{release_id}") |> json_response(200)
     assert shown["data"]["release_date_precision"] == "tbd"
     assert_schema(shown, "ReleaseResponse", DockdWeb.ApiSpec.spec())
-    listed = get(build_conn(), ~p"/api/v1/games/#{game.id}/releases") |> json_response(200)
+
+    listed =
+      get(authorize_api(build_conn(), user), ~p"/api/v1/games/#{game.id}/releases")
+      |> json_response(200)
+
     assert_schema(listed, "ReleaseListResponse", DockdWeb.ApiSpec.spec())
     assert %{"data" => [%{"platform" => "switch"}]} = listed
 
     invalid =
-      post(build_conn(), ~p"/api/v1/games/#{game.id}/releases", %{release: %{}})
+      post(authorize_api(build_conn(), user), ~p"/api/v1/games/#{game.id}/releases", %{
+        release: %{}
+      })
       |> json_response(422)
 
     assert_schema(invalid, "ValidationError", DockdWeb.ApiSpec.spec())
@@ -103,7 +113,10 @@ defmodule DockdWeb.CatalogApiTest do
     assert response["components"]["schemas"]["Release"]["properties"]["release_date_precision"]
   end
 
-  test "deletes an orphan release and protects releases with ownership", %{conn: conn} do
+  test "deletes an orphan release and protects releases with ownership", %{
+    conn: conn,
+    user: user
+  } do
     {:ok, game} = Catalog.create_game(%{title: "Sports Resort", availability: :switch2_exclusive})
     {:ok, orphan} = Catalog.create_release(game.id, %{platform: :switch})
     conn = put_req_header(conn, "content-type", "application/json")
@@ -113,7 +126,6 @@ defmodule DockdWeb.CatalogApiTest do
            |> response(204) == ""
 
     {:ok, owned} = Catalog.create_release(game.id, %{platform: :switch_2})
-    user = Dockd.Accounts.default_owner()
 
     assert {:ok, _ownership} =
              Dockd.Library.create_ownership(user, %{

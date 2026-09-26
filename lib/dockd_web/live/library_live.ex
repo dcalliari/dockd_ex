@@ -2,14 +2,14 @@ defmodule DockdWeb.LibraryLive do
   @moduledoc "Biblioteca: every game the owner relates to, one status each, as a grid of covers."
   use DockdWeb, :live_view
 
-  alias Dockd.{Accounts, Catalog, Library}
+  alias Dockd.{Catalog, Library}
   alias Dockd.Library.Shelf
 
   @filters ~w(tab plat media sort)
 
   @impl true
   def mount(_params, _session, socket) do
-    user = Accounts.default_owner()
+    user = socket.assigns.current_scope.user
     items = Shelf.list(user)
 
     {:ok,
@@ -77,7 +77,7 @@ defmodule DockdWeb.LibraryLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current="Biblioteca">
+    <Layouts.app flash={@flash} current_scope={@current_scope} current="Biblioteca">
       <.tabs id="library-tabs">
         <:tab
           :for={tab <- Shelf.tabs()}

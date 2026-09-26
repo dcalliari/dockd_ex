@@ -1,13 +1,13 @@
 defmodule Dockd.PlannerTest do
   use Dockd.DataCase
-  alias Dockd.{Accounts, Catalog, Library, Planner, Purchasing, Wallet}
   alias Dockd.Activity.Event
+  alias Dockd.{Catalog, Library, Planner, Purchasing, Wallet}
   alias Dockd.Catalog.Game
   alias Dockd.Library.Entry
   import Dockd.DomainFixtures
 
   setup do
-    {:ok, user} = Accounts.create_user(%{name: "Planner owner"})
+    {:ok, user} = Dockd.DomainFixtures.user_fixture(%{name: "Planner owner"})
     %{user: user}
   end
 

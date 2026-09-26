@@ -1,6 +1,8 @@
 defmodule DockdWeb.Router do
   use DockdWeb, :router
 
+  import DockdWeb.UserAuth
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -8,6 +10,7 @@ defmodule DockdWeb.Router do
     plug :put_root_layout, html: {DockdWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :fetch_current_scope_for_user
   end
 
   pipeline :api do
@@ -15,13 +18,33 @@ defmodule DockdWeb.Router do
     plug OpenApiSpex.Plug.PutApiSpec, module: DockdWeb.ApiSpec
   end
 
+  pipeline :api_user do
+    plug :require_api_user
+  end
+
+  # Every screen is a personal library: signed out, the visitor goes to Entrar.
+  scope "/", DockdWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    live_session :require_authenticated_user,
+      on_mount: [{DockdWeb.UserAuth, :require_authenticated}, DockdWeb.AccountMenu] do
+      live "/", LibraryLive, :index
+      live "/comprar", BuyLive, :index
+      live "/descobrir", DiscoverLive, :index
+      live "/jogos/:id", GameLive, :show
+    end
+  end
+
   scope "/", DockdWeb do
     pipe_through :browser
 
-    live "/", LibraryLive, :index
-    live "/comprar", BuyLive, :index
-    live "/descobrir", DiscoverLive, :index
-    live "/jogos/:id", GameLive, :show
+    live_session :current_user, on_mount: [{DockdWeb.UserAuth, :mount_current_scope}] do
+      live "/entrar", SignInLive, :new
+      live "/entrar/:token", MagicLinkLive, :new
+    end
+
+    post "/entrar", UserSessionController, :create
+    delete "/sair", UserSessionController, :delete
   end
 
   scope "/" do
@@ -35,7 +58,7 @@ defmodule DockdWeb.Router do
   end
 
   scope "/api/v1", DockdWeb do
-    pipe_through :api
+    pipe_through [:api, :api_user]
 
     resources "/entries", LibraryController, only: [:index, :show, :create, :update, :delete]
     resources "/ownerships", OwnershipController, only: [:index, :show, :create, :update, :delete]

@@ -2,12 +2,12 @@ defmodule DockdWeb.BuyLive do
   @moduledoc "Comprar: a fila dos jogos em Quero, por data de lançamento, com saldo do eShop."
   use DockdWeb, :live_view
 
-  alias Dockd.{Accounts, Purchasing, Wallet}
   alias Dockd.Library.Shelf
+  alias Dockd.{Purchasing, Wallet}
 
   @impl true
   def mount(_params, _session, socket) do
-    user = Accounts.default_owner()
+    user = socket.assigns.current_scope.user
     {:ok, socket |> assign(page_title: "Comprar", user: user, form: nil) |> load()}
   end
 
@@ -118,7 +118,7 @@ defmodule DockdWeb.BuyLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current="Comprar">
+    <Layouts.app flash={@flash} current_scope={@current_scope} current="Comprar">
       <p :if={@has_wallet} id="wallet-line" class="dk-wallet">
         <span>Saldo eShop<b>{money(@balance)}</b></span>
         <span :if={@reserved > 0}>Reservado<b>{money(@reserved)}</b></span>

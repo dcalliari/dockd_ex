@@ -6,7 +6,9 @@ alias Dockd.Wallet
 
 # Seeds are intentionally idempotent. Use only against a throwaway database.
 if Catalog.list_games() == [] do
-  owner = Accounts.default_owner()
+  # Demo account, documented in the README.
+  {:ok, owner} =
+    Accounts.register_user(%{email: "dono@dockd.local", password: "dockd-demonstracao"})
 
   catalog = [
     {"The Legend of Zelda: Tears of the Kingdom", :nintendo_exclusive, :demanding, :solo, 120,

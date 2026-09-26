@@ -1,7 +1,7 @@
 defmodule DockdWeb.Layouts do
   @moduledoc """
   Application shell: top navigation, page container, bottom navigation on phones,
-  IGDB attribution and flash messages.
+  IGDB attribution and flash messages. Signed out, only the wordmark remains.
   """
   use DockdWeb, :html
 
@@ -17,10 +17,15 @@ defmodule DockdWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <.nav_bar current={@current} search={@search} search_live={@search_live} />
+    <.nav_bar
+      current_scope={@current_scope}
+      current={@current}
+      search={@search}
+      search_live={@search_live}
+    />
     <main class="dk-page">
       {render_slot(@inner_block)}
-      <p class="dk-credit">
+      <p :if={@current_scope} class="dk-credit">
         Dados de jogos por
         <a href="https://www.igdb.com" target="_blank" rel="noopener noreferrer">IGDB</a>
         <span :if={@igdb_url}>
@@ -28,7 +33,7 @@ defmodule DockdWeb.Layouts do
         </span>
       </p>
     </main>
-    <.bottom_nav current={@current} />
+    <.bottom_nav :if={@current_scope} current={@current} />
     <.flash_group flash={@flash} />
     """
   end

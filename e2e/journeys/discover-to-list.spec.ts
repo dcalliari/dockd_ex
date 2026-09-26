@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { signIn } from "./sign-in";
 
 test("a new game goes from Descobrir to the Biblioteca as Quero and can be started", async ({ page }) => {
+  await signIn(page);
   await page.goto("/descobrir");
   await page.locator("#nav-search").fill("Discovery Candidate");
   const results = page.getByTestId("discover-results").or(page.locator("#discover-results"));
