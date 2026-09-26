@@ -4,7 +4,15 @@ Todas as mudanças relevantes do Dockd são documentadas neste arquivo.
 
 ## [0.3.0] Não lançada
 
+### Adicionado
+
+- Contas: cada conta é uma biblioteca. Tela Entrar com e-mail e senha, `Criar conta` sem convite e, com SMTP configurado por variáveis de ambiente, entrada por link.
+- Menu da conta na barra, com o e-mail, `Copiar token da API` e `Sair`.
+- A biblioteca anterior às contas recebe e-mail e senha por `Dockd.Release.claim_owner/2`; senha esquecida se troca por `Dockd.Release.reset_password/2`.
+
 ### Alterado
+
+- Todas as telas exigem conta, e a API `/api/v1` exige `Authorization: Bearer` com o token da conta. Nada mais usa o dono único do MVP.
 
 - Camada web reescrita a partir do design system aprovado em 25/09/2026: Biblioteca como home, página do Jogo com um único controle de status, Descobrir sobre o IGDB inteiro e Comprar como fila de lançamentos.
 - Um status derivado por jogo (Quero, Backlog, Jogando, Zerado, Larguei), calculado de posse e estado de jogo, sem campo novo no modelo.

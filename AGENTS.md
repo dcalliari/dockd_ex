@@ -51,6 +51,13 @@ custom classes must fully style the input
 - Focus on **delightful details** like hover effects, loading states, and smooth page transitions
 
 
+### Contas no Dockd
+
+- Autenticação veio do `phx.gen.auth` adaptado: `DockdWeb.UserAuth` atribui `@current_scope`; nunca existe `@current_user`. Toda tela pessoal fica no `live_session :require_authenticated_user` do router e lê o dono em `@current_scope.user`; a API lê o mesmo `conn.assigns.current_scope` do token Bearer (`require_api_user`).
+- Os contextos de domínio recebem o `%User{}` (`scope.user`), não o escopo. Uma conta é uma biblioteca, sem papel nem admin.
+- A tela Entrar é `DockdWeb.SignInLive` (maquete `design/maquetes/entrar.html`, caminho C). Erros aparecem no campo e o estado muda no lugar; não use flash visível. Link de entrada só existe quando `Accounts.magic_link_enabled?/0` (SMTP configurado).
+- Testes de LiveView usam `setup :register_and_log_in_user`; de API, `setup :register_api_user` (ambos em `DockdWeb.ConnCase`).
+
 <!-- usage-rules-start -->
 
 <!-- phoenix:elixir-start -->

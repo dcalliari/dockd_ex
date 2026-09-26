@@ -22,7 +22,8 @@ Quatro telas, desenhadas a partir do design system em [`design/`](design/FONTE.m
 - **Jogo** em `/jogos/:id`: capa com plataformas e exclusividade, um único controle de status, versões com preço observado e datado, e o histórico das ações.
 - **Descobrir** em `/descobrir`: busca no IGDB inteiro restrita a Switch e Switch 2, com `Quero jogar` em um toque. Sem credenciais do IGDB, busca no catálogo local.
 - **Comprar** em `/comprar`: a fila dos jogos em Quero, separada em próximos lançamentos, disponíveis e sem data, com reserva de saldo e registro de compra em linha.
-- API JSON versionada em `/api/v1` e especificação em `/api/openapi`. O catálogo continua sendo administrado só pela API.
+- **Entrar** em `/entrar`: cada conta é uma biblioteca. Entra-se com e-mail e senha, e `Criar conta` abre uma conta nova sem convite. Com SMTP configurado, aparece também `Entrar por link`. Todas as telas acima exigem a conta.
+- API JSON versionada em `/api/v1` e especificação em `/api/openapi`. Cada chamada leva `Authorization: Bearer <token>`, o token que `Copiar token da API`, no menu da conta, gera e copia; um novo substitui o anterior. O catálogo continua sendo administrado só pela API, por qualquer conta.
 - Tema segue o sistema operacional; não há seletor de tema.
 - Integração opcional com IGDB para sincronizar dados de jogos. O uso não comercial exige atribuição visível à fonte, presente no rodapé de toda página. No deploy por compose, as variáveis do IGDB são fornecidas pelo `.env`.
 
@@ -132,13 +133,19 @@ mix setup
 mix phx.server
 ```
 
-Para carregar o cenário de demonstração em um banco descartável, execute `mix run priv/repo/seeds.exs`. O script pode ser executado novamente sem duplicar dados; nunca o use no banco do laboratório.
+Para carregar o cenário de demonstração em um banco descartável, execute `mix run priv/repo/seeds.exs` e entre com `dono@dockd.local` e a senha `dockd-demonstracao`. O script pode ser executado novamente sem duplicar dados; nunca o use no banco do laboratório. Em desenvolvimento, o link de entrada chega em <http://localhost:4000/dev/mailbox>.
 
 `mix setup` instala dependências, cria e migra o banco, instala os binários de assets e compila CSS e JavaScript. O [Makefile](Makefile) reúne atalhos para setup, desenvolvimento, testes, lint, formatação, banco e Docker.
 
 Para usar um proxy reverso, copie `.env.example`, preencha `PHX_HOST`, `DATABASE_URL`, `SECRET_KEY_BASE`, `TRAEFIK_NETWORK` e `TRAEFIK_ENTRYPOINT`, e execute `docker compose -f compose.traefik.yml up --build`. Esse compose não cria a rede externa: ela deve existir no ambiente escolhido. O serviço reinicia automaticamente após reinicializações do host ou do Docker.
 
 Em produção, `DATABASE_URL` e `SECRET_KEY_BASE` são obrigatórios. `PORT`, `PHX_HOST`, `POOL_SIZE` e `ECTO_IPV6` também são lidos em runtime. No compose Traefik, `IGDB_CLIENT_ID` e `IGDB_CLIENT_SECRET` habilitam a integração; `IGDB_SYNC_INTERVAL_MS` e `IGDB_SYNC_INITIAL_DELAY_MS` são opcionais e usam 86400000 ms e 1000 ms, respectivamente. Migrações de release podem ser executadas com `bin/migrate` dentro da imagem.
+
+Contas em produção:
+
+- A biblioteca anterior às contas não tem e-mail nem senha. Depois da migração, dê a ela uma entrada uma única vez: `bin/dockd eval 'Dockd.Release.claim_owner("email", "senha")'`. Até lá, ninguém entra nela; quem criar conta começa com uma biblioteca vazia.
+- Senha esquecida sem SMTP: `bin/dockd eval 'Dockd.Release.reset_password("email", "senha")'`, que também encerra as sessões da conta.
+- O envio de e-mail vem só da configuração: `SMTP_HOST`, `SMTP_PORT` (587 por padrão; 465 usa TLS direto), `SMTP_USERNAME`, `SMTP_PASSWORD` e `SMTP_FROM`. Sem `SMTP_HOST`, a tela Entrar oferece só e-mail e senha. O primeiro link usado por uma conta confirma o e-mail e descarta a senha criada antes dele, porque criar conta não verifica o e-mail.
 
 ### Testes e validações
 
