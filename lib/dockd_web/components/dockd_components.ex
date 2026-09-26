@@ -133,7 +133,7 @@ defmodule DockdWeb.DockdComponents do
   end
 
   @doc "Joins metadata parts with a middle dot, dropping blanks."
-  def meta(parts), do: parts |> Enum.reject(&(&1 in [nil, ""])) |> Enum.join(" · ")
+  def meta(parts), do: parts |> Enum.reject(&(&1 in [nil, "", false])) |> Enum.join(" · ")
 
   # ---------------------------------------------------------------------------
   # Navigation
