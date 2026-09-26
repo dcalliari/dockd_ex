@@ -1,18 +1,24 @@
 defmodule DockdWeb.Layouts do
   @moduledoc """
   Application shell: top navigation, page container, bottom navigation on phones,
-  IGDB attribution and flash messages. Signed out, only the wordmark remains.
+  IGDB attribution and flash messages. A visitor gets the visitor NavBar and no bottom
+  navigation: Descobrir is already in the wordmark row.
   """
   use DockdWeb, :html
 
   embed_templates "layouts/*"
 
   attr :flash, :map, required: true, doc: "the map of flash messages"
-  attr :current, :string, default: nil, doc: "Biblioteca, Comprar or Descobrir"
+
+  attr :current, :string,
+    default: nil,
+    doc: "Biblioteca, Comprar, Descobrir, Entrar or Criar conta"
+
   attr :search, :string, default: ""
   attr :search_live, :boolean, default: false
   attr :current_scope, :map, default: nil
   attr :igdb_url, :string, default: nil
+  slot :bleed, doc: "full-width content between the NavBar and the page, like the Entrar shelf"
   slot :inner_block, required: true
 
   def app(assigns) do
@@ -23,9 +29,10 @@ defmodule DockdWeb.Layouts do
       search={@search}
       search_live={@search_live}
     />
+    {render_slot(@bleed)}
     <main class="dk-page">
       {render_slot(@inner_block)}
-      <p :if={@current_scope} class="dk-credit">
+      <p class="dk-credit">
         Dados de jogos por
         <a href="https://www.igdb.com" target="_blank" rel="noopener noreferrer">IGDB</a>
         <span :if={@igdb_url}>

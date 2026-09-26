@@ -18,11 +18,13 @@ A restrição a Switch e Switch 2 é uma escolha de produto, não uma limitaçã
 
 Quatro telas, desenhadas a partir do design system em [`design/`](design/FONTE.md) e aprovadas em maquete antes de virarem código:
 
-- **Biblioteca** em `/`: grade de capas com um status por jogo (Quero, Backlog, Jogando, Zerado, Larguei), derivado de posse e estado de jogo; abas com contagem, filtros de plataforma e mídia, busca e ordenação.
+- **Vitrine** em `/` para quem não entrou: três faixas de capas do catálogo (próximos lançamentos, os que chegaram agora e os em alta no IGDB), cada uma abrindo sua lista em Descobrir.
+- **Biblioteca** em `/`, com conta: grade de capas com um status por jogo (Quero, Backlog, Jogando, Zerado, Larguei), derivado de posse e estado de jogo; abas com contagem, filtros de plataforma e mídia, busca e ordenação.
 - **Jogo** em `/jogos/:id`: capa com plataformas e exclusividade, um único controle de status, versões com preço observado e datado, e o histórico das ações.
 - **Descobrir** em `/descobrir`: busca no IGDB inteiro restrita a Switch e Switch 2, com `Quero jogar` em um toque. Sem credenciais do IGDB, busca no catálogo local.
 - **Comprar** em `/comprar`: a fila dos jogos em Quero, separada em próximos lançamentos, disponíveis e sem data, com reserva de saldo e registro de compra em linha.
-- **Entrar** em `/entrar`: cada conta é uma biblioteca. Entra-se com e-mail e senha, e `Criar conta` abre uma conta nova sem convite. Com SMTP configurado, aparece também `Entrar por link`. Todas as telas acima exigem a conta.
+- **Entrar** em `/entrar` e **Criar conta** em `/criar-conta`: cada conta é uma biblioteca. Entra-se com e-mail e senha, e `Criar conta` abre uma conta nova sem convite. Com SMTP configurado, aparece também `Entrar por link`.
+- Sem conta, a Vitrine, Descobrir e a página do jogo mostram só o catálogo; a etiqueta `+ Adicionar` leva ao Entrar e volta à mesma capa. Biblioteca, Comprar, preço, posse, status e histórico exigem a conta.
 - API JSON versionada em `/api/v1` e especificação em `/api/openapi`. Cada chamada leva `Authorization: Bearer <token>`, o token que `Copiar token da API`, no menu da conta, gera e copia; um novo substitui o anterior. O catálogo continua sendo administrado só pela API, por qualquer conta.
 - Tema segue o sistema operacional; não há seletor de tema.
 - Integração opcional com IGDB para sincronizar dados de jogos. O uso não comercial exige atribuição visível à fonte, presente no rodapé de toda página. No deploy por compose, as variáveis do IGDB são fornecidas pelo `.env`.

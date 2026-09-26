@@ -22,7 +22,7 @@ defmodule DockdWeb.DiscoverLiveTest do
 
   test "opens on upcoming releases and searches the catalog by title", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/descobrir")
-    assert has_element?(view, "#discover-upcoming", "Próximos lançamentos")
+    assert has_element?(view, "#discover-list", "Próximos lançamentos")
     assert has_element?(view, "#result-#{ctx.candidate.id}", "05/11/2026")
     refute has_element?(view, "#result-#{ctx.listed.id}")
 

@@ -62,6 +62,8 @@ defmodule Dockd.Library.Shelf do
   end
 
   @doc "Builds the shelf item of one game for a user."
+  def item(nil, %Game{} = game), do: build(Repo.preload(game, :releases), nil, [])
+
   def item(%User{id: user_id}, %Game{} = game) do
     game = Repo.preload(game, :releases)
     entry = Repo.one(from e in Entry, where: e.user_id == ^user_id and e.game_id == ^game.id)

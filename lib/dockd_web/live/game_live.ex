@@ -1,20 +1,28 @@
 defmodule DockdWeb.GameLive do
-  @moduledoc "Página do jogo: capa, um controle de status, versões com preço e o histórico."
+  @moduledoc """
+  Página do jogo: capa, um controle de status, versões com preço e o histórico. O
+  visitante vê só a ficha do catálogo, e a etiqueta + Adicionar leva ao Entrar.
+  """
   use DockdWeb, :live_view
 
   alias Dockd.{Activity, Catalog, Library, Purchasing}
   alias Dockd.Library.Shelf
+  alias DockdWeb.UserAuth
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    user = socket.assigns.current_scope.user
+    user = socket.assigns.current_scope && socket.assigns.current_scope.user
     game = Catalog.get_game!(id)
 
     {:ok,
      socket
      |> assign(page_title: game.title, user: user, game: game, panel: nil, form: nil)
+     |> UserAuth.halt_visitor_events([])
      |> load()}
   end
+
+  defp load(%{assigns: %{user: nil, game: game}} = socket),
+    do: assign(socket, item: Shelf.item(nil, game), observations: %{}, history: [], since: nil)
 
   defp load(socket) do
     %{user: user, game: game} = socket.assigns
@@ -231,12 +239,15 @@ defmodule DockdWeb.GameLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      current="Biblioteca"
+      current={@user && "Biblioteca"}
       igdb_url={igdb_url(@game)}
     >
       <p class="dk-back">
-        <.link id="game-back" navigate={~p"/"} class="dk-link">
+        <.link :if={@user} id="game-back" navigate={~p"/"} class="dk-link">
           <.icon name="hero-arrow-left" /> Biblioteca
+        </.link>
+        <.link :if={!@user} id="game-back" navigate={~p"/descobrir"} class="dk-link">
+          <.icon name="hero-arrow-left" /> Descobrir
         </.link>
       </p>
 
@@ -252,7 +263,17 @@ defmodule DockdWeb.GameLive do
           <h1 class="t-display">{@game.title}</h1>
           <p id="game-meta" class="t-meta">{meta([@game.developer, @item.year])}</p>
 
+          <div :if={!@user} class="dk-status-control">
+            <.link
+              id="game-sign-in"
+              href={UserAuth.sign_in_path(~p"/jogos/#{@game.id}")}
+              class="dk-status dk-status--add"
+            >
+              + Adicionar
+            </.link>
+          </div>
           <.status_control
+            :if={@user}
             id={"status-control-#{@item.status}"}
             status={@item.status}
             since={@since}
@@ -275,7 +296,10 @@ defmodule DockdWeb.GameLive do
             <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
           </div>
 
-          <div :if={@item.status in [nil, :quero] and @item.releases != []} class="dk-hero__actions">
+          <div
+            :if={@user != nil and @item.status in [nil, :quero] and @item.releases != []}
+            class="dk-hero__actions"
+          >
             <.btn
               id="buy-button"
               variant="primary"
@@ -318,7 +342,7 @@ defmodule DockdWeb.GameLive do
               <% end %>
             </div>
           </div>
-          <div class="dk-row__end">
+          <div :if={@user} class="dk-row__end">
             <.price id={"price-#{release.id}"} observation={@observations[release.id]} />
             <.btn size="sm" phx-click="price_form" phx-value-release_id={release.id}>
               Registrar preço

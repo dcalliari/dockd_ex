@@ -22,25 +22,25 @@ defmodule DockdWeb.Router do
     plug :require_api_user
   end
 
-  # Every screen is a personal library: signed out, the visitor goes to Entrar.
-  scope "/", DockdWeb do
-    pipe_through [:browser, :require_authenticated_user]
-
-    live_session :require_authenticated_user,
-      on_mount: [{DockdWeb.UserAuth, :require_authenticated}, DockdWeb.AccountMenu] do
-      live "/", LibraryLive, :index
-      live "/comprar", BuyLive, :index
-      live "/descobrir", DiscoverLive, :index
-      live "/jogos/:id", GameLive, :show
-    end
-  end
-
+  # The catalog is public: a visitor explores it and each game, while personal data and
+  # every write need an account (see `DockdWeb.UserAuth.halt_visitor_events/2`).
   scope "/", DockdWeb do
     pipe_through :browser
 
-    live_session :current_user, on_mount: [{DockdWeb.UserAuth, :mount_current_scope}] do
+    live_session :default,
+      on_mount: [{DockdWeb.UserAuth, :mount_current_scope}, DockdWeb.AccountMenu] do
+      live "/", LibraryLive, :index
+      live "/descobrir", DiscoverLive, :index
+      live "/jogos/:id", GameLive, :show
       live "/entrar", SignInLive, :new
+      live "/criar-conta", SignInLive, :register
       live "/entrar/:token", MagicLinkLive, :new
+
+      scope "/" do
+        pipe_through :require_authenticated_user
+
+        live "/comprar", BuyLive, :index
+      end
     end
 
     post "/entrar", UserSessionController, :create

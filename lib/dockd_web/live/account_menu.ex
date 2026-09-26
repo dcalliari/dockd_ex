@@ -10,8 +10,12 @@ defmodule DockdWeb.AccountMenu do
   def on_mount(:default, _params, _session, socket),
     do: {:cont, attach_hook(socket, :account_menu, :handle_event, &handle_event/3)}
 
-  defp handle_event("copy_api_token", _params, socket) do
-    {:ok, token} = Accounts.create_api_token(socket.assigns.current_scope.user)
+  defp handle_event(
+         "copy_api_token",
+         _params,
+         %{assigns: %{current_scope: %{user: user}}} = socket
+       ) do
+    {:ok, token} = Accounts.create_api_token(user)
     {:halt, push_event(socket, "copy_api_token", %{token: token})}
   end
 

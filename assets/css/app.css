@@ -144,11 +144,16 @@ img { display: block; max-width: 100%; }
 .dk-bottomnav { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); align-items: stretch; background: var(--surface); border-top: 1px solid var(--line); }
 .dk-bottomnav a { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-top: 2px solid transparent; margin-top: -1px; }
 .dk-bottomnav a[aria-current="page"] { color: var(--ink); border-top-color: var(--red); }
+/* Visitante: Entrar e Criar conta à direita; no celular só Entrar, sem barra inferior (design/maquetes/area-publica.html) */
+.dk-nav__guest { display: flex; gap: var(--space-4); }
+.dk-nav__guest-phone { display: none; }
 @media (max-width: 767px) {
   .dk-nav__links, .dk-nav__search { display: none; }
   .dk-nav__icon { display: inline-flex; }
+  .dk-nav__guest-phone { display: inline-block; }
+  .dk-nav:has(.dk-nav__guest) { gap: var(--space-3); }
   .dk-nav--searching .dk-nav__search { display: block; position: absolute; left: var(--space-4); right: var(--space-4); width: auto; }
-  .dk-nav--searching .dk-wordmark, .dk-nav--searching .dk-nav__icon, .dk-nav--searching .dk-account { visibility: hidden; }
+  .dk-nav--searching .dk-wordmark, .dk-nav--searching .dk-nav__icon, .dk-nav--searching .dk-account, .dk-nav--searching .dk-nav__guest-phone { visibility: hidden; }
   .dk-bottomnav { display: flex; }
   .dk-page { padding-bottom: calc(var(--nav-height) + var(--space-6)); }
 }
@@ -170,6 +175,15 @@ img { display: block; max-width: 100%; }
 .dk-auth .dk-btn { width: 100%; }
 .dk-auth__links { display: flex; justify-content: center; gap: var(--space-5); }
 @media (min-width: 768px) { .dk-auth { margin-top: 88px; } }
+/* Entrar, caminho A: uma prateleira de capas do catálogo sai pelas duas bordas, com etiquetas ilustrativas (design/maquetes/entrar-v2.html) */
+.dk-auth-shelf { display: grid; grid-auto-flow: column; grid-auto-columns: 112px; gap: var(--space-2); justify-content: unsafe center; margin-top: var(--space-4); overflow: hidden; }
+.dk-auth-shelf .dk-status--sm { font-size: 9px; padding: 0 4px; }
+.dk-auth-shelf + .dk-page .dk-auth { margin-top: var(--space-6); }
+@media (min-width: 768px) {
+  .dk-auth-shelf { grid-auto-columns: 176px; gap: var(--space-3); margin-top: var(--space-5); }
+  .dk-auth-shelf .dk-status--sm { font-size: 10px; padding: 0 6px; }
+  .dk-auth-shelf + .dk-page .dk-auth { margin-top: var(--space-7); }
+}
 
 /* TextField: o SearchField sem lupa. O erro fica embaixo do campo, em red-ink. */
 .dk-field { display: flex; flex-direction: column; gap: var(--space-1); }
@@ -320,6 +334,11 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
   .dk-poster__veil, .dk-tip { display: none; }
   .dk-card__action--touch { display: inline-flex; }
 }
+
+/* Strip: uma linha de capas na vitrine do visitante; no celular rola de lado */
+.dk-strip { display: grid; grid-auto-flow: column; grid-auto-columns: 104px; gap: var(--space-3); overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+.dk-strip .dk-card { scroll-snap-align: start; }
+@media (min-width: 768px) { .dk-strip { grid-auto-columns: minmax(0, 1fr); overflow: visible; } }
 
 /* GameRow */
 .dk-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }

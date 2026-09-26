@@ -35,6 +35,40 @@ defmodule DockdWeb.UserSessionControllerTest do
       assert redirected_to(conn) == "/comprar"
     end
 
+    test "comes back to the page whose tag led to Entrar", %{conn: conn, user: user} do
+      volta = "/descobrir?q=zelda&abrir=result-igdb-1"
+
+      conn =
+        post(conn, ~p"/entrar", %{
+          "user" => %{"email" => user.email, "password" => valid_user_password()},
+          "volta" => volta
+        })
+
+      assert redirected_to(conn) == volta
+    end
+
+    test "never comes back to another site", %{conn: conn, user: user} do
+      for volta <- ["//evil.example", "https://evil.example", "/\\evil.example"] do
+        conn =
+          post(conn, ~p"/entrar", %{
+            "user" => %{"email" => user.email, "password" => valid_user_password()},
+            "volta" => volta
+          })
+
+        assert redirected_to(conn) == ~p"/"
+      end
+    end
+
+    test "a wrong password keeps the page to come back to", %{conn: conn, user: user} do
+      conn =
+        post(conn, ~p"/entrar", %{
+          "user" => %{"email" => user.email, "password" => "senha errada!!"},
+          "volta" => "/jogos/1"
+        })
+
+      assert redirected_to(conn) == ~p"/entrar?volta=%2Fjogos%2F1"
+    end
+
     test "a wrong password goes back to Entrar with the error on the field", %{
       conn: conn,
       user: user
@@ -72,10 +106,10 @@ defmodule DockdWeb.UserSessionControllerTest do
   end
 
   describe "DELETE /sair" do
-    test "signs out and goes to Entrar", %{conn: conn, user: user} do
+    test "signs out and goes to the showcase", %{conn: conn, user: user} do
       conn = conn |> log_in_user(user) |> delete(~p"/sair")
 
-      assert redirected_to(conn) == ~p"/entrar"
+      assert redirected_to(conn) == ~p"/"
       refute get_session(conn, :user_token)
     end
   end

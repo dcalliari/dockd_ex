@@ -1,6 +1,8 @@
 defmodule DockdWeb.DiscoverLive do
   @moduledoc """
-  Descobrir: busca no catálogo inteiro do IGDB, restrita a Switch e Switch 2.
+  Descobrir: busca no catálogo inteiro do IGDB e as listas da vitrine, restritas a Switch e
+  Switch 2. É pública: para o visitante a etiqueta de status leva ao Entrar e volta aqui,
+  com o menu daquela capa aberto (`abrir`).
 
   Sem credenciais do IGDB a busca cai para o catálogo local, o que mantém o fluxo
   utilizável em desenvolvimento e nos testes.
@@ -9,15 +11,33 @@ defmodule DockdWeb.DiscoverLive do
 
   alias Dockd.{Catalog, Library}
   alias Dockd.Library.Shelf
+  alias DockdWeb.UserAuth
+
+  # Showcase lists by their `lista` value; the first one opens Descobrir without a search.
+  @lists [
+    {"lancamentos", :upcoming, "Próximos lançamentos"},
+    {"recentes", :recent, "Chegaram agora"},
+    {"em-alta", :popular, "Em alta"}
+  ]
+
+  def lists, do: @lists
 
   @impl true
-  def mount(_params, _session, socket),
-    do: {:ok, assign(socket, page_title: "Descobrir", user: socket.assigns.current_scope.user)}
+  def mount(_params, _session, socket) do
+    user = socket.assigns.current_scope && socket.assigns.current_scope.user
+
+    {:ok,
+     socket
+     |> assign(page_title: "Descobrir", user: user)
+     |> UserAuth.halt_visitor_events(["search"])}
+  end
 
   @impl true
   def handle_params(params, _uri, socket) do
     q = params |> Map.get("q", "") |> String.trim()
-    {:noreply, socket |> assign(q: q) |> search()}
+    list = List.keyfind(@lists, params["lista"], 0, hd(@lists))
+
+    {:noreply, socket |> assign(q: q, list: list, open: params["abrir"]) |> search()}
   end
 
   @impl true
@@ -26,6 +46,7 @@ defmodule DockdWeb.DiscoverLive do
 
   def handle_event("set_status", %{"status" => status} = params, socket) do
     status = Enum.find(statuses(), &(Atom.to_string(&1) == status))
+    socket = assign(socket, open: nil)
 
     with {:ok, game} <- resolve_game(params),
          {:ok, _} <- Library.set_status(socket.assigns.user, game, status) do
@@ -43,86 +64,44 @@ defmodule DockdWeb.DiscoverLive do
   defp resolve_game(%{"game_id" => game_id}), do: {:ok, Catalog.get_game!(game_id)}
   defp resolve_game(%{"igdb_id" => igdb_id}), do: Catalog.import_igdb(String.to_integer(igdb_id))
 
-  defp search(%{assigns: %{q: "", user: user}} = socket) do
-    shelf = user |> Shelf.list() |> Map.new(&{&1.game.id, &1.status})
+  defp search(%{assigns: %{q: "", list: {_, list, _}}} = socket),
+    do: assign(socket, results: with_status(Catalog.showcase(list), socket), source: :showcase)
 
-    results =
-      case Catalog.upcoming_igdb() do
-        {:ok, results} -> results
-        {:error, _} -> local_upcoming()
-      end
-
-    assign(socket, results: with_status(results, shelf), source: :upcoming)
+  defp search(%{assigns: %{q: q}} = socket) do
+    {source, results} = Catalog.search(q)
+    assign(socket, results: with_status(results, socket), source: source)
   end
 
-  defp search(%{assigns: %{q: q, user: user}} = socket) do
-    shelf = user |> Shelf.list() |> Map.new(&{&1.game.id, &1.status})
-
-    {source, results} =
-      case Catalog.search_igdb(q) do
-        {:ok, results} -> {:igdb, results}
-        {:error, _} -> {:local, local_results(q)}
-      end
-
-    assign(socket, results: with_status(results, shelf), source: source)
+  defp with_status(results, %{assigns: %{user: user}}) do
+    shelf = if user, do: user |> Shelf.list() |> Map.new(&{&1.game.id, &1.status}), else: %{}
+    Enum.map(results, &Map.put(&1, :status, &1.game && shelf[&1.game.id]))
   end
 
-  defp with_status(results, shelf),
-    do: Enum.map(results, &Map.put(&1, :status, &1.game && shelf[&1.game.id]))
+  @doc "The DOM id of a result card, also the `abrir` value that opens its menu."
+  def result_id(%{game: %{id: id}}), do: "result-#{id}"
+  def result_id(%{igdb_id: igdb_id}), do: "result-igdb-#{igdb_id}"
 
-  defp local_upcoming do
-    today = Date.utc_today()
-
-    Catalog.list_games()
-    |> Enum.filter(fn game ->
-      Enum.any?(
-        game.releases || [],
-        &(&1.release_date && Date.compare(&1.release_date, today) == :gt)
-      )
-    end)
-    |> local_shape()
-    |> Enum.sort_by(& &1.first_date, Date)
-  end
-
-  defp local_results(q) do
-    needle = String.downcase(q)
-
-    Catalog.list_games()
-    |> Enum.filter(&String.contains?(String.downcase(&1.title), needle))
-    |> local_shape()
-  end
-
-  defp local_shape(games) do
-    Enum.map(games, fn game ->
-      releases = game.releases || []
-      dates = releases |> Enum.map(& &1.release_date) |> Enum.reject(&is_nil/1)
-      first = if dates == [], do: nil, else: Enum.min(dates, Date)
-
-      %{
-        igdb_id: game.igdb_id,
-        title: game.title,
-        cover_url: game.cover_url,
-        platforms: releases |> Enum.map(& &1.platform) |> Enum.uniq() |> Enum.sort(),
-        first_date: first,
-        year: first && first.year,
-        game: game
-      }
-    end)
-  end
-
-  defp result_id(%{game: %{id: id}}), do: "result-#{id}"
-  defp result_id(%{igdb_id: igdb_id}), do: "result-igdb-#{igdb_id}"
+  @doc "Descobrir on the showcase list `lista`, with extra query `params`."
+  def list_path("lancamentos", params), do: ~p"/descobrir?#{params}"
+  def list_path(lista, params), do: ~p"/descobrir?#{Map.put(params, :lista, lista)}"
 
   defp menu_values(%{game: %{id: id}}), do: %{game_id: id}
   defp menu_values(%{igdb_id: igdb_id}), do: %{igdb_id: igdb_id}
 
-  defp result_meta(%{first_date: %Date{} = date, platforms: platforms} = result) do
+  @doc "Platforms and the release date, or the year once it is out."
+  def result_meta(%{first_date: %Date{} = date, platforms: platforms} = result) do
     if Date.compare(date, Date.utc_today()) == :gt,
       do: meta([Enum.map_join(platforms, " · ", &enum_label/1), date_pt_br(date)]),
       else: meta([Enum.map_join(platforms, " · ", &enum_label/1), result.year])
   end
 
-  defp result_meta(result), do: Enum.map_join(result.platforms, " · ", &enum_label/1)
+  def result_meta(result), do: Enum.map_join(result.platforms, " · ", &enum_label/1)
+
+  # Where a visitor comes back to after Entrar: this same list, with the card's menu open.
+  defp back_path(%{q: "", list: {lista, _, _}}, result),
+    do: list_path(lista, %{abrir: result_id(result)})
+
+  defp back_path(%{q: q}, result), do: ~p"/descobrir?#{%{q: q, abrir: result_id(result)}}"
 
   defp count_label(1), do: "1 jogo"
   defp count_label(n), do: "#{n} jogos"
@@ -138,9 +117,9 @@ defmodule DockdWeb.DiscoverLive do
       search_live
     >
       <.section_head
-        :if={@source == :upcoming and @results != []}
-        id="discover-upcoming"
-        title="Próximos lançamentos"
+        :if={@source == :showcase and @results != []}
+        id="discover-list"
+        title={elem(@list, 2)}
       />
       <p
         :if={@q != ""}
@@ -163,7 +142,9 @@ defmodule DockdWeb.DiscoverLive do
             cover_url={result.cover_url}
             navigate={result.game && ~p"/jogos/#{result.game.id}"}
           />
+          <.status_link :if={!@user} back={back_path(assigns, result)} />
           <.status_menu
+            :if={@user}
             id={"status-#{result_id(result)}"}
             status={result.status}
             available={
@@ -173,6 +154,7 @@ defmodule DockdWeb.DiscoverLive do
               )
             }
             values={menu_values(result)}
+            open={@open == result_id(result)}
           />
           <span class="dk-card__text">
             <span class="dk-card__title">{result.title}</span>

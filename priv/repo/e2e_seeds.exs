@@ -137,6 +137,7 @@ for index <- 1..24 do
 end
 
 _discovery_candidate = create_game.("Discovery Candidate", nil, %{})
+_visitor_pick = create_game.("Visitor Pick", Date.add(today, 60), %{})
 
 {:ok, _balance} = Wallet.create_balance(owner, %{store: :eshop, amount_cents: 30_000, currency: "BRL"})
 

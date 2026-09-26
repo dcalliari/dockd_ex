@@ -302,13 +302,113 @@ defmodule Dockd.Catalog do
   the work is already in the catalog. Returns `{:error, :not_configured}` without credentials.
   """
   def search_igdb(query) when is_binary(query) do
-    with {:ok, %{body: externals}} <- Dockd.IGDB.search(query), do: {:ok, igdb_results(externals)}
+    with {:ok, %{body: externals}} <- Dockd.IGDB.search(query),
+         do: {:ok, externals |> igdb_results() |> Enum.sort_by(&{-(&1.year || 0), &1.title})}
   end
 
-  @doc "Upcoming Nintendo releases from IGDB, in the same shape as `search_igdb/1`."
-  def upcoming_igdb do
-    with {:ok, %{body: externals}} <- Dockd.IGDB.upcoming(),
-         do: {:ok, externals |> igdb_results() |> Enum.sort_by(& &1.first_date, Date)}
+  @doc """
+  Searches IGDB, or the local catalog by title when IGDB is not available. Returns
+  `{:igdb | :local, results}` in the shape of `search_igdb/1`.
+  """
+  def search(query) when is_binary(query) do
+    case search_igdb(query) do
+      {:ok, results} ->
+        {:igdb, results}
+
+      {:error, _} ->
+        needle = String.downcase(query)
+
+        {:local,
+         list_games()
+         |> Enum.filter(&String.contains?(String.downcase(&1.title), needle))
+         |> Enum.map(&local_result/1)}
+    end
+  end
+
+  @showcase_ttl :timer.hours(1)
+
+  @doc """
+  A showcase list, in the shape of `search_igdb/1`: `:upcoming`, `:recent` or `:popular`
+  (see `Dockd.IGDB.showcase/2`). IGDB answers are kept for an hour; the local catalog
+  stands in when IGDB is not available.
+  """
+  def showcase(list) when list in [:upcoming, :recent, :popular] do
+    today = Date.utc_today()
+
+    case cached_showcase(list) do
+      {:ok, externals} -> externals |> igdb_results() |> nintendo_dates(list, today)
+      {:error, _} -> local_showcase(list, today)
+    end
+  end
+
+  # IGDB dates a work by its first release on any platform; the Switch one can differ.
+  # Upcoming works known only by year sort after the dated ones.
+  defp nintendo_dates(results, :upcoming, today) do
+    {dated, by_year} =
+      Enum.split_with(results, &(&1.first_date && Date.compare(&1.first_date, today) == :gt))
+
+    Enum.sort_by(dated, & &1.first_date, Date) ++ by_year
+  end
+
+  defp nintendo_dates(results, _released, today),
+    do: Enum.filter(results, &(&1.first_date && Date.compare(&1.first_date, today) != :gt))
+
+  defp cached_showcase(list) do
+    key = {__MODULE__, :showcase, list}
+    now = System.monotonic_time(:millisecond)
+
+    case :persistent_term.get(key, nil) do
+      {expires, externals} when expires > now ->
+        {:ok, externals}
+
+      _ ->
+        with {:ok, %{body: externals}} <- Dockd.IGDB.showcase(list) do
+          :persistent_term.put(key, {now + @showcase_ttl, externals})
+          {:ok, externals}
+        end
+    end
+  end
+
+  defp local_showcase(list, today) do
+    results = Enum.map(list_games(), &local_result/1)
+
+    case list do
+      :upcoming ->
+        results
+        |> Enum.filter(&(&1.first_date && Date.compare(&1.first_date, today) == :gt))
+        |> Enum.sort_by(& &1.first_date, Date)
+
+      :recent ->
+        released_since(results, today, 90)
+
+      :popular ->
+        released_since(results, today, 365)
+    end
+  end
+
+  defp released_since(results, today, days) do
+    since = Date.add(today, -days)
+
+    results
+    |> Enum.filter(&(&1.first_date && Date.compare(&1.first_date, since) == :gt))
+    |> Enum.reject(&(Date.compare(&1.first_date, today) == :gt))
+    |> Enum.sort_by(& &1.first_date, {:desc, Date})
+  end
+
+  defp local_result(%Game{} = game) do
+    releases = game.releases || []
+    dates = releases |> Enum.map(& &1.release_date) |> Enum.reject(&is_nil/1)
+    first = if dates == [], do: nil, else: Enum.min(dates, Date)
+
+    %{
+      igdb_id: game.igdb_id,
+      title: game.title,
+      cover_url: game.cover_url,
+      platforms: releases |> Enum.map(& &1.platform) |> Enum.uniq() |> Enum.sort(),
+      first_date: first,
+      year: first && first.year,
+      game: game
+    }
   end
 
   defp igdb_results(externals) do
@@ -335,7 +435,6 @@ defmodule Dockd.Catalog do
       }
     end)
     |> Enum.reject(&(&1.platforms == []))
-    |> Enum.sort_by(&{-(&1.year || 0), &1.title})
   end
 
   @doc "Imports an IGDB work into the catalog with its Nintendo releases, or returns the existing one."

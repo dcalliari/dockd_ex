@@ -138,8 +138,8 @@ defmodule DockdWeb.DockdComponents do
   # ---------------------------------------------------------------------------
   # Navigation
 
-  attr :current_scope, :map, required: true, doc: "nil when signed out: only the wordmark"
-  attr :current, :string, default: nil
+  attr :current_scope, :map, required: true, doc: "nil for a visitor"
+  attr :current, :string, default: nil, doc: "a destination, or Entrar or Criar conta"
   attr :search, :string, default: ""
 
   attr :search_live, :boolean,
@@ -150,6 +150,33 @@ defmodule DockdWeb.DockdComponents do
     ~H"""
     <header class="dk-nav">
       <.link navigate="/" class="dk-wordmark" aria-label="Dockd, início">dockd<i>.</i></.link>
+      <nav class="dk-nav__links" aria-label="Principal">
+        <.link
+          navigate="/descobrir"
+          class="dk-nav__link"
+          aria-current={if(@current == "Descobrir", do: "page")}
+        >
+          Descobrir
+        </.link>
+      </nav>
+      <.nav_search search={@search} search_live={@search_live} />
+      <nav class="dk-nav__links dk-nav__guest" aria-label="Conta">
+        <.link
+          :for={{label, path} <- [{"Entrar", "/entrar"}, {"Criar conta", "/criar-conta"}]}
+          navigate={path}
+          class="dk-nav__link"
+          aria-current={if(label == @current, do: "page")}
+        >
+          {label}
+        </.link>
+      </nav>
+      <.link
+        navigate="/entrar"
+        class="dk-nav__link dk-nav__guest-phone"
+        aria-current={if(@current == "Entrar", do: "page")}
+      >
+        Entrar
+      </.link>
     </header>
     """
   end
@@ -168,38 +195,47 @@ defmodule DockdWeb.DockdComponents do
           {label}
         </.link>
       </nav>
-      <form
-        id="nav-search-form"
-        class="dk-search dk-nav__search"
-        role="search"
-        action={if(!@search_live, do: "/descobrir")}
-        phx-change={if(@search_live, do: "search")}
-        phx-submit={if(@search_live, do: "search")}
-      >
-        <.icon name="hero-magnifying-glass" />
-        <input
-          id="nav-search"
-          type="search"
-          name="q"
-          value={@search}
-          placeholder="Buscar no catálogo"
-          aria-label="Buscar no catálogo"
-          autocomplete="off"
-          phx-debounce={if(@search_live, do: "300")}
-          autofocus={@search_live and @search == ""}
-        />
-      </form>
-      <button
-        id="nav-search-toggle"
-        type="button"
-        class="dk-nav__icon"
-        aria-label="Buscar no catálogo"
-        phx-hook="NavSearch"
-      >
-        <.icon name="hero-magnifying-glass" />
-      </button>
+      <.nav_search search={@search} search_live={@search_live} />
       <.account_menu user={@current_scope.user} />
     </header>
+    """
+  end
+
+  attr :search, :string, required: true
+  attr :search_live, :boolean, required: true
+
+  defp nav_search(assigns) do
+    ~H"""
+    <form
+      id="nav-search-form"
+      class="dk-search dk-nav__search"
+      role="search"
+      action={if(!@search_live, do: "/descobrir")}
+      phx-change={if(@search_live, do: "search")}
+      phx-submit={if(@search_live, do: "search")}
+    >
+      <.icon name="hero-magnifying-glass" />
+      <input
+        id="nav-search"
+        type="search"
+        name="q"
+        value={@search}
+        placeholder="Buscar no catálogo"
+        aria-label="Buscar no catálogo"
+        autocomplete="off"
+        phx-debounce={if(@search_live, do: "300")}
+        autofocus={@search_live and @search == ""}
+      />
+    </form>
+    <button
+      id="nav-search-toggle"
+      type="button"
+      class="dk-nav__icon"
+      aria-label="Buscar no catálogo"
+      phx-hook="NavSearch"
+    >
+      <.icon name="hero-magnifying-glass" />
+    </button>
     """
   end
 
@@ -461,10 +497,11 @@ defmodule DockdWeb.DockdComponents do
   attr :available, :list, default: @statuses
   attr :values, :map, default: %{}
   attr :size, :string, default: "sm", values: ~w(md sm)
+  attr :open, :boolean, default: false
 
   def status_menu(assigns) do
     ~H"""
-    <details id={@id} class="dk-status-menu">
+    <details id={@id} class="dk-status-menu" open={@open}>
       <summary aria-label="Mudar status">
         <.status_chip :if={@status} status={@status} size={@size} />
         <span :if={!@status} class={["dk-status", "dk-status--add", @size == "sm" && "dk-status--sm"]}>
@@ -490,6 +527,24 @@ defmodule DockdWeb.DockdComponents do
         </li>
       </ul>
     </details>
+    """
+  end
+
+  @doc """
+  The add chip for a visitor, in the place of `status_menu/1`: a link to Entrar that comes
+  back to `back`. Nothing is saved until the account picks a status.
+  """
+  attr :back, :string, required: true
+
+  def status_link(assigns) do
+    ~H"""
+    <.link
+      href={DockdWeb.UserAuth.sign_in_path(@back)}
+      class="dk-status-menu"
+      title="Entrar para adicionar"
+    >
+      <span class="dk-status dk-status--add dk-status--sm">+ Adicionar</span>
+    </.link>
     """
   end
 

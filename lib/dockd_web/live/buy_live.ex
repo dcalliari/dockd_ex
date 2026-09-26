@@ -2,6 +2,8 @@ defmodule DockdWeb.BuyLive do
   @moduledoc "Comprar: a fila dos jogos em Quero, por data de lançamento, com saldo do eShop."
   use DockdWeb, :live_view
 
+  on_mount {DockdWeb.UserAuth, :require_authenticated}
+
   alias Dockd.Library.Shelf
   alias Dockd.{Purchasing, Wallet}
 

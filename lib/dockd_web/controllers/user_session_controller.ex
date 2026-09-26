@@ -19,14 +19,17 @@ defmodule DockdWeb.UserSessionController do
     end
   end
 
-  def create(conn, %{"user" => %{"email" => email, "password" => password}}) do
+  # `volta` is the page to come back to, like the Descobrir card whose tag led here.
+  def create(conn, %{"user" => %{"email" => email, "password" => password}} = params) do
+    return_to = UserAuth.local_path(params["volta"])
+
     if user = Accounts.get_user_by_email_and_password(email, password) do
-      UserAuth.log_in_user(conn, user)
+      UserAuth.log_in_user(conn, user, return_to)
     else
       conn
       |> put_flash(:password_error, "E-mail ou senha errados")
       |> put_flash(:email, String.slice(email, 0, 160))
-      |> redirect(to: ~p"/entrar")
+      |> redirect(to: UserAuth.sign_in_path(return_to))
     end
   end
 

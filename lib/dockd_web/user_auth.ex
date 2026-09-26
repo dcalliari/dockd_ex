@@ -24,9 +24,12 @@ defmodule DockdWeb.UserAuth do
   # user is never signed out by the 14-day validity.
   @session_reissue_age_in_days 7
 
-  @doc "Signs the user in, remembered on this device, and goes back to where they were headed."
-  def log_in_user(conn, user) do
-    user_return_to = get_session(conn, :user_return_to)
+  @doc """
+  Signs the user in, remembered on this device, and goes back to where they were headed:
+  `return_to` when it is a path of this site, else the page that asked for an account.
+  """
+  def log_in_user(conn, user, return_to \\ nil) do
+    user_return_to = local_path(return_to) || get_session(conn, :user_return_to)
 
     conn
     |> create_or_extend_session(user)
@@ -46,8 +49,19 @@ defmodule DockdWeb.UserAuth do
     conn
     |> renew_session(nil)
     |> delete_resp_cookie(@remember_me_cookie, @remember_me_options)
-    |> redirect(to: ~p"/entrar")
+    |> redirect(to: ~p"/")
   end
+
+  @doc "Entrar, coming back to `return_to` afterwards."
+  def sign_in_path(nil), do: ~p"/entrar"
+  def sign_in_path(return_to), do: ~p"/entrar?#{%{volta: return_to}}"
+
+  @doc "`path` when it is a path of this site, never another host; nil otherwise."
+  def local_path("/" <> rest = path) do
+    if String.starts_with?(rest, ["/", "\\"]), do: nil, else: path
+  end
+
+  def local_path(_), do: nil
 
   @doc "Assigns `current_scope` from the session or the remember-me cookie."
   def fetch_current_scope_for_user(conn, _opts) do
@@ -137,6 +151,18 @@ defmodule DockdWeb.UserAuth do
     else
       {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/entrar")}
     end
+  end
+
+  @doc """
+  Public screens show a visitor everything but save nothing: every event outside
+  `allowed` is dropped before the LiveView sees it.
+  """
+  def halt_visitor_events(%{assigns: %{current_scope: %Scope{}}} = socket, _allowed), do: socket
+
+  def halt_visitor_events(socket, allowed) do
+    Phoenix.LiveView.attach_hook(socket, :visitor_events, :handle_event, fn event, _, socket ->
+      if event in allowed, do: {:cont, socket}, else: {:halt, socket}
+    end)
   end
 
   defp mount_current_scope(socket, session) do

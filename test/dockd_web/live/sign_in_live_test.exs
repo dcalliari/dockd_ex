@@ -8,19 +8,32 @@ defmodule DockdWeb.SignInLiveTest do
   alias Dockd.Accounts
 
   describe "signed out" do
-    test "every screen goes to Entrar", %{conn: conn} do
-      for path <- ["/", "/comprar", "/descobrir", "/jogos/#{Ecto.UUID.generate()}"] do
-        assert {:error, {:redirect, %{to: "/entrar"}}} = live(conn, path)
-      end
+    test "Comprar is the only screen that goes to Entrar", %{conn: conn} do
+      assert {:error, {:redirect, %{to: "/entrar"}}} = live(conn, "/comprar")
+      assert {:ok, _, _} = live(conn, "/")
+      assert {:ok, _, _} = live(conn, "/descobrir")
     end
 
-    test "Entrar shows only the wordmark in the bar", %{conn: conn} do
+    test "Entrar shows the visitor bar and the shelf of catalog covers", %{conn: conn} do
+      game =
+        Dockd.DomainFixtures.game_fixture(%{title: "Capa Real", cover_url: "https://c/1.jpg"})
+
+      Dockd.DomainFixtures.release_fixture(game, %{release_date: Date.add(Date.utc_today(), -30)})
       {:ok, view, _html} = live(conn, ~p"/entrar")
 
       assert has_element?(view, ".dk-nav .dk-wordmark")
-      refute has_element?(view, ".dk-nav__links")
+      assert has_element?(view, ".dk-nav__guest a[aria-current=page]", "Entrar")
       refute has_element?(view, "#account-menu")
       refute has_element?(view, ".dk-bottomnav")
+      assert has_element?(view, "#entrar-shelf[aria-hidden=true] img[src='#{game.cover_url}']")
+      assert has_element?(view, "#entrar-shelf .dk-poster__status")
+    end
+
+    test "Criar conta has its own address in the bar", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/criar-conta")
+
+      assert has_element?(view, ".dk-nav__guest a[aria-current=page]", "Criar conta")
+      assert has_element?(view, "#entrar-submit", "Criar conta")
     end
 
     test "the API needs a token", %{conn: conn} do
@@ -67,6 +80,7 @@ defmodule DockdWeb.SignInLiveTest do
       {:ok, view, _html} = live(conn, ~p"/entrar")
 
       view |> element("#entrar-register") |> render_click()
+      assert_patch(view, ~p"/criar-conta")
       assert has_element?(view, "#entrar-submit", "Criar conta")
       assert has_element?(view, "#entrar-password", "Já tenho conta")
 

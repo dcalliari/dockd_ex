@@ -30,17 +30,35 @@ defmodule Dockd.IGDB do
       else: {:error, :not_configured}
   end
 
-  @doc "Upcoming Switch and Switch 2 releases, soonest first."
-  def upcoming(limit \\ 24) do
-    now = System.os_time(:second)
+  @showcase_fields "fields id,name,cover.image_id,platforms.id,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher"
 
+  @doc """
+  A showcase list of Switch and Switch 2 works with a cover:
+
+    * `:upcoming` not out yet, soonest first;
+    * `:recent` out in the last 90 days, most followed first;
+    * `:popular` out in the last year, most followed first.
+  """
+  def showcase(list, limit \\ 50) when list in [:upcoming, :recent, :popular] do
     if configured?(),
       do:
         post(
           "games",
-          "fields id,name,cover.image_id,platforms.id,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher; where platforms = (#{@switch_id},#{@switch_2_id}) & first_release_date > #{now} & cover != null; sort first_release_date asc; limit #{limit};"
+          "#{@showcase_fields}; where platforms = (#{@switch_id},#{@switch_2_id}) & cover != null & #{showcase_where(list)}; limit #{limit};"
         ),
       else: {:error, :not_configured}
+  end
+
+  defp showcase_where(:upcoming),
+    do: "first_release_date > #{System.os_time(:second)}; sort first_release_date asc"
+
+  defp showcase_where(:recent), do: released_since(90)
+  defp showcase_where(:popular), do: released_since(365)
+
+  defp released_since(days) do
+    now = System.os_time(:second)
+
+    "first_release_date <= #{now} & first_release_date > #{now - days * 86_400} & version_parent = null; sort hypes desc"
   end
 
   def get_games(ids) when is_list(ids) do

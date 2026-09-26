@@ -1,13 +1,24 @@
 defmodule DockdWeb.LibraryLive do
-  @moduledoc "Biblioteca: every game the owner relates to, one status each, as a grid of covers."
+  @moduledoc """
+  Biblioteca: every game the owner relates to, one status each, as a grid of covers. At
+  the same address a visitor gets the catalog showcase (`DockdWeb.Showcase`).
+  """
   use DockdWeb, :live_view
 
   alias Dockd.{Catalog, Library}
   alias Dockd.Library.Shelf
+  alias DockdWeb.{Showcase, UserAuth}
 
   @filters ~w(tab plat media sort)
 
   @impl true
+  def mount(_params, _session, %{assigns: %{current_scope: nil}} = socket) do
+    {:ok,
+     socket
+     |> assign(page_title: "Dockd", user: nil, strips: Showcase.strips())
+     |> UserAuth.halt_visitor_events([])}
+  end
+
   def mount(_params, _session, socket) do
     user = socket.assigns.current_scope.user
     items = Shelf.list(user)
@@ -22,6 +33,8 @@ defmodule DockdWeb.LibraryLive do
   end
 
   @impl true
+  def handle_params(_params, _uri, %{assigns: %{user: nil}} = socket), do: {:noreply, socket}
+
   def handle_params(params, _uri, socket) do
     filters = Map.take(params, @filters)
 
@@ -75,6 +88,14 @@ defmodule DockdWeb.LibraryLive do
   defp count_label(n), do: "#{n} jogos"
 
   @impl true
+  def render(%{user: nil} = assigns) do
+    ~H"""
+    <Layouts.app flash={@flash} current_scope={@current_scope}>
+      <Showcase.showcase strips={@strips} />
+    </Layouts.app>
+    """
+  end
+
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope} current="Biblioteca">
