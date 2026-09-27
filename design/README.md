@@ -14,7 +14,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 
 ## Texto
 
-- Escreva em pt-BR, na voz de quem usa: **+ Adicionar**, **Comprei**, **Reservar**, **Registrar preço**. O botão diz o que acontece; nunca "Salvar" ou "Confirmar".
+- Escreva em pt-BR, na voz de quem usa: **+ Adicionar**, **Comprei**, **Desfazer**, **Registrar preço**. O botão diz o que acontece; nunca "Salvar" ou "Confirmar".
 - Nenhuma string de interface passa de seis palavras. Exceções: estado vazio, confirmação de ação irreversível e as três frases de Sobre.
 - Sem slogan, subtítulo, eyebrow ou sermão. A navegação já diz onde a pessoa está; a tela não repete o nome em um título grande.
 - Cada informação aparece uma vez por tela. Um valor padrão não é informação: um jogo sem preço observado não mostra "R$ 0,00" nem "Sem alvo", mostra `Sem preço` uma vez, em `ink-muted`.
@@ -53,6 +53,18 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 
 Acima de 768px: uma barra superior de `nav-height` com o wordmark, os destinos Biblioteca, Comprar e Descobrir, e a busca à direita. Abaixo: a barra superior fica com wordmark e lupa, e os três destinos vão para uma barra inferior fixa de `nav-height`, só texto, com o mesmo indicador `red` do destino ativo. Não há barra lateral, menu hambúrguer nem ícone nos destinos.
 
+### Busca única no topo
+
+Existe um campo de busca, `Buscar no catálogo`, na barra superior de toda tela, e nenhum outro. Ele procura no catálogo inteiro do IGDB: em qualquer tela, enviar leva a Descobrir com o termo; em Descobrir, ele busca enquanto se digita. No celular, a lupa abre o mesmo campo por cima da barra, no lugar do wordmark, e ele fecha vazio. Nenhuma tela ganha um segundo campo de busca nem um filtro de título.
+
+### Barra de filtros
+
+Filtro de lista é uma linha logo abaixo das abas: rótulos em `t-label`, caixa alta, `ink-muted`, cada um com o chevron e um menu próprio em `surface-raised`, como o Letterboxd (Plataforma, Mídia, Ordem). Um filtro ativo mostra o valor escolhido em `ink`, e a opção atual do menu tem o marcador `red`. À direita, a contagem em `t-meta` (`21 jogos`). Não existe select nativo, chip solto nem segundo estilo de filtro; no celular a linha rola de lado. Ver `maquetes/biblioteca.html`.
+
+### Área do visitante
+
+Sem conta, o Dockd mostra só o catálogo (`maquetes/area-publica.html`). São públicos `/`, que vira a vitrine do catálogo em três faixas, Descobrir e a página do jogo, que mostra capa, ficha, plataformas e versões, sem status, preço, posse nem histórico. A barra do visitante tem Descobrir, a busca, Entrar e Criar conta; no celular, só Entrar, sem barra inferior. A etiqueta do visitante é `+ Adicionar`, que leva ao Entrar e volta à mesma capa com o menu aberto. Biblioteca, Comprar e tudo que grava exigem conta: abrir Comprar sem conta leva ao Entrar e volta para Comprar. Nenhum dado de uma conta aparece para o visitante.
+
 ## Estados de um jogo
 
 Um jogo tem um status visível, derivado do domínio (`ownerships` e `entries.play_state`), e é o único controle da página do jogo:
@@ -67,13 +79,23 @@ Um jogo tem um status visível, derivado do domínio (`ownerships` e `entries.pl
 
 A mídia é um segundo eixo, por versão: Físico, Digital ou Key card, sempre como MediaTag em `t-label`, nunca como cor nem como ícone.
 
-O status só se troca pelo StatusMenu, o mesmo sobre a capa (Biblioteca, Descobrir) e na página do jogo: o chip atual é o controle, apontar para ele abre os outros estados embaixo, e clicar nele desmarca. No toque, o primeiro toque abre e o segundo desmarca. Desmarcar é a única forma de tirar um jogo da biblioteca: não há lixeira, link de remoção, confirmação nem aviso, e compra, preço visto, saldo e histórico ficam. Ver StatusMenu.
+O status só se troca pelo StatusMenu, o mesmo sobre a capa (Biblioteca, Descobrir) e na página do jogo: o chip atual é o controle, apontar para ele abre os outros estados embaixo, e clicar nele desmarca. No toque, o primeiro toque abre e o segundo desmarca. Desmarcar é a única forma de tirar um jogo da biblioteca: não há lixeira, link de remoção, confirmação nem aviso, e compra, preço visto e histórico ficam. Ver StatusMenu.
 
 Na página do jogo, plataforma e exclusividade da obra não vão no texto do herói: ficam na legenda da capa, `SWITCH 2` à esquerda e `EXCLUSIVO` em `red-ink` à direita, e só quando a obra é exclusiva.
 
 ## Rodapé
 
 Uma linha só no fim de toda tela, menos Entrar e Criar conta: wordmark pequeno, `Sobre` e `Dados de jogos por IGDB`, em `t-meta` `ink-muted` sobre um fio `line`, na largura do conteúdo. No celular termina acima da barra inferior. Sobre (`/sobre`) diz o que é o Dockd em no máximo três frases, sem título, slogan nem apresentação; o crédito do IGDB fica só no Footer. Termos e Privacidade entram na mesma linha só quando o Dockd abrir para outras pessoas. Ver Footer.
+
+## Compra e preço
+
+Decidido em 27/09/2026 (`maquetes/compra.html`, caminho A). O Dockd não guarda saldo de loja nem reserva: pediam que alguém atualizasse valores à mão.
+
+- **Comprei** é um toque, com o mesmo componente em Comprar e na página do jogo. Com uma versão e uma mídia, grava a compra na hora pelo último preço visto daquela versão e mídia. Com mais de uma, as opções aparecem no lugar do botão, num Choice, e a escolha já é a compra. Depois, enquanto a tela está aberta, o controle mostra o que foi pago (ou `Sem valor`), que se clica para corrigir, e `Desfazer`. A linha de Comprar ganha a etiqueta Backlog e fica no lugar até a próxima visita.
+- **O preço é o controle** do registro manual, como a etiqueta é o controle do status: clicar em `R$ 79,90` ou em `Sem preço` abre embaixo da linha Versão e Mídia (só quando há escolha), Preço visto e Onde, com os preços já vistos do jogo embaixo. Quem traz preço, em regra, é a sincronização; o registro manual é a exceção.
+- **Choice** substitui o select nativo: poucas opções reais, contorno `line-strong`, a escolhida em `ink`. Uma opção só não é escolha e aparece como texto. Erro aparece embaixo do campo em `red-ink`, nunca em aviso flutuante.
+- **Totals** é a linha no topo de Comprar, no estilo do metadado: o total estimado da fila por mídia, Físico e Digital separados, cada um com a cobertura (`em 2 de 15`), e `Gasto em setembro` quando há compra no mês. Soma sem preço nenhum não aparece.
+- No histórico, `Comprou: R$ 79,90` marca o estado, e a posse que veio da compra não se repete como Registrou a posse.
 
 ## Histórico
 
