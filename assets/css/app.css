@@ -181,6 +181,7 @@ img { display: block; max-width: 100%; }
 .dk-account .dk-filter__menu button, .dk-account .dk-filter__menu a { display: flex; width: 100%; padding: 6px var(--space-3); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink); text-align: left; white-space: nowrap; }
 .dk-account .dk-filter__menu button:hover, .dk-account .dk-filter__menu a:hover { background: var(--surface-sunken); }
 .dk-account__who { padding: 6px var(--space-3) var(--space-2); margin-bottom: var(--space-1); border-bottom: 1px solid var(--line); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-account .dk-filter__menu a small { margin-left: auto; padding-left: var(--space-4); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 767px) { .dk-account { margin-left: calc(-1 * var(--space-2)); } }
 
 /* AuthForm: a tela Entrar. Uma coluna, sem título; o botão diz o que acontece. */
@@ -444,6 +445,27 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 .dk-totals b { color: var(--ink); font-size: 15px; font-weight: 600; margin-left: 6px; }
 .dk-totals small { margin-left: 6px; font-size: 12px; }
 @media (max-width: 767px) { .dk-totals { justify-content: space-between; } }
+
+/* MatchRow: a versão que a sincronização não casou sozinha e os produtos da eShop que podem
+   ser ela (maquetes/casar-eshop.html, caminho A, decidido em 27/09/2026). O candidato é uma
+   linha sem capa, alinhada ao título; escolher, recusar e desfazer mudam a linha no lugar. */
+.dk-match { border-bottom: 1px solid var(--line); }
+.dk-match > .dk-row { border-bottom: 0; }
+.dk-match__options { margin: 0; padding: 0 0 var(--space-2); list-style: none; }
+.dk-match__option { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-1) var(--space-3); align-items: center; padding: var(--space-2) 0; border-top: 1px solid var(--line); }
+.dk-match__option > :first-child { grid-column: 2; }
+.dk-match__option .dk-row__title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.dk-match__option a.dk-row__title:hover { color: var(--red-ink); }
+.dk-match__none { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: var(--space-1) var(--space-3); padding: var(--space-2) 0 0; border-top: 1px solid var(--line); }
+.dk-match__none > * { grid-column: 2; justify-self: start; }
+.dk-match__error { margin: 0; font-size: 12px; line-height: 16px; color: var(--red-ink); }
+.dk-match .dk-row__end .dk-price { min-width: 80px; }
+@media (max-width: 560px) {
+  .dk-match__option, .dk-match[data-state="confirmed"] > .dk-row { grid-template-columns: 44px minmax(0, 1fr); }
+  .dk-match__option > .dk-row__end, .dk-match[data-state="confirmed"] > .dk-row > .dk-row__end { grid-column: 2; justify-self: stretch; justify-content: space-between; }
+  .dk-match__option .dk-price, .dk-match[data-state="confirmed"] .dk-price { align-items: flex-start; }
+  .dk-match[data-state="confirmed"] > .dk-row > :first-child { grid-row: span 2; align-self: start; }
+}
 
 /* Flash: uma linha discreta, sem cartão */
 .dk-flash { position: fixed; left: 50%; bottom: calc(var(--nav-height) + var(--space-4)); translate: -50% 0; z-index: 4; max-width: calc(100% - 2 * var(--space-4)); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 13px; line-height: 18px; }

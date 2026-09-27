@@ -14,7 +14,7 @@ defmodule Dockd.Eshop do
   @price_batch 50
   # HTTP headers are ASCII only.
   @user_agent "Dockd/#{Mix.Project.config()[:version]} (personal game library; prices once a day)"
-  @search_fields ~w(nsuid title platformCode eshopDetails.productType dlcType isUpgrade)
+  @search_fields ~w(nsuid title url platformCode eshopDetails.productType dlcType isUpgrade)
 
   def price_batch, do: @price_batch
 

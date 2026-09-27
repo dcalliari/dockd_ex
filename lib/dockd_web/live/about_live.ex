@@ -11,7 +11,7 @@ defmodule DockdWeb.AboutLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app flash={@flash} current_scope={@current_scope} eshop_review={@eshop_review}>
       <div id="about" class="dk-about">
         <p>
           dockd. é uma biblioteca pessoal de jogos de Switch e Switch 2.

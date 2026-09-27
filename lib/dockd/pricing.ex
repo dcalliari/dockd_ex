@@ -187,10 +187,39 @@ defmodule Dockd.Pricing do
     queries = for locale <- @locales, title <- titles, do: {locale, title}
 
     with {:ok, hits} <- search_until_settled(queries, titles, platforms, []) do
+      decisions =
+        Enum.map(pending, fn {release, listing} ->
+          {release, listing,
+           EshopMatch.decide(EshopMatch.candidates(titles, hits, release.platform))}
+        end)
+
+      prices = candidate_prices(decisions)
+
       {:ok,
-       Enum.map(pending, fn {release, listing} ->
-         save_decision(release, listing, EshopMatch.candidates(titles, hits, release.platform))
+       Enum.map(decisions, fn {release, listing, decision} ->
+         save_decision(release, listing, decision, prices)
        end)}
+    end
+  end
+
+  # The person choosing sees what each candidate costs in Brazil, and whether it is sold.
+  defp candidate_prices(decisions) do
+    ids =
+      for {_release, _listing, {:review, candidates}} <- decisions,
+          %{hit: hit} <- candidates,
+          uniq: true,
+          do: hit["nsuid"]
+
+    with [_ | _] <- ids,
+         {:ok, prices} <- Eshop.prices(Enum.take(ids, Eshop.price_batch())) do
+      Map.new(prices, &{to_string(&1["title_id"]), price_attrs(&1)})
+    else
+      [] ->
+        %{}
+
+      {:error, reason} ->
+        Logger.warning("eShop: preço dos candidatos falhou: #{inspect(reason)}")
+        %{}
     end
   end
 
@@ -210,9 +239,9 @@ defmodule Dockd.Pricing do
     end
   end
 
-  defp save_decision(release, listing, candidates) do
+  defp save_decision(release, listing, decision, prices) do
     attrs =
-      case EshopMatch.decide(candidates) do
+      case decision do
         :none ->
           nil
 
@@ -224,7 +253,7 @@ defmodule Dockd.Pricing do
             match: :review,
             external_id: nil,
             title: nil,
-            candidates: Enum.map(candidates, &candidate/1)
+            candidates: Enum.map(candidates, &candidate(&1, prices))
           }
       end
 
@@ -266,15 +295,165 @@ defmodule Dockd.Pricing do
     end
   end
 
-  defp candidate(%{hit: hit, class: class}),
-    do: %{
+  @platforms %{"NINTENDO_SWITCH" => "switch", "NINTENDO_SWITCH_2" => "switch_2"}
+
+  # Stored as JSON: the price as the API gave it when the candidate was found, so the
+  # review shows it and confirming records it without asking Nintendo again.
+  defp candidate(%{hit: hit, class: class}, prices) do
+    price =
+      case Map.fetch(prices, hit["nsuid"]) do
+        {:ok, attrs} -> Map.new(attrs, fn {key, value} -> {Atom.to_string(key), value} end)
+        :error -> %{}
+      end
+
+    Map.merge(price, %{
       "external_id" => hit["nsuid"],
       "title" => hit["title"],
-      "class" => Atom.to_string(class)
-    }
+      "class" => Atom.to_string(class),
+      "platform" => @platforms[hit["platformCode"]],
+      "bundle" => get_in(hit, ["eshopDetails", "productType"]) == "BUNDLE",
+      "url" => hit["url"],
+      "seen_at" => if(price != %{}, do: DateTime.utc_now())
+    })
+  end
 
   defp count(counts, decisions),
     do: Enum.reduce(decisions, counts, &Map.update!(&2, &1, fn n -> n + 1 end))
+
+  # ---------------------------------------------------------------------------
+  # Review: a person picks the store product the sync could not settle. The listing is
+  # catalog data, so any account decides for all of them.
+
+  @doc "Listings waiting for a person to pick the store product, by game and platform."
+  def list_review_listings do
+    Repo.all(
+      from l in StoreListing,
+        join: r in assoc(l, :release),
+        join: g in assoc(r, :game),
+        where: l.store == :eshop_br and l.match == :review,
+        order_by: [asc: g.title, asc: r.platform],
+        preload: [release: {r, game: g}]
+    )
+  end
+
+  @doc "How many listings wait for review."
+  def review_count,
+    do:
+      Repo.aggregate(
+        from(l in StoreListing, where: l.store == :eshop_br and l.match == :review),
+        :count
+      )
+
+  @doc "A listing with its release and game."
+  def get_listing!(id), do: StoreListing |> Repo.get!(id) |> Repo.preload(release: :game)
+
+  @doc """
+  Confirms one of a listing's candidates as the store product and records the price
+  seen with it, so the release is priced at once; the daily sync refreshes it.
+  """
+  def confirm_listing(%StoreListing{match: :review} = listing, external_id) do
+    case Enum.find(listing.candidates, &(&1["external_id"] == external_id)) do
+      nil ->
+        {:error, :not_a_candidate}
+
+      candidate ->
+        Repo.transaction(fn -> confirm_candidate(listing, candidate) end)
+    end
+  end
+
+  def confirm_listing(%StoreListing{}, _external_id), do: {:error, :not_in_review}
+
+  defp confirm_candidate(listing, candidate) do
+    changeset =
+      StoreListing.changeset(listing, %{
+        match: :confirmed,
+        external_id: candidate["external_id"],
+        title: candidate["title"],
+        sales_status: candidate["sales_status"],
+        checked_at: candidate["seen_at"]
+      })
+
+    case Repo.update(changeset) do
+      {:ok, listing} ->
+        record_candidate_price(listing, candidate)
+        listing
+
+      {:error, changeset} ->
+        Repo.rollback(changeset)
+    end
+  end
+
+  defp record_candidate_price(listing, %{"sales_status" => status, "seen_at" => seen_at} = c)
+       when is_binary(status) do
+    {:ok, seen_at, _} = DateTime.from_iso8601(to_string(seen_at))
+
+    %StorePrice{listing_id: listing.id}
+    |> StorePrice.changeset(%{
+      sales_status: status,
+      regular_cents: c["regular_cents"],
+      discount_cents: c["discount_cents"],
+      discount_starts_at: c["discount_starts_at"],
+      discount_ends_at: c["discount_ends_at"],
+      currency: c["currency"] || "BRL",
+      first_seen_at: seen_at,
+      last_seen_at: seen_at
+    })
+    |> Repo.insert!()
+  end
+
+  defp record_candidate_price(_listing, _candidate), do: :ok
+
+  @doc "Records that the eShop does not sell the release: it leaves the queue for good."
+  def reject_listing(%StoreListing{match: :review} = listing),
+    do: listing |> StoreListing.changeset(%{match: :rejected}) |> Repo.update()
+
+  def reject_listing(%StoreListing{}), do: {:error, :not_in_review}
+
+  @doc "Undoes a confirmation or a rejection: the listing waits for review again."
+  def reopen_listing(%StoreListing{match: match} = listing)
+      when match in [:confirmed, :rejected] do
+    Repo.transaction(fn ->
+      Repo.delete_all(from p in StorePrice, where: p.listing_id == ^listing.id)
+
+      listing
+      |> StoreListing.changeset(%{
+        match: :review,
+        external_id: nil,
+        title: nil,
+        sales_status: nil
+      })
+      |> Repo.update!()
+    end)
+  end
+
+  def reopen_listing(%StoreListing{}), do: {:error, :not_decided}
+
+  @doc "What a candidate costs, as seen when it was found, or nil when it had no price."
+  def candidate_price(candidate, now \\ DateTime.utc_now())
+
+  def candidate_price(%{"regular_cents" => cents, "seen_at" => seen_at} = candidate, now)
+      when is_integer(cents) do
+    {:ok, seen_at, _} = DateTime.from_iso8601(to_string(seen_at))
+
+    store_current_price(
+      %StorePrice{
+        regular_cents: cents,
+        discount_cents: candidate["discount_cents"],
+        discount_starts_at: iso_datetime(candidate["discount_starts_at"]),
+        discount_ends_at: iso_datetime(candidate["discount_ends_at"]),
+        currency: candidate["currency"] || "BRL",
+        sales_status: candidate["sales_status"],
+        last_seen_at: seen_at
+      },
+      now
+    )
+  end
+
+  def candidate_price(_candidate, _now), do: nil
+
+  defp iso_datetime(nil), do: nil
+  defp iso_datetime(%DateTime{} = datetime), do: datetime
+  defp iso_datetime(value), do: datetime(value)
 
   @doc """
   Asks the eShop Brasil price of every accepted listing, #{Eshop.price_batch()} at a

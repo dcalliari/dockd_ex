@@ -472,7 +472,7 @@ Os caminhos suportados estão documentados no [README](README.md). Use `mix setu
 
 Variáveis relevantes: `DOCKD_DB_PASSWORD`, `DOCKD_DB_USER`, `DOCKD_DB_HOST`, `DOCKD_DB_NAME`, `DATABASE_URL`, `SECRET_KEY_BASE`, `PHX_HOST`, `TRAEFIK_NETWORK` e `TRAEFIK_ENTRYPOINT`. Os nomes e exemplos ficam em [`.env.example`](.env.example); valores locais ficam em `.env`.
 
-Preço de loja é dado de catálogo (`Dockd.Pricing`, tabelas `store_listings` e `store_prices`), sincronizado da eShop Brasil pelo `SyncScheduler` depois do IGDB; `price_observations` continua sendo do usuário. Testes da eShop usam as respostas gravadas em `test/support/fixtures/eshop` via `Dockd.EshopStub` e não acessam a rede.
+Preço de loja é dado de catálogo (`Dockd.Pricing`, tabelas `store_listings` e `store_prices`), sincronizado da eShop Brasil pelo `SyncScheduler` depois do IGDB; `price_observations` continua sendo do usuário. Casamento incerto espera em `/eshop` (`DockdWeb.EshopReviewLive`), que qualquer conta resolve. Testes da eShop usam as respostas gravadas em `test/support/fixtures/eshop` via `Dockd.EshopStub` e não acessam a rede.
 
 Os contextos de domínio estão em `lib/dockd/`, o design system em `DockdWeb.DockdComponents`, as telas em `lib/dockd_web/live/` e a API segue o padrão `/api/v1` com contrato em `lib/dockd_web/api_spec.ex`. O cenário demonstrativo está em `priv/repo/seeds.exs` e é idempotente.
 

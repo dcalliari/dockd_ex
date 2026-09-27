@@ -80,6 +80,7 @@ buyable = create_game.("Buyable Quest", Date.add(today, -30), %{})
 expensive = create_game.("Expensive Quest", Date.add(today, -25), %{})
 mystery = create_game.("Mystery Quest", Date.add(today, -20), %{})
 store_quest = create_game.("Store Quest", Date.add(today, -40), %{})
+review_quest = create_game.("Review Quest", Date.add(today, -50), %{})
 
 # The eShop price the daily sync would have recorded, on sale. Store Quest stays out of
 # the library so the queue totals of the other journeys do not change.
@@ -106,6 +107,38 @@ store_listing =
   sales_status: "onsale",
   first_seen_at: now,
   last_seen_at: now
+})
+|> Repo.insert!()
+
+# A version the sync could not settle, waiting in Escolher na eShop with two candidates.
+%StoreListing{release_id: review_quest.release.id}
+|> StoreListing.changeset(%{
+  store: :eshop_br,
+  match: :review,
+  candidates: [
+    %{
+      "external_id" => "70010000000002",
+      "title" => "Review Quest: Director's Edition",
+      "class" => "prefix",
+      "platform" => "switch",
+      "bundle" => false,
+      "sales_status" => "onsale",
+      "regular_cents" => 4_699,
+      "currency" => "BRL",
+      "seen_at" => DateTime.to_iso8601(now)
+    },
+    %{
+      "external_id" => "70070000000003",
+      "title" => "Review Quest and Friends Bundle",
+      "class" => "contains",
+      "platform" => "switch",
+      "bundle" => true,
+      "sales_status" => "onsale",
+      "regular_cents" => 11_000,
+      "currency" => "BRL",
+      "seen_at" => DateTime.to_iso8601(now)
+    }
+  ]
 })
 |> Repo.insert!()
 

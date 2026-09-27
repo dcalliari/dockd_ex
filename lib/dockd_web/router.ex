@@ -41,6 +41,7 @@ defmodule DockdWeb.Router do
         pipe_through :require_authenticated_user
 
         live "/comprar", BuyLive, :index
+        live "/eshop", EshopReviewLive, :index
       end
     end
 

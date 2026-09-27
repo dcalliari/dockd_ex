@@ -140,6 +140,7 @@ defmodule DockdWeb.DockdComponents do
 
   attr :current_scope, :map, required: true, doc: "nil for a visitor"
   attr :current, :string, default: nil, doc: "a destination, or Entrar or Criar conta"
+  attr :eshop_review, :integer, default: 0, doc: "listings waiting in Escolher na eShop"
   attr :search, :string, default: ""
 
   attr :search_live, :boolean,
@@ -196,7 +197,7 @@ defmodule DockdWeb.DockdComponents do
         </.link>
       </nav>
       <.nav_search search={@search} search_live={@search_live} />
-      <.account_menu user={@current_scope.user} />
+      <.account_menu user={@current_scope.user} eshop_review={@eshop_review} />
     </header>
     """
   end
@@ -241,9 +242,11 @@ defmodule DockdWeb.DockdComponents do
 
   @doc """
   The account item of the NavBar: the name opens a menu, like a FilterBar menu, with the
-  email, the API token and Sair. Copying the token swaps its label in place.
+  email, Escolher na eShop while store matches wait for review, the API token and Sair.
+  Copying the token swaps its label in place.
   """
   attr :user, :map, required: true
+  attr :eshop_review, :integer, default: 0
 
   def account_menu(assigns) do
     ~H"""
@@ -251,6 +254,11 @@ defmodule DockdWeb.DockdComponents do
       <summary>{@user.name} <.icon name="hero-chevron-down" /></summary>
       <ul class="dk-filter__menu">
         <li class="dk-account__who">{@user.email}</li>
+        <li :if={@eshop_review > 0}>
+          <.link id="account-eshop-review" navigate={~p"/eshop"}>
+            Escolher na eShop <small>{@eshop_review}</small>
+          </.link>
+        </li>
         <li>
           <button
             id="account-api-token"
@@ -630,6 +638,114 @@ defmodule DockdWeb.DockdComponents do
     if release.edition in [nil, "", "Edição padrão"],
       do: enum_label(release.platform),
       else: "#{enum_label(release.platform)} · #{release.edition}"
+  end
+
+  @doc """
+  MatchRow (`maquetes/casar-eshop.html`, caminho A): a version whose eShop product the
+  sync could not settle, with up to three candidates. `É este` confirms one and the row
+  shows its price; `Não está na eShop` records that the store does not sell it; both
+  change the row in place, and `Desfazer` brings the candidates back. No dialog.
+  """
+  attr :id, :string, required: true
+  attr :listing, Dockd.Pricing.StoreListing, required: true, doc: "with release and game"
+  attr :price, :map, default: nil, doc: "the store price once confirmed"
+  attr :error, :string, default: nil
+
+  def eshop_match(assigns) do
+    ~H"""
+    <div id={@id} class="dk-match" data-state={@listing.match}>
+      <div class="dk-row">
+        <.poster
+          title={@listing.release.game.title}
+          cover_url={@listing.release.game.cover_url}
+          size="sm"
+          navigate={~p"/jogos/#{@listing.release.game.id}"}
+        />
+        <div>
+          <.link navigate={~p"/jogos/#{@listing.release.game.id}"} class="dk-row__title">
+            {@listing.release.game.title}
+          </.link>
+          <div class="dk-row__meta">
+            {meta([enum_label(@listing.release.platform), match_state(@listing)])}
+          </div>
+        </div>
+        <div class="dk-row__end">
+          <.price :if={@listing.match == :confirmed} observation={@price} />
+          <button
+            :if={@listing.match in [:confirmed, :rejected]}
+            id={"#{@id}-undo"}
+            type="button"
+            class="dk-link"
+            phx-click="undo"
+            phx-value-id={@listing.id}
+          >
+            Desfazer
+          </button>
+        </div>
+      </div>
+      <ul :if={@listing.match == :review} class="dk-match__options">
+        <li
+          :for={candidate <- @listing.candidates}
+          id={"#{@id}-#{candidate["external_id"]}"}
+          class="dk-match__option"
+        >
+          <div>
+            <a
+              :if={candidate["url"]}
+              href={"https://www.nintendo.com" <> candidate["url"]}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="dk-row__title"
+            >
+              {candidate["title"]}
+            </a>
+            <span :if={!candidate["url"]} class="dk-row__title">{candidate["title"]}</span>
+            <div class="dk-row__meta">{candidate_meta(candidate)}</div>
+          </div>
+          <div class="dk-row__end">
+            <.price observation={Dockd.Pricing.candidate_price(candidate)} />
+            <.btn
+              size="sm"
+              phx-click="choose"
+              phx-value-id={@listing.id}
+              phx-value-external_id={candidate["external_id"]}
+            >
+              É este
+            </.btn>
+          </div>
+        </li>
+        <li class="dk-match__none">
+          <.btn id={"#{@id}-none"} size="sm" phx-click="reject" phx-value-id={@listing.id}>
+            Não está na eShop
+          </.btn>
+          <p :if={@error} class="dk-match__error">{@error}</p>
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
+  defp match_state(%{match: :review, candidates: [_]}), do: "1 candidato"
+
+  defp match_state(%{match: :review, candidates: candidates}),
+    do: "#{length(candidates)} candidatos"
+
+  defp match_state(%{match: :confirmed, title: title}), do: title
+  defp match_state(%{match: :rejected}), do: "fora da eShop"
+
+  @sales_status %{
+    "preorder" => "Pré-venda",
+    "unreleased" => "Não lançado",
+    "sales_termination" => "Fora de venda",
+    "not_found" => "Não vendido no Brasil"
+  }
+
+  defp candidate_meta(candidate) do
+    meta([
+      if(candidate["bundle"], do: "Pacote", else: "Jogo"),
+      enum_label(candidate["platform"]),
+      @sales_status[candidate["sales_status"]]
+    ])
   end
 
   @doc """

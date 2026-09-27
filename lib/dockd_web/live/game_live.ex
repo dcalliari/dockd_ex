@@ -176,6 +176,7 @@ defmodule DockdWeb.GameLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
+      eshop_review={@eshop_review}
       current={@user && "Biblioteca"}
     >
       <p class="dk-back">

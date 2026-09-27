@@ -155,11 +155,16 @@ defmodule Dockd.PricingTest do
 
       assert %{match: :review, external_id: nil, candidates: [first | _]} = listing(ditto)
 
-      assert first == %{
+      # The price in Brazil comes with the candidate, so choosing needs no second look.
+      assert %{
                "external_id" => "70010000017137",
                "title" => "The Swords of Ditto: Mormo's Curse",
-               "class" => "prefix"
-             }
+               "class" => "prefix",
+               "platform" => "switch",
+               "bundle" => false,
+               "sales_status" => "onsale",
+               "regular_cents" => 4_699
+             } = first
 
       # A prefix can be another game: never accepted on its own.
       assert %{match: :review, candidates: [%{"external_id" => "70010000009443"}]} = listing(ff)
@@ -195,6 +200,70 @@ defmodule Dockd.PricingTest do
 
       assert log =~ "eShop: casamento falhou"
       assert %{price_cents: 38_990} = Pricing.store_price(listed.release.id)
+    end
+  end
+
+  describe "review" do
+    setup do
+      {_, %{switch: ditto}} = game_with("The Swords of Ditto", [:switch])
+      {:ok, %{review: 1}} = Pricing.match_eshop()
+      %{ditto: ditto, listing: listing(ditto)}
+    end
+
+    test "lists what waits, with its game", %{listing: listing} do
+      assert [%StoreListing{id: id, release: %{game: %{title: "The Swords of Ditto"}}}] =
+               Pricing.list_review_listings()
+
+      assert id == listing.id
+      assert Pricing.review_count() == 1
+    end
+
+    test "confirming a candidate prices the release at once", %{ditto: ditto, listing: listing} do
+      assert {:ok, %{match: :confirmed, external_id: "70010000017137"}} =
+               Pricing.confirm_listing(listing, "70010000017137")
+
+      assert %CurrentPrice{price_cents: 4_699, source: "eShop"} = Pricing.store_price(ditto.id)
+      assert Pricing.review_count() == 0
+
+      # The daily sync keeps pricing it and does not search it again.
+      assert {:ok, %{auto: 0, review: 0}} = Pricing.match_eshop()
+      assert {:ok, %{listings: 1, priced: 1}} = Pricing.sync_eshop_prices()
+    end
+
+    test "only a listed candidate can be confirmed", %{listing: listing} do
+      assert Pricing.confirm_listing(listing, "70010000063714") == {:error, :not_a_candidate}
+    end
+
+    test "rejecting takes the release out of the queue for good", %{
+      ditto: ditto,
+      listing: listing
+    } do
+      assert {:ok, %{match: :rejected}} = Pricing.reject_listing(listing)
+      assert Pricing.list_review_listings() == []
+      assert Pricing.store_price(ditto.id) == nil
+      assert {:ok, %{review: 0}} = Pricing.match_eshop()
+    end
+
+    test "undo puts a confirmed or rejected listing back in review", %{
+      ditto: ditto,
+      listing: listing
+    } do
+      {:ok, confirmed} = Pricing.confirm_listing(listing, "70010000017137")
+      assert {:ok, %{match: :review, external_id: nil}} = Pricing.reopen_listing(confirmed)
+      assert Pricing.store_price(ditto.id) == nil
+      assert Repo.aggregate(StorePrice, :count) == 0
+
+      {:ok, rejected} = Pricing.reject_listing(listing(ditto))
+      assert {:ok, %{match: :review}} = Pricing.reopen_listing(rejected)
+      assert Pricing.review_count() == 1
+    end
+
+    test "a candidate shows what it cost when found", %{listing: listing} do
+      [mormo, bundle] = listing.candidates
+
+      assert %CurrentPrice{price_cents: 4_699} = Pricing.candidate_price(mormo)
+      assert %CurrentPrice{price_cents: 11_000} = Pricing.candidate_price(bundle)
+      assert Pricing.candidate_price(%{"external_id" => "1"}) == nil
     end
   end
 
@@ -258,8 +327,9 @@ defmodule Dockd.PricingTest do
       ids = Enum.map(EshopStub.recorded_prices(), &to_string(&1["title_id"]))
       prices = EshopStub.recorded_prices()
 
+      # 80 listings whatever the recording's size: two requests, the second partial.
       many =
-        for n <- 1..60 do
+        for n <- 1..(80 - length(ids)) do
           id = "7001#{String.pad_leading(Integer.to_string(n), 10, "0")}"
           %{"title_id" => String.to_integer(id), "sales_status" => "unreleased"}
         end
@@ -267,11 +337,11 @@ defmodule Dockd.PricingTest do
       EshopStub.stub(self(), prices ++ many)
       Enum.each(ids ++ Enum.map(many, &to_string(&1["title_id"])), &listing_for/1)
 
-      {:ok, %{listings: 70}} = Pricing.sync_eshop_prices(@during_sale)
+      {:ok, %{listings: 80}} = Pricing.sync_eshop_prices(@during_sale)
 
       assert_received {:eshop_request, :price, first, agent}
       assert_received {:eshop_request, :price, second, _}
-      assert {length(first), length(second)} == {50, 20}
+      assert {length(first), length(second)} == {50, 30}
       assert agent =~ ~r{^Dockd/[\x20-\x7e]+$}
     end
 

@@ -152,7 +152,12 @@ defmodule DockdWeb.BuyLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope} current="Comprar">
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      eshop_review={@eshop_review}
+      current="Comprar"
+    >
       <p
         :if={@estimate.physical.priced > 0 or @estimate.digital.priced > 0 or @spent > 0}
         id="queue-totals"
