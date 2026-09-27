@@ -756,25 +756,6 @@ defmodule DockdWeb.DockdComponents do
     """
   end
 
-  @doc """
-  The IGDB attribution, shown only next to the data that came from IGDB: at the end of
-  the game page, with the game's own IGDB link, and at the end of catalog search results.
-  """
-  attr :id, :string, default: nil
-  attr :url, :string, default: nil, doc: "the game's IGDB page"
-
-  def igdb_credit(assigns) do
-    ~H"""
-    <p id={@id} class="dk-credit">
-      Dados de jogos por
-      <a href="https://www.igdb.com" target="_blank" rel="noopener noreferrer">IGDB</a>
-      <span :if={@url}>
-        · <a href={@url} target="_blank" rel="noopener noreferrer">Mais informações no IGDB</a>
-      </span>
-    </p>
-    """
-  end
-
   attr :items, :list, required: true, doc: "maps with :what, :at (DateTime), :who, :current"
   attr :id, :string, default: nil
 

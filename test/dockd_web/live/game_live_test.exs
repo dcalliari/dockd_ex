@@ -35,23 +35,17 @@ defmodule DockdWeb.GameLiveTest do
     refute html =~ "Edição padrão"
   end
 
-  test "credits IGDB once, at the end, with the game's IGDB page", %{conn: conn} = ctx do
+  test "links to the game's IGDB page without repeating the credit", %{conn: conn} = ctx do
     {:ok, game} = Dockd.Catalog.update_game(ctx.game, %{igdb_id: 4242, slug: "metroid-prime-4"})
     {:ok, view, _html} = live(conn, ~p"/jogos/#{game.id}")
 
-    assert has_element?(view, "#game-credit a[href='https://www.igdb.com']", "IGDB")
-
     assert has_element?(
              view,
-             "#game-credit a[href='https://www.igdb.com/games/metroid-prime-4']",
+             "#game-igdb a[href='https://www.igdb.com/games/metroid-prime-4']",
              "Mais informações no IGDB"
            )
 
-    assert view
-           |> render()
-           |> LazyHTML.from_fragment()
-           |> LazyHTML.query(".dk-credit")
-           |> Enum.count() == 1
+    refute has_element?(view, "#game-igdb", "Dados de jogos por")
   end
 
   test "sets Quero, then Jogando, through the status control", %{conn: conn} = ctx do

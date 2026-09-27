@@ -12,7 +12,7 @@ test("the footer leads to Sobre and stays off the Entrar covers", async ({ page 
   await expect(footer).toContainText("Dados de jogos por IGDB");
   await footer.locator("#footer-about").click();
   await expect(page).toHaveURL(/\/sobre$/);
-  await expect(page.locator("#about-credit")).toContainText("Dados de jogos por IGDB");
+  await expect(page.getByText("Dados de jogos por IGDB")).toHaveCount(1);
 
   await page.goto("/entrar");
   await expect(page.locator("#entrar-backdrop")).toBeVisible();

@@ -22,7 +22,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 - Datas em `dd/mm/aaaa`; mês abreviado em caixa alta sem ponto no bloco de data (`SET`, `OUT`). Dinheiro em `R$ 1.249,90`.
 - Metadado separado por ponto mediano: `Switch 2 · 2026 · Team Cherry`. Nunca vírgula, nunca barra, nunca espaço duplo.
 - Sem emoji, sem ponto de exclamação.
-- O crédito do IGDB (`Dados de jogos por IGDB`) fica em `t-meta`, `ink-muted`, no fim de onde os dados do IGDB aparecem: na página do jogo, na mesma linha do link `Mais informações no IGDB`, e no fim dos resultados de uma busca em Descobrir. Fora disso, só na linha do Footer e em Sobre.
+- O crédito da fonte (`Dados de jogos por IGDB`) aparece uma vez por tela, no Footer, e em nenhum outro lugar do corpo. A página do jogo leva só o link `Mais informações no IGDB`, em `t-meta` `ink-muted`, para a página daquele jogo. Entrar e Criar conta não têm Footer nem crédito.
 
 ## Cor
 
@@ -73,7 +73,7 @@ Na página do jogo, plataforma e exclusividade da obra não vão no texto do her
 
 ## Rodapé
 
-Uma linha só no fim de toda tela, menos Entrar e Criar conta: wordmark pequeno, `Sobre` e `Dados de jogos por IGDB`, em `t-meta` `ink-muted` sobre um fio `line`, na largura do conteúdo. No celular termina acima da barra inferior. Sobre (`/sobre`) diz o que é o Dockd em no máximo três frases, sem título, slogan nem apresentação, e leva o crédito do IGDB. Termos e Privacidade entram na mesma linha só quando o Dockd abrir para outras pessoas. Ver Footer.
+Uma linha só no fim de toda tela, menos Entrar e Criar conta: wordmark pequeno, `Sobre` e `Dados de jogos por IGDB`, em `t-meta` `ink-muted` sobre um fio `line`, na largura do conteúdo. No celular termina acima da barra inferior. Sobre (`/sobre`) diz o que é o Dockd em no máximo três frases, sem título, slogan nem apresentação; o crédito do IGDB fica só no Footer. Termos e Privacidade entram na mesma linha só quando o Dockd abrir para outras pessoas. Ver Footer.
 
 ## Histórico
 

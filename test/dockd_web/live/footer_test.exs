@@ -15,11 +15,27 @@ defmodule DockdWeb.FooterTest do
       end
     end
 
-    test "Sobre says what Dockd is and credits IGDB", %{conn: conn} do
+    test "Sobre says what Dockd is", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/sobre")
 
       assert has_element?(view, "#about", "biblioteca pessoal de jogos")
-      assert has_element?(view, "#about-credit a[href='https://www.igdb.com']", "IGDB")
+    end
+
+    test "credits IGDB once per screen, in the footer", %{conn: conn} do
+      game =
+        Dockd.DomainFixtures.game_fixture(%{
+          title: "Credit Once",
+          igdb_id: 77,
+          slug: "credit-once"
+        })
+
+      for path <- ["/sobre", "/descobrir?q=credit", "/jogos/#{game.id}"] do
+        {:ok, view, _html} = live(conn, path)
+        text = view |> render() |> LazyHTML.from_fragment() |> LazyHTML.text()
+        text = String.replace(text, ~r/\s+/, " ")
+
+        assert length(String.split(text, "Dados de jogos por IGDB")) == 2, path
+      end
     end
 
     test "Entrar and Criar conta keep the covers without a footer", %{conn: conn} do

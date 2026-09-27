@@ -154,7 +154,6 @@ defmodule DockdWeb.DiscoverLive do
           </span>
         </div>
       </div>
-      <.igdb_credit :if={@q != "" and @results != []} id="discover-credit" />
 
       <.empty_state :if={@q != "" and @results == []} id="discover-empty">
         Nenhum jogo com “{@q}” para Switch ou Switch 2.

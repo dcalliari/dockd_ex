@@ -18,7 +18,6 @@ defmodule DockdWeb.AboutLive do
           Guarda o que você tem, o que quer, o que está jogando e o que vai comprar.
           Cada preço aparece com a data em que foi visto.
         </p>
-        <.igdb_credit id="about-credit" />
       </div>
     </Layouts.app>
     """

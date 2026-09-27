@@ -295,7 +295,9 @@ defmodule DockdWeb.GameLive do
 
       <.section_head :if={@history != []} title="Histórico" />
       <.history :if={@history != []} id="game-history" items={@history} />
-      <.igdb_credit id="game-credit" url={igdb_url(@game)} />
+      <p :if={igdb_url(@game)} id="game-igdb" class="dk-credit">
+        <a href={igdb_url(@game)} target="_blank" rel="noopener noreferrer">Mais informações no IGDB</a>
+      </p>
     </Layouts.app>
     """
   end

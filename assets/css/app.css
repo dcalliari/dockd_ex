@@ -141,7 +141,6 @@ img { display: block; max-width: 100%; }
 /* Sobre: três frases e o crédito do IGDB */
 .dk-about { max-width: 560px; margin-top: var(--space-6); }
 .dk-about p:first-child { margin: 0; }
-.dk-about .dk-credit { margin-top: var(--space-4); }
 
 /* NavBar (topo) e BottomNav (celular) */
 .dk-nav { position: sticky; top: 0; z-index: 3; height: var(--nav-height); display: flex; align-items: center; gap: var(--space-5); padding: 0 var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
