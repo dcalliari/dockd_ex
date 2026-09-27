@@ -24,6 +24,7 @@ custom classes must fully style the input
 - Toda tela nasce de uma maquete aprovada em `design/maquetes/` antes de virar LiveView. Mudança de token ou regra acontece primeiro no artefato (`design/FONTE.md`) e depois é copiada para `design/`.
 - Um jogo tem um status derivado por `Dockd.Library.Shelf.status/2`: Quero, Backlog, Jogando, Zerado, Larguei. Nunca guarde status; nunca crie um sexto.
 - O status só muda pelo `status_menu/1`, igual em toda tela; clicar na etiqueta atual desmarca e é a única saída da biblioteca (`Library.set_status/4` com `nil`). Ação que aparece em mais de uma tela passa por `DockdWeb.GameEvents`, com o mesmo componente e texto (regra 6 de `design/README.md`).
+- Nunca diálogo nativo do navegador (`confirm`, `alert`, `prompt`, `data-confirm`): confirmação acontece na interface (regra 7 de `design/README.md`, garantida por `DockdWeb.NativeDialogTest`).
 - Componentes vivem em `DockdWeb.DockdComponents`; textos em pt-BR, no máximo seis palavras, sem título repetindo a navegação.
 
 ### JS and CSS guidelines

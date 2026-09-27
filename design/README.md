@@ -1,6 +1,6 @@
 dockd. é uma biblioteca pessoal de jogos de Switch e Switch 2: o que tenho, o que quero, o que estou jogando e o que vou comprar. A interface segue a família Letterboxd e Backloggd: a capa é o conteúdo, o texto é metadado, e cada tela tem uma ação primária. Paleta vermelho, branco e preto, uma família tipográfica, dois temas.
 
-## Seis regras de consistência
+## Sete regras de consistência
 
 Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 
@@ -10,6 +10,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 4. **Borda tem 1px e é `line-strong` quando é controle, `line` quando é separação.** Não existe 1,5px, não existe 2px, exceto o indicador de aba ativa.
 5. **Número é tabular e alinhado à direita, com a data ao lado.** Dinheiro sem data não existe.
 6. **Uma ação, um controle, um texto, um efeito.** Uma ação que aparece em mais de uma tela usa o mesmo componente, as mesmas palavras e grava o mesmo efeito em todas, e a regra de domínio fica num lugar só (`Dockd.Library`, `Dockd.Purchasing`), chamada por um só tratador de eventos (`DockdWeb.GameEvents`). Uma tela não ganha um atalho próprio para algo que outra tela já faz. O inventário está em `maquetes/status.html`.
+7. **Nunca diálogo nativo do navegador.** Sem `confirm`, `alert`, `prompt` nem `data-confirm`. O que precisar de confirmação confirma dentro da interface, no próprio controle. `DockdWeb.NativeDialogTest` falha se algum aparecer em `lib/` ou `assets/js`.
 
 ## Texto
 
