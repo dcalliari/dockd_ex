@@ -2,7 +2,7 @@ defmodule Dockd.LibraryStatusTest do
   use Dockd.DataCase, async: false
   import Dockd.DomainFixtures
 
-  alias Dockd.{Activity, Library, Purchasing, Wallet}
+  alias Dockd.{Activity, Library, Purchasing}
   alias Dockd.Library.Shelf
 
   setup do
@@ -26,11 +26,8 @@ defmodule Dockd.LibraryStatusTest do
     assert Activity.list_events(user) == []
   end
 
-  test "nil keeps purchases, prices, wallet and events", %{user: user, game: game} = ctx do
-    {:ok, _} = balance_fixture(user, %{amount_cents: 10_000})
-
-    {:ok, _} =
-      purchase_fixture(user, ctx.release, %{price_cents: 25_000, store_credit_used_cents: 4_000})
+  test "nil keeps purchases, prices and events", %{user: user, game: game} = ctx do
+    {:ok, _} = purchase_fixture(user, ctx.release, %{price_cents: 25_000})
 
     {:ok, _} =
       Purchasing.create_price_observation(user, %{
@@ -49,7 +46,6 @@ defmodule Dockd.LibraryStatusTest do
     assert Shelf.item(user, game).ownerships == []
     assert [%{price_cents: 25_000}] = Purchasing.list_purchases_for_game(user, game.id)
     assert %{price_cents: 27_000} = Purchasing.latest_price_observation(user, ctx.release.id)
-    assert [%{amount_cents: 6_000}] = Wallet.list_balances(user)
     assert [%{type: :removed} | rest] = Activity.list_events(user)
     assert length(rest) == events
   end

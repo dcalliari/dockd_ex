@@ -11,9 +11,13 @@ Todas as mudanças relevantes do Dockd são documentadas neste arquivo.
 - A biblioteca anterior às contas recebe e-mail e senha por `Dockd.Release.claim_owner/2`; senha esquecida se troca por `Dockd.Release.reset_password/2`.
 - Área pública: sem conta, `/` é a vitrine do catálogo em três faixas, e Descobrir e a página do jogo mostram só o catálogo. A etiqueta de status do visitante leva ao Entrar e volta à mesma capa com o menu aberto. As listas do IGDB ficam em cache por uma hora.
 - Entrar e Criar conta (`/criar-conta`) ganham a barra do visitante e o formulário num painel sobre as capas do catálogo, escurecidas pelo véu.
+- Comprar mostra numa linha o total estimado da fila, Físico e Digital separados, cada um com quantos jogos têm preço, e o gasto do mês.
+- Comprei com um toque, em Comprar e na página do jogo: grava a compra com o último preço visto daquela versão e mídia, pergunta a versão no lugar do botão quando há mais de uma, e deixa corrigir o valor e Desfazer enquanto a tela está aberta.
+- O preço é o controle do registro manual, nas duas telas, com os preços já vistos embaixo; o histórico mostra o valor de cada compra.
 
 ### Alterado
 
+- A compra não exige mais preço nem loja.
 - Biblioteca, Comprar e toda gravação exigem conta, e a API `/api/v1` exige `Authorization: Bearer` com o token da conta. Nada mais usa o dono único do MVP.
 
 - Camada web reescrita a partir do design system aprovado em 25/09/2026: Biblioteca como home, página do Jogo com um único controle de status, Descobrir sobre o IGDB inteiro e Comprar como fila de lançamentos.
@@ -25,6 +29,7 @@ Todas as mudanças relevantes do Dockd são documentadas neste arquivo.
 ### Removido
 
 - DaisyUI, o seletor de tema, a barra lateral, o feature flag `flows` e as telas de Planejador, Carteira e Catálogo.
+- Saldo do eShop e reservas, na tela, na API (`/api/v1/wallet/*`), no domínio e no banco, com o saldo usado na compra: dependiam de atualizar valores à mão. A migração apaga os registros existentes.
 
 ## [0.2.0] 2026-09-22
 

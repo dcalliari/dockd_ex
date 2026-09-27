@@ -6,7 +6,6 @@ defmodule Dockd.Purchasing.Purchase do
     field :format, Ecto.Enum, values: [:physical, :digital]
     field :price_cents, :integer
     field :currency, :string, default: "BRL"
-    field :store_credit_used_cents, :integer, default: 0
     field :purchased_at, :utc_datetime_usec
     field :is_preorder, :boolean, default: false
     field :retailer, :string
@@ -24,18 +23,10 @@ defmodule Dockd.Purchasing.Purchase do
         :format,
         :price_cents,
         :currency,
-        :store_credit_used_cents,
         :purchased_at,
         :is_preorder,
         :retailer
       ])
-      |> validate_required([
-        :user_id,
-        :release_id,
-        :format,
-        :price_cents,
-        :purchased_at,
-        :retailer
-      ])
+      |> validate_required([:user_id, :release_id, :format, :purchased_at])
       |> validate_number(:price_cents, greater_than_or_equal_to: 0)
 end

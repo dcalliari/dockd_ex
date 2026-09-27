@@ -23,8 +23,7 @@ defmodule DockdWeb.PlannerController do
             title: item.game.title,
             release_id: item.release.id,
             release_date: item.release.release_date,
-            recommendation: item.recommendation,
-            reserved_cents: item.reserved_cents
+            recommendation: item.recommendation
           }
         end),
       backlog:

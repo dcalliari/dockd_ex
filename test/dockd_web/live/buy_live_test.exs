@@ -5,7 +5,7 @@ defmodule DockdWeb.BuyLiveTest do
   import Dockd.DomainFixtures
 
   alias Dockd.Library.Shelf
-  alias Dockd.{Purchasing, Wallet}
+  alias Dockd.Purchasing
 
   setup :register_and_log_in_user
 
@@ -64,44 +64,89 @@ defmodule DockdWeb.BuyLiveTest do
     assert has_element?(view, "#queue-#{ctx.available.id} button", "Comprei")
     assert has_element?(view, "#queue-#{ctx.undated.id}")
     refute has_element?(view, "#queue-#{ctx.owned.id}")
-    refute has_element?(view, "#wallet-line")
+    refute has_element?(view, "button", "Reservar")
   end
 
-  test "shows the eShop balance when there is one", %{conn: conn} = ctx do
-    {:ok, _} = balance_fixture(ctx.user, %{amount_cents: 4000})
+  test "the line on top shows the month's spending and no estimate without prices",
+       %{conn: conn} do
     {:ok, view, _html} = live(conn, "/comprar")
-    assert has_element?(view, "#wallet-line", "R$ 40,00")
+
+    assert has_element?(view, "#month-spending", "R$ 10,00")
+    refute has_element?(view, "#estimate-digital")
+    refute has_element?(view, "#estimate-physical")
   end
 
-  test "reserves money for an upcoming release inline", %{conn: conn} = ctx do
+  test "the estimate adds each media's prices and says how many games it covers",
+       %{conn: conn} = ctx do
+    observe(ctx.user, ctx.available_release, :digital, 9_990)
     {:ok, view, _html} = live(conn, "/comprar")
 
-    view |> element("#queue-#{ctx.upcoming.id} button", "Reservar") |> render_click()
-    view |> form("#reserve-form-#{ctx.upcoming.id}", %{"amount" => "349,90"}) |> render_submit()
-
-    assert [%{amount_cents: 34_990}] = Wallet.list_reservations(ctx.user)
-    assert has_element?(view, "#queue-#{ctx.upcoming.id}", "Reservado")
-    assert has_element?(view, "#wallet-line", "R$ 349,90")
+    assert has_element?(view, "#estimate-digital", "R$ 99,90")
+    assert has_element?(view, "#estimate-digital", "em 1 de 4")
+    refute has_element?(view, "#estimate-physical")
+    assert has_element?(view, "#price-#{ctx.available.id}", "R$ 99,90")
   end
 
-  test "Comprei takes the game out of the queue", %{conn: conn} = ctx do
+  test "Comprei buys in one tap with the price seen, then Desfazer undoes it",
+       %{conn: conn} = ctx do
+    observe(ctx.user, ctx.available_release, :digital, 9_990)
     {:ok, view, _html} = live(conn, "/comprar")
 
-    view |> element("#queue-#{ctx.available.id} button", "Comprei") |> render_click()
-    view |> form("#buy-form-#{ctx.available.id}", %{"price" => "99,90"}) |> render_submit()
+    view |> element("#buy-#{ctx.available.id}-button") |> render_click()
 
-    refute has_element?(view, "#queue-#{ctx.available.id}")
     assert Shelf.item(ctx.user, ctx.available).status == :backlog
-    assert [%{price_cents: 9_990}] = Purchasing.list_purchases(ctx.user, ctx.available_release.id)
+
+    assert [%{price_cents: 9_990, retailer: "eShop"}] =
+             Purchasing.list_purchases(ctx.user, ctx.available_release.id)
+
+    assert has_element?(view, "#buy-#{ctx.available.id} .dk-status--backlog")
+    assert has_element?(view, "#buy-#{ctx.available.id}", "pago em")
+    refute has_element?(view, "#estimate-digital")
+
+    view |> element("#buy-#{ctx.available.id} button", "Desfazer") |> render_click()
+
+    assert Shelf.item(ctx.user, ctx.available).status == :quero
+    assert Purchasing.list_purchases(ctx.user, ctx.available_release.id) == []
+    assert has_element?(view, "#buy-#{ctx.available.id}-button")
   end
 
-  test "Comprei without a price says the same as on the game page", %{conn: conn} = ctx do
+  test "the paid value opens in place and takes a correction", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/comprar")
 
-    view |> element("#queue-#{ctx.available.id} button", "Comprei") |> render_click()
-    view |> form("#buy-form-#{ctx.available.id}", %{"price" => ""}) |> render_submit()
+    view |> element("#buy-#{ctx.available.id}-button") |> render_click()
+    assert has_element?(view, "#buy-#{ctx.available.id}", "Sem valor")
 
-    assert has_element?(view, "#flash-group", "Informe o preço pago.")
-    assert has_element?(view, "#queue-#{ctx.available.id}")
+    view |> element("#buy-#{ctx.available.id} button", "Sem valor") |> render_click()
+    view |> form("#buy-#{ctx.available.id} form", %{"price" => "abc"}) |> render_submit()
+    assert has_element?(view, "#buy-#{ctx.available.id} .dk-field__error", "Use 199,90")
+
+    view |> form("#buy-#{ctx.available.id} form", %{"price" => "89,90"}) |> render_submit()
+
+    assert [%{price_cents: 8_990}] = Purchasing.list_purchases(ctx.user, ctx.available_release.id)
+    assert has_element?(view, "#buy-#{ctx.available.id}", "R$ 89,90")
+  end
+
+  test "the price opens the manual record under the row", %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/comprar")
+
+    view |> element("#price-#{ctx.upcoming.id}") |> render_click()
+
+    view
+    |> form("#price-form-#{ctx.upcoming.id}", %{"price" => "349,90", "source" => "Amazon"})
+    |> render_submit()
+
+    refute has_element?(view, "#price-form-#{ctx.upcoming.id}")
+    assert has_element?(view, "#price-#{ctx.upcoming.id}", "R$ 349,90")
+  end
+
+  defp observe(user, release, format, cents) do
+    {:ok, _} =
+      Purchasing.create_price_observation(user, %{
+        release_id: release.id,
+        format: format,
+        price_cents: cents,
+        observed_at: DateTime.utc_now(),
+        source: "eShop"
+      })
   end
 end

@@ -1,7 +1,7 @@
 defmodule Dockd.DomainFixtures do
   @moduledoc "Fixtures for domain context tests."
   alias Dockd.Accounts.User
-  alias Dockd.{Catalog, Library, Purchasing, Wallet}
+  alias Dockd.{Catalog, Library, Purchasing}
 
   @doc "Creates a library owner for context tests; the domain does not need a login."
   def user_fixture(attrs \\ %{}),
@@ -49,8 +49,4 @@ defmodule Dockd.DomainFixtures do
       )
     )
   end
-
-  @doc "Creates an eShop balance."
-  def balance_fixture(user, attrs \\ %{}),
-    do: Wallet.create_balance(user, Map.merge(%{store: :eshop, amount_cents: 1000}, attrs))
 end

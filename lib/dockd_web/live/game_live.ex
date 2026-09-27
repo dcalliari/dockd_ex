@@ -19,71 +19,42 @@ defmodule DockdWeb.GameLive do
 
     {:ok,
      socket
-     |> assign(page_title: game.title, user: user, game: game, form: nil)
+     |> assign(page_title: game.title, user: user, game: game)
      |> GameEvents.init(params["abrir"])
      |> UserAuth.halt_visitor_events([])
      |> load()}
   end
 
   defp load(%{assigns: %{user: nil, game: game}} = socket),
-    do: assign(socket, item: Shelf.item(nil, game), observations: %{}, history: [], since: nil)
+    do:
+      assign(socket,
+        item: Shelf.item(nil, game),
+        prices: %{},
+        purchases: %{},
+        history: [],
+        since: nil
+      )
 
   defp load(socket) do
     %{user: user, game: game} = socket.assigns
     item = Shelf.item(user, game)
-
-    observations =
-      Map.new(item.releases, &{&1.id, Purchasing.latest_price_observation(user, &1.id)})
+    purchases = Purchasing.list_purchases_for_game(user, game.id)
 
     assign(socket,
       item: item,
-      observations: observations,
-      history: history(user, item),
+      prices: Map.new(item.releases, &{&1.id, Purchasing.current_price(user, &1.id)}),
+      purchases: Map.new(purchases, &{&1.id, &1}),
+      history: history(user, item, purchases),
       since: since(item)
     )
   end
 
   # ---------------------------------------------------------------------------
-  # Status, Comprei and prices, inline
+  # Status, Comprei and prices: every event is a game event
 
   @impl true
   def handle_event(event, params, socket) when event in @game_events,
     do: GameEvents.handle_event(event, params, socket, &load/1)
-
-  def handle_event("cancel", _params, socket), do: {:noreply, assign(socket, form: nil)}
-
-  def handle_event("price_form", %{"release_id" => release_id}, socket),
-    do: {:noreply, assign(socket, form: {:price, release_id})}
-
-  def handle_event("buy_form", _params, socket), do: {:noreply, assign(socket, form: :buy)}
-
-  def handle_event("save_price", %{"release_id" => release_id} = params, socket) do
-    with {:ok, cents} when is_integer(cents) <- parse_money(params["price"]),
-         {:ok, _} <-
-           Purchasing.create_price_observation(socket.assigns.user, %{
-             release_id: release_id,
-             format: params["format"] || "digital",
-             price_cents: cents,
-             observed_at: DateTime.utc_now(),
-             source: blank_to(params["source"], "eShop")
-           }) do
-      {:noreply, socket |> assign(form: nil) |> load()}
-    else
-      {:ok, nil} -> {:noreply, put_flash(socket, :error, "Informe o preço visto.")}
-      :error -> {:noreply, put_flash(socket, :error, "Preço inválido. Use 199,90.")}
-      {:error, changeset} -> {:noreply, put_flash(socket, :error, error_message(changeset))}
-    end
-  end
-
-  defp blank_to(value, default) when value in [nil, ""], do: default
-  defp blank_to(value, _default), do: value
-
-  defp error_message(%Ecto.Changeset{} = changeset) do
-    case Keyword.values(changeset.errors) do
-      [{message, _} | _] -> message
-      _ -> "Não foi possível salvar."
-    end
-  end
 
   # ---------------------------------------------------------------------------
   # Read model for the page
@@ -91,18 +62,23 @@ defmodule DockdWeb.GameLive do
   defp since(%Shelf{entry: nil}), do: nil
   defp since(%Shelf{entry: entry}), do: entry.updated_at
 
-  defp history(user, %Shelf{game: game, ownerships: ownerships, releases: releases}) do
+  # An ownership that came with a purchase is told by the purchase, which carries the
+  # price and defined the Backlog.
+  defp history(user, %Shelf{game: game, ownerships: ownerships, releases: releases}, purchases) do
     release_names = Map.new(releases, &{&1.id, enum_label(&1.platform)})
+    purchases = Map.new(purchases, &{&1.id, &1})
 
     events =
       user
       |> Activity.list_events()
       |> Enum.filter(&(&1.game_id == game.id))
-      |> Enum.map(&event_item(&1, release_names))
+      |> Enum.map(&event_item(&1, release_names, purchases))
       |> Enum.reject(&is_nil/1)
 
     owned =
-      Enum.map(ownerships, fn o ->
+      ownerships
+      |> Enum.reject(& &1.purchase_id)
+      |> Enum.map(fn o ->
         %{
           what: "Registrou a posse",
           at: o.acquired_at,
@@ -140,9 +116,25 @@ defmodule DockdWeb.GameLive do
     abandoned: "Largou",
     removed: "Saiu da biblioteca"
   }
-  @other_events %{purchased: "Comprou", vetoed: "Não quer esta versão"}
+  @other_events %{vetoed: "Não quer esta versão"}
 
-  defp event_item(event, release_names) do
+  defp event_item(%{type: :purchased} = event, release_names, purchases) do
+    purchase = purchases[event.payload["purchase_id"]]
+    price = purchase && purchase.price_cents
+
+    %{
+      what: if(price, do: "Comprou: #{money(price, purchase.currency)}", else: "Comprou"),
+      at: event.occurred_at,
+      who: [
+        release_names[event.release_id],
+        purchase && enum_label(purchase.format),
+        purchase && purchase.retailer
+      ],
+      state: true
+    }
+  end
+
+  defp event_item(event, release_names, _purchases) do
     who = [release_names[event.release_id]]
 
     cond do
@@ -160,21 +152,23 @@ defmodule DockdWeb.GameLive do
   defp igdb_url(%{igdb_id: nil}), do: nil
   defp igdb_url(%{slug: slug}), do: "https://www.igdb.com/games/#{slug}"
 
+  defp paid_cents(purchases, %{purchase_id: id}) when is_binary(id),
+    do: purchases[id] && purchases[id].price_cents
+
+  defp paid_cents(_purchases, _ownership), do: nil
+
   defp ownership_for(item, release_id),
     do: Enum.find(item.ownerships, &(&1.release_id == release_id))
 
   defp exclusive?(game), do: game.availability in [:nintendo_exclusive, :switch2_exclusive]
 
-  defp default_price(nil), do: ""
+  defp price_open?(%{kind: :price, key: key}, release_id), do: key == release_id
+  defp price_open?(_form, _release_id), do: false
 
-  defp default_price(observation),
-    do: observation.price_cents |> money() |> String.replace("R$ ", "")
-
-  # Comprei offers the version out first, preselected.
-  defp buy_releases(item) do
-    first = Shelf.first_release(item)
-    [first | List.delete(item.releases, first)]
-  end
+  defp buyable?(assigns),
+    do:
+      assigns.user != nil and assigns.item.releases != [] and
+        (assigns.item.status in [nil, :quero] or Map.has_key?(assigns.bought, assigns.game.id))
 
   @impl true
   def render(assigns) do
@@ -223,18 +217,15 @@ defmodule DockdWeb.GameLive do
             ask={GameEvents.ask(@asking, @item)}
           />
 
-          <div
-            :if={@user != nil and @item.status in [nil, :quero] and @item.releases != []}
-            class="dk-hero__actions"
-          >
-            <.btn :if={@form != :buy} id="buy-button" variant="primary" phx-click="buy_form">
-              Comprei
-            </.btn>
-            <.purchase_form
-              :if={@form == :buy}
-              id="buy-form"
-              releases={buy_releases(@item)}
-              price={default_price(@observations[Shelf.first_release(@item).id])}
+          <div :if={buyable?(assigns)} class="dk-hero__actions">
+            <.buy_control
+              id="buy"
+              place="hero"
+              game_id={@game.id}
+              choices={GameEvents.buying(@buying, @game.id)}
+              purchase={@bought[@game.id]}
+              form={@form}
+              error={@form_error}
             />
           </div>
         </div>
@@ -249,7 +240,11 @@ defmodule DockdWeb.GameLive do
             <div class="dk-row__meta">
               <%= if ownership = ownership_for(@item, release.id) do %>
                 Tem · <.media_tag media={ownership.ownership_type} />
-                desde {date_pt_br(ownership.acquired_at)}
+                <%= if paid = paid_cents(@purchases, ownership) do %>
+                  · pagou {money(paid)} em {date_pt_br(ownership.acquired_at)}
+                <% else %>
+                  desde {date_pt_br(ownership.acquired_at)}
+                <% end %>
               <% else %>
                 {meta([
                   release.physical_available && "Físico",
@@ -260,37 +255,21 @@ defmodule DockdWeb.GameLive do
             </div>
           </div>
           <div :if={@user} class="dk-row__end">
-            <.price id={"price-#{release.id}"} observation={@observations[release.id]} />
-            <.btn size="sm" phx-click="price_form" phx-value-release_id={release.id}>
-              Registrar preço
-            </.btn>
+            <.price
+              id={"price-#{release.id}"}
+              observation={@prices[release.id]}
+              game_id={@game.id}
+              release_id={release.id}
+              open={price_open?(@form, release.id)}
+            />
           </div>
         </div>
-
-        <form
-          :if={@form == {:price, release.id}}
+        <.price_form
+          :if={price_open?(@form, release.id)}
           id={"price-form-#{release.id}"}
-          class="dk-inline-form"
-          phx-submit="save_price"
-        >
-          <input type="hidden" name="release_id" value={release.id} />
-          <input
-            type="text"
-            name="price"
-            inputmode="decimal"
-            placeholder="199,90"
-            aria-label="Preço visto"
-            value={default_price(@observations[release.id])}
-            autofocus
-          />
-          <select name="format" aria-label="Mídia">
-            <option value="digital">Digital</option>
-            <option value="physical">Físico</option>
-          </select>
-          <input type="text" name="source" placeholder="eShop" aria-label="Onde viu" />
-          <.btn type="submit" size="sm" variant="primary">Salvar preço</.btn>
-          <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
-        </form>
+          form={@form}
+          error={@form_error}
+        />
       </div>
 
       <.section_head :if={@history != []} title="Histórico" />

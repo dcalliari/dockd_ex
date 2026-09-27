@@ -125,10 +125,12 @@ defmodule DockdWeb.GameLiveTest do
     assert has_element?(view, "#game-history .dk-history__item--current", "Saiu da biblioteca")
   end
 
-  test "registers an observed price inline", %{conn: conn} = ctx do
+  test "the price opens the manual record in place", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
 
-    view |> element("#release-#{ctx.release.id} button", "Registrar preço") |> render_click()
+    view |> element("#price-#{ctx.release.id}", "Sem preço") |> render_click()
+    view |> form("#price-form-#{ctx.release.id}", %{"price" => "abc"}) |> render_submit()
+    assert has_element?(view, "#price-form-#{ctx.release.id} .dk-field__error", "Use 199,90")
 
     view
     |> form("#price-form-#{ctx.release.id}", %{"price" => "349,90", "source" => "OLX"})
@@ -139,35 +141,54 @@ defmodule DockdWeb.GameLiveTest do
 
     assert has_element?(view, "#price-#{ctx.release.id}", "R$ 349,90")
     assert has_element?(view, "#game-history", "Viu o preço: R$ 349,90")
+
+    view |> element("#price-#{ctx.release.id}") |> render_click()
+    assert has_element?(view, "#price-form-#{ctx.release.id} .dk-seen", "R$ 349,90")
   end
 
-  test "Comprei records the purchase and turns the game into Backlog", %{conn: conn} = ctx do
+  test "Comprei asks the version, buys it with the price seen, and Desfazer undoes it",
+       %{conn: conn} = ctx do
     {:ok, _} = entry_fixture(ctx.user, ctx.game, %{purchase_intent: :want})
+
+    {:ok, _} =
+      Purchasing.create_price_observation(ctx.user, %{
+        release_id: ctx.release_2.id,
+        format: :digital,
+        price_cents: 29_990,
+        observed_at: DateTime.utc_now(),
+        source: "eShop"
+      })
+
     {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
 
     view |> element("#buy-button") |> render_click()
-    assert has_element?(view, "#buy-form select[name=release_id] option", "Switch 2")
-
-    view
-    |> form("#buy-form", %{"release_id" => ctx.release_2.id, "price" => "299,90"})
-    |> render_submit()
+    assert Purchasing.list_purchases_for_game(ctx.user, ctx.game.id) == []
+    view |> element("#buy .dk-choice button", "Switch 2") |> render_click()
 
     item = Shelf.item(ctx.user, ctx.game)
     assert item.status == :backlog
     assert [%{release_id: release_id}] = item.ownerships
     assert release_id == ctx.release_2.id
     assert [%{price_cents: 29_990}] = Purchasing.list_purchases_for_game(ctx.user, ctx.game.id)
-    assert has_element?(view, "#game-history", "Comprou")
-    refute has_element?(view, "#buy-form")
+    assert has_element?(view, "#game-history .dk-history__item--current", "Comprou: R$ 299,90")
+    refute has_element?(view, "#game-history", "Registrou a posse")
+    assert has_element?(view, "#release-#{ctx.release_2.id}", "pagou R$ 299,90")
+
+    view |> element("#buy button", "Desfazer") |> render_click()
+
+    assert Shelf.item(ctx.user, ctx.game).status == :quero
+    assert Purchasing.list_purchases_for_game(ctx.user, ctx.game.id) == []
+    refute has_element?(view, "#game-history", "Comprou")
+    assert has_element?(view, "#buy-button", "Comprei")
   end
 
-  test "Comprei with the same form and message as Comprar", %{conn: conn} = ctx do
+  test "Cancelar closes the version question and buys nothing", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
 
     view |> element("#buy-button") |> render_click()
-    view |> form("#buy-form", %{"price" => ""}) |> render_submit()
+    view |> element("#buy button", "Cancelar") |> render_click()
 
-    assert has_element?(view, "#flash-group", "Informe o preço pago.")
+    assert has_element?(view, "#buy-button")
     assert Purchasing.list_purchases_for_game(ctx.user, ctx.game.id) == []
   end
 end

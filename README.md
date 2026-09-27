@@ -10,7 +10,7 @@ Dockd parte de uma ideia simples: o problema não é ter mais uma lista de jogos
 
 Um projeto pessoal, de escopo deliberadamente Nintendo, para organizar o caminho entre uma obra que interessa e uma compra que faz sentido. O produto não tenta ser rede social, catálogo de avaliações, agregador de notas ou diário de jogo.
 
-A restrição a Switch e Switch 2 é uma escolha de produto, não uma limitação acidental. Ela permite tratar problemas específicos do ecossistema, como exclusivos, jogos físicos com pouca redução de preço, game-key cards e saldo preso no eShop.
+A restrição a Switch e Switch 2 é uma escolha de produto, não uma limitação acidental. Ela permite tratar problemas específicos do ecossistema, como exclusivos, jogos físicos com pouca redução de preço e game-key cards.
 
 ## Estado atual
 
@@ -22,7 +22,7 @@ Quatro telas, desenhadas a partir do design system em [`design/`](design/FONTE.m
 - **Biblioteca** em `/`, com conta: grade de capas com um status por jogo (Quero, Backlog, Jogando, Zerado, Larguei), derivado de posse e estado de jogo; abas com contagem, filtros de plataforma e mídia, busca e ordenação.
 - **Jogo** em `/jogos/:id`: capa com plataformas e exclusividade, um único controle de status, versões com preço observado e datado, e o histórico das ações.
 - **Descobrir** em `/descobrir`: busca no IGDB inteiro restrita a Switch e Switch 2, com `Quero jogar` em um toque. Sem credenciais do IGDB, busca no catálogo local.
-- **Comprar** em `/comprar`: a fila dos jogos em Quero, separada em próximos lançamentos, disponíveis e sem data, com reserva de saldo e registro de compra em linha.
+- **Comprar** em `/comprar`: a fila dos jogos em Quero, separada em próximos lançamentos, disponíveis e sem data, com o total estimado da fila por mídia e o gasto do mês numa linha no topo. Comprei grava a compra com um toque, pelo último preço visto, e Desfazer volta atrás no lugar.
 - **Entrar** em `/entrar` e **Criar conta** em `/criar-conta`: cada conta é uma biblioteca. Entra-se com e-mail e senha, e `Criar conta` abre uma conta nova sem convite. Com SMTP configurado, aparece também `Entrar por link`.
 - Sem conta, a Vitrine, Descobrir e a página do jogo mostram só o catálogo; a etiqueta `+ Adicionar` leva ao Entrar e volta à mesma capa. Biblioteca, Comprar, preço, posse, status e histórico exigem a conta.
 - API JSON versionada em `/api/v1` e especificação em `/api/openapi`. Cada chamada leva `Authorization: Bearer <token>`, o token que `Copiar token da API`, no menu da conta, gera e copia; um novo substitui o anterior. O catálogo continua sendo administrado só pela API, por qualquer conta.

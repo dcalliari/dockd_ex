@@ -19,6 +19,20 @@ defmodule Dockd.Catalog.Release do
     timestamps(type: :utc_datetime_usec)
   end
 
+  @doc """
+  The media a release is sold in, physical first. A release that declares neither is
+  treated as digital, so every release can be bought and priced.
+  """
+  def media(%__MODULE__{} = release) do
+    case Enum.filter(
+           [physical: release.physical_available, digital: release.digital_available],
+           &elem(&1, 1)
+         ) do
+      [] -> [:digital]
+      media -> Keyword.keys(media)
+    end
+  end
+
   def changeset(release, attrs) do
     release
     |> cast(attrs, [

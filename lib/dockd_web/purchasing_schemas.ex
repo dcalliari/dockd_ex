@@ -14,7 +14,6 @@ defmodule DockdWeb.ApiSchemas.PurchasingRequest do
       purchased_at: %Schema{type: :string, format: :date_time},
       source: %Schema{type: :string},
       retailer: %Schema{type: :string},
-      store_credit_used_cents: %Schema{type: :integer, minimum: 0},
       is_preorder: %Schema{type: :boolean},
       reason: %Schema{type: :string}
     }

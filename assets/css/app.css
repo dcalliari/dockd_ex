@@ -320,11 +320,45 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .dk-link svg, .dk-link [class*="hero-"] { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
 
-/* Formulário inline: uma linha, sem cartão */
-.dk-inline-form { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-2) 0 var(--space-3); }
-.dk-inline-form input, .dk-inline-form select { height: 28px; padding: 0 var(--space-2); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); font-size: 13px; }
-.dk-inline-form input[inputmode="decimal"] { width: 110px; font-variant-numeric: tabular-nums; }
-.dk-inline-form .dk-error { width: 100%; font-size: 12px; line-height: 16px; color: var(--red-ink); }
+/* Form em linha: abre embaixo da linha, alinhado ao título, e fecha no mesmo lugar (maquetes/compra.html) */
+.dk-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); padding: var(--space-2) 0 var(--space-4) 56px; border-bottom: 1px solid var(--line); }
+.dk-form__field { display: flex; flex-direction: column; gap: var(--space-1); }
+.dk-form__field > span:first-child { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.dk-form__field input:not([type="radio"]) { height: 28px; width: 132px; padding: 0 var(--space-2); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font-size: 13px; }
+.dk-form__field.is-error input { border-color: var(--red-ink); }
+.dk-form__field .dk-media { height: 28px; color: var(--ink); }
+.dk-form__actions { display: flex; align-items: center; gap: var(--space-3); height: 28px; }
+.dk-money { position: relative; display: block; }
+.dk-money::before { content: "R$"; position: absolute; left: var(--space-2); top: 50%; translate: 0 -50%; font-size: 13px; color: var(--ink-muted); pointer-events: none; }
+.dk-money input:not([type="radio"]) { width: 104px; padding-left: 30px; font-variant-numeric: tabular-nums; }
+.dk-row:has(+ .dk-form) { border-bottom: 0; }
+@media (max-width: 767px) {
+  .dk-form { padding-left: 0; }
+  .dk-form > .dk-form__field { flex: 1 1 140px; }
+  .dk-form > .dk-form__field input:not([type="radio"]) { width: 100%; }
+  .dk-form__actions { flex: 1 1 100%; }
+}
+
+/* Choice: poucas opções que existem de fato; uma opção só vira texto. Botões quando a escolha já é a ação. */
+.dk-choice { display: inline-flex; height: 28px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden; }
+.dk-choice > button, .dk-choice > label > span { display: inline-flex; align-items: center; height: 100%; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-muted); background: var(--surface); white-space: nowrap; cursor: pointer; transition: background-color 120ms, color 120ms; }
+.dk-choice > * + * { border-left: 1px solid var(--line-strong); }
+.dk-choice > label { position: relative; display: flex; }
+.dk-choice > label > input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.dk-choice > button:hover, .dk-choice > label > span:hover { color: var(--ink); background: var(--surface-raised); }
+.dk-choice > label > input:checked + span { background: var(--ink); color: var(--on-ink); }
+.dk-choice > label > input:focus-visible + span { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+
+/* Vistos: os preços já vistos do jogo, dentro do registro de preço */
+.dk-seen { flex: 1 1 100%; margin: 0; padding: 0; list-style: none; }
+.dk-seen li { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: var(--space-3); align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-seen b { font-size: 15px; line-height: 20px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
+.dk-seen time { font-variant-numeric: tabular-nums; }
+
+/* Comprei (caminho A): o botão, a pergunta de versão no lugar dele, e depois o valor pago com Desfazer */
+.dk-buy { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-3); }
+.dk-buy__paid { display: flex; align-items: flex-start; gap: var(--space-2); }
+.dk-hero__actions .dk-buy { justify-content: flex-start; }
 
 /* GameCard e grade */
 .dk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--space-4) var(--space-3); }
@@ -374,6 +408,10 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-price b { font-size: 15px; line-height: 20px; font-weight: 600; }
 .dk-price small { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
 .dk-price--stale small { color: var(--warn); }
+.dk-price--none b { font-weight: 400; color: var(--ink-muted); }
+/* O preço é o controle do registro manual, como a etiqueta é o controle do status */
+button.dk-price { text-align: right; padding: 2px var(--space-1); margin: -2px calc(-1 * var(--space-1)); border-radius: var(--radius-sm); transition: background-color 120ms; }
+button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(--surface-raised); }
 
 /* EmptyState */
 .dk-empty { margin: 0; padding: var(--space-6) 0; font-size: 15px; line-height: 22px; color: var(--ink-muted); }
@@ -400,11 +438,12 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-history__what small { margin-left: var(--space-2); font-size: 13px; font-weight: 400; color: var(--ink-muted); }
 .dk-history__who { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
 
-/* Carteira em linha, na fila de compra */
-.dk-wallet { display: flex; justify-content: flex-end; align-items: baseline; gap: var(--space-4); margin: var(--space-4) 0 var(--space-5); font-size: 12px; line-height: 16px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
-.dk-wallet span { white-space: nowrap; }
-.dk-wallet b { color: var(--ink); font-size: 15px; font-weight: 600; margin-left: 6px; }
-@media (max-width: 767px) { .dk-wallet { justify-content: space-between; } }
+/* Totals: o total estimado da fila por mídia, com a cobertura, e o gasto do mês, numa linha no topo de Comprar */
+.dk-totals { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: baseline; gap: var(--space-2) var(--space-4); margin: var(--space-4) 0 var(--space-5); font-size: 12px; line-height: 16px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.dk-totals span { white-space: nowrap; }
+.dk-totals b { color: var(--ink); font-size: 15px; font-weight: 600; margin-left: 6px; }
+.dk-totals small { margin-left: 6px; font-size: 12px; }
+@media (max-width: 767px) { .dk-totals { justify-content: space-between; } }
 
 /* Flash: uma linha discreta, sem cartão */
 .dk-flash { position: fixed; left: 50%; bottom: calc(var(--nav-height) + var(--space-4)); translate: -50% 0; z-index: 4; max-width: calc(100% - 2 * var(--space-4)); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 13px; line-height: 18px; }

@@ -12,7 +12,6 @@ defmodule Dockd.Catalog do
   alias Dockd.Library.{Ownership, ReleaseVeto}
   alias Dockd.Purchasing.{PriceObservation, Purchase}
   alias Dockd.Repo
-  alias Dockd.Wallet.BalanceReservation
 
   def list_games do
     Repo.all(from game in Game, order_by: [asc: game.title], preload: [:releases])
@@ -65,13 +64,6 @@ defmodule Dockd.Catalog do
         Repo.exists?(from record in schema, where: record.release_id == ^release.id)
       end)
       |> Enum.map(&elem(&1, 0))
-
-    reservation? =
-      Repo.exists?(
-        from reservation in BalanceReservation, where: reservation.game_id == ^release.game_id
-      )
-
-    blockers = if reservation?, do: blockers ++ [:reservation], else: blockers
 
     if blockers == [], do: Repo.delete(release), else: {:error, {:in_use, blockers}}
   end

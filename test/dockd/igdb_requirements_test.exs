@@ -3,7 +3,7 @@ defmodule Dockd.IGDBRequirementsTest do
   import OpenApiSpex.TestAssertions
   import Phoenix.ConnTest
   import Plug.Conn, only: [put_req_header: 3]
-  alias Dockd.{Activity, Catalog, IGDB, Library, Purchasing, Repo, Wallet}
+  alias Dockd.{Activity, Catalog, IGDB, Library, Purchasing, Repo}
   alias Dockd.Catalog.Game
   alias DockdWeb.ApiSpec
   @endpoint DockdWeb.Endpoint
@@ -300,8 +300,6 @@ defmodule Dockd.IGDBRequirementsTest do
       purchases: Repo.aggregate(Purchasing.Purchase, :count),
       price_observations: Repo.aggregate(Purchasing.PriceObservation, :count),
       vetoes: Repo.aggregate(Library.ReleaseVeto, :count),
-      store_balances: Repo.aggregate(Wallet.StoreBalance, :count),
-      balance_reservations: Repo.aggregate(Wallet.BalanceReservation, :count),
       events: Repo.aggregate(Activity.Event, :count)
     }
   end

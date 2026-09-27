@@ -1,31 +1,44 @@
 defmodule DockdWeb.GameEvents do
   @moduledoc """
-  The events a game answers to on every screen, handled once so the status control and
-  Comprei do the same thing wherever they appear (design/README.md, Uma ação, um efeito).
+  The events a game answers to on every screen, handled once so the status control,
+  Comprei and the price do the same thing wherever they appear (design/README.md, Uma
+  ação, um efeito).
 
   A LiveView delegates `events/0` here and passes the function that reloads what it shows:
 
       def handle_event(event, params, socket) when event in @game_events,
         do: GameEvents.handle_event(event, params, socket, &load/1)
 
-  The screen keeps two assigns, set by `init/2`: `status_open`, a menu the URL asked to open
-  (`abrir`), and `asking`, the game whose Backlog waits for the version it is owned in.
+  The screen keeps these assigns, set by `init/2`: `status_open`, a menu the URL asked to
+  open (`abrir`); `asking`, the game whose Backlog waits for the version it is owned in;
+  `buying`, the game whose Comprei waits for a version or media; `bought`, the purchases
+  made on this screen, which show Desfazer until the screen is left; and `form`, the price
+  or paid value being typed, with its `form_error`.
   """
-  import Phoenix.Component, only: [assign: 3]
+  import Phoenix.Component, only: [assign: 3, assign_new: 3]
   import Phoenix.LiveView, only: [put_flash: 3]
   import DockdWeb.DockdComponents, only: [parse_money: 1, release_label: 1, enum_label: 1]
 
   alias Dockd.{Catalog, Library, Purchasing}
+  alias Dockd.Catalog.Release
   alias Dockd.Library.Shelf
 
-  @events ~w(set_status own close_status save_purchase)
+  @events ~w(set_status own close_status buy undo_purchase paid_form save_paid price_form save_price cancel)
   @media %{"physical" => :physical, "digital" => :digital}
 
   @doc "Event names handled here."
   def events, do: @events
 
-  @doc "Closes every status menu, or opens the one the URL named."
-  def init(socket, open \\ nil), do: socket |> assign(:status_open, open) |> assign(:asking, nil)
+  @doc "Closes every menu and form, or opens the status menu the URL named."
+  def init(socket, open \\ nil) do
+    socket
+    |> assign(:status_open, open)
+    |> assign(:asking, nil)
+    |> assign(:buying, nil)
+    |> assign(:form, nil)
+    |> assign(:form_error, nil)
+    |> assign_new(:bought, fn -> %{} end)
+  end
 
   @doc """
   The versions to own for the card of `item` (a shelf item or a Descobrir result), when
@@ -39,6 +52,31 @@ defmodule DockdWeb.GameEvents do
 
     if (game && game.id == asking.game.id) || (igdb_id && igdb_id == asking.game.igdb_id),
       do: asking.choices
+  end
+
+  @doc "The version and media choices Comprei offers for `game_id`, when it is asking."
+  def buying(%{game_id: game_id, choices: choices}, game_id), do: choices
+  def buying(_buying, _game_id), do: nil
+
+  @doc """
+  What Comprei can buy for a game: one choice per release and media it is sold in. The
+  label names only what differs between the choices.
+  """
+  def purchase_choices(%{releases: releases}) do
+    pairs = for r <- Enum.sort_by(releases, & &1.platform), m <- Release.media(r), do: {r, m}
+    many_releases? = pairs |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> length() > 1
+    many_media? = pairs |> Enum.map(&elem(&1, 1)) |> Enum.uniq() |> length() > 1
+
+    Enum.map(pairs, fn {release, media} ->
+      label =
+        cond do
+          many_releases? and many_media? -> "#{release_label(release)} · #{enum_label(media)}"
+          many_releases? -> release_label(release)
+          true -> enum_label(media)
+        end
+
+      %{release: release, media: media, label: label}
+    end)
   end
 
   def handle_event("set_status", %{"status" => status} = params, socket, reload) do
@@ -76,25 +114,132 @@ defmodule DockdWeb.GameEvents do
 
   def handle_event("close_status", _params, socket, _reload), do: {:noreply, init(socket)}
 
-  def handle_event("save_purchase", %{"release_id" => release_id} = params, socket, reload) do
-    with {:ok, cents} when is_integer(cents) <- parse_money(params["price"]),
-         {:ok, _} <-
-           Purchasing.create_purchase(user(socket), %{
-             release_id: release_id,
-             format: params["format"] || "digital",
-             price_cents: cents,
-             purchased_at: DateTime.utc_now(),
-             retailer: blank_to(params["retailer"], "eShop")
-           }) do
-      {:noreply, socket |> assign(:form, nil) |> reload.()}
-    else
-      {:ok, nil} -> {:noreply, put_flash(socket, :error, "Informe o preço pago.")}
-      :error -> {:noreply, put_flash(socket, :error, "Preço inválido. Use 199,90.")}
-      {:error, _} -> {:noreply, put_flash(socket, :error, "Não foi possível registrar.")}
+  # Comprei in one tap: with a single version and media it buys at once; otherwise the
+  # control asks which one, and the answer is the purchase.
+  def handle_event("buy", %{"game_id" => game_id} = params, socket, reload) do
+    game = Catalog.get_game!(game_id)
+    choices = purchase_choices(game)
+
+    case pick(choices, params) do
+      {:ok, choice} ->
+        buy(socket, game, choice, reload)
+
+      :ask ->
+        choices =
+          Enum.map(choices, &%{release_id: &1.release.id, media: &1.media, label: &1.label})
+
+        {:noreply, socket |> init() |> assign(:buying, %{game_id: game.id, choices: choices})}
     end
   end
 
+  def handle_event("undo_purchase", %{"game_id" => game_id}, socket, reload) do
+    with {:ok, purchase} <- Map.fetch(socket.assigns.bought, game_id),
+         {:ok, _} <- Purchasing.undo_purchase(user(socket), purchase) do
+      {:noreply,
+       socket
+       |> init()
+       |> assign(:bought, Map.delete(socket.assigns.bought, game_id))
+       |> reload.()}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("paid_form", %{"game_id" => game_id}, socket, _reload),
+    do: {:noreply, socket |> init() |> assign(:form, %{kind: :paid, key: game_id})}
+
+  def handle_event("save_paid", %{"game_id" => game_id, "price" => price}, socket, reload) do
+    with {:ok, purchase} <- Map.fetch(socket.assigns.bought, game_id),
+         {:ok, cents} <- parse_money(price),
+         {:ok, purchase} <-
+           Purchasing.update_purchase(user(socket), purchase, %{price_cents: cents}) do
+      bought = Map.put(socket.assigns.bought, game_id, purchase)
+      {:noreply, socket |> init() |> assign(:bought, bought) |> reload.()}
+    else
+      _ -> {:noreply, assign(socket, :form_error, "Use 199,90")}
+    end
+  end
+
+  def handle_event("price_form", %{"game_id" => game_id} = params, socket, _reload) do
+    game = Catalog.get_game!(game_id)
+
+    releases =
+      case params["release_id"] do
+        nil -> Enum.sort_by(game.releases, & &1.platform)
+        release_id -> Enum.filter(game.releases, &(&1.id == release_id))
+      end
+
+    seen =
+      releases
+      |> Enum.flat_map(&Purchasing.list_price_observations(user(socket), &1.id))
+      |> Enum.sort_by(& &1.observed_at, {:desc, DateTime})
+      |> Enum.take(5)
+
+    form = %{
+      kind: :price,
+      key: params["release_id"] || game_id,
+      releases: releases,
+      seen: seen,
+      names: Map.new(game.releases, &{&1.id, release_label(&1)})
+    }
+
+    {:noreply, socket |> init() |> assign(:form, form)}
+  end
+
+  def handle_event("save_price", %{"release_id" => release_id} = params, socket, reload) do
+    with {:ok, cents} when is_integer(cents) <- parse_money(params["price"]),
+         {:ok, _} <-
+           Purchasing.create_price_observation(user(socket), %{
+             release_id: release_id,
+             format: Map.get(@media, params["format"], :digital),
+             price_cents: cents,
+             observed_at: DateTime.utc_now(),
+             source: blank_to(params["source"], "eShop")
+           }) do
+      {:noreply, socket |> init() |> reload.()}
+    else
+      {:ok, nil} -> {:noreply, assign(socket, :form_error, "Informe o preço visto")}
+      _ -> {:noreply, assign(socket, :form_error, "Use 199,90")}
+    end
+  end
+
+  def handle_event("cancel", _params, socket, _reload), do: {:noreply, init(socket)}
+
   defp user(socket), do: socket.assigns.current_scope.user
+
+  defp pick([only], _params), do: {:ok, only}
+
+  defp pick(choices, %{"release_id" => release_id, "media" => media}) do
+    case Enum.find(choices, &(&1.release.id == release_id and Atom.to_string(&1.media) == media)) do
+      nil -> :ask
+      choice -> {:ok, choice}
+    end
+  end
+
+  defp pick(_choices, _params), do: :ask
+
+  # The purchase takes the price shown for that version and media, when there is one.
+  defp buy(socket, game, %{release: release, media: media}, reload) do
+    price = Purchasing.current_price(user(socket), release.id, media)
+
+    attrs = %{
+      release_id: release.id,
+      format: media,
+      purchased_at: DateTime.utc_now(),
+      price_cents: price && price.price_cents,
+      currency: price && price.currency,
+      retailer: price && price.source
+    }
+
+    case Purchasing.create_purchase(user(socket), attrs) do
+      {:ok, purchase} ->
+        bought = Map.put(socket.assigns.bought, game.id, purchase)
+        {:noreply, socket |> init() |> assign(:bought, bought) |> reload.()}
+
+      {:error, _} ->
+        {:noreply, socket |> init() |> put_flash(:error, "Não foi possível registrar.")}
+    end
+  end
 
   # An empty status is the current tag clicked again: out of the library.
   defp parse_status(""), do: {:ok, nil}

@@ -133,7 +133,6 @@ defmodule DockdWeb.PurchasingController do
         :format,
         :price_cents,
         :currency,
-        :store_credit_used_cents,
         :purchased_at,
         :is_preorder,
         :retailer

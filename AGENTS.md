@@ -26,6 +26,7 @@ custom classes must fully style the input
 - O status só muda pelo `status_menu/1`, igual em toda tela; clicar na etiqueta atual desmarca e é a única saída da biblioteca (`Library.set_status/4` com `nil`). Ação que aparece em mais de uma tela passa por `DockdWeb.GameEvents`, com o mesmo componente e texto (regra 6 de `design/README.md`).
 - Nunca diálogo nativo do navegador (`confirm`, `alert`, `prompt`, `data-confirm`): confirmação acontece na interface (regra 7 de `design/README.md`, garantida por `DockdWeb.NativeDialogTest`).
 - Componentes vivem em `DockdWeb.DockdComponents`; textos em pt-BR, no máximo seis palavras, sem título repetindo a navegação.
+- Tela lê preço só por `Dockd.Purchasing.current_price/3` e `current_game_price/3`, o ponto único que o preço da loja substitui. Não há saldo de loja nem reserva no produto.
 
 ### JS and CSS guidelines
 

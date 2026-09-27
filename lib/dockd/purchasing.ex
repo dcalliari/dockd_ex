@@ -7,6 +7,7 @@ defmodule Dockd.Purchasing do
   alias Dockd.Catalog.Release
   alias Dockd.Library
   alias Dockd.Library.Entry
+  alias Dockd.Library.Ownership
   alias Dockd.Purchasing.PriceObservation
   alias Dockd.Purchasing.Purchase
   alias Dockd.Repo
@@ -51,14 +52,14 @@ defmodule Dockd.Purchasing do
       end
     end)
     |> Ecto.Multi.insert(:purchase, purchase_changeset)
-    |> Ecto.Multi.run(:purchased_event, fn repo, %{release: release} ->
+    |> Ecto.Multi.run(:purchased_event, fn repo, %{release: release, purchase: purchase} ->
       insert_event(repo, %{
         user_id: user_id,
         game_id: release.game_id,
         release_id: release.id,
         type: :purchased,
         occurred_at: DateTime.utc_now(),
-        payload: Map.put(attrs, :game_id, release.game_id)
+        payload: attrs |> Map.put(:game_id, release.game_id) |> Map.put(:purchase_id, purchase.id)
       })
     end)
     |> Ecto.Multi.run(:ownership, fn repo, %{purchase: purchase} ->
@@ -69,17 +70,85 @@ defmodule Dockd.Purchasing do
         purchase_id: purchase.id
       })
     end)
-    |> Ecto.Multi.run(:entry, fn repo, %{release: release} ->
-      close_entry_after_purchase(repo, user_id, release.game_id)
-    end)
-    |> Ecto.Multi.run(:balance, fn repo, %{purchase: purchase} ->
-      debit_credit(repo, user_id, purchase)
-    end)
-    |> Ecto.Multi.run(:reservation, fn repo, %{release: release} ->
-      consume_reservations(repo, user_id, release.game_id)
+    |> Ecto.Multi.run(:entry, fn repo, %{release: release, purchase: purchase} ->
+      close_entry_after_purchase(repo, user_id, release.game_id, purchase.id)
     end)
     |> Repo.transaction()
     |> result(:purchase)
+  end
+
+  @doc """
+  Undoes a purchase recorded by mistake, as if it never happened: the purchase, the
+  ownership it created and the events it wrote go away, and the entry gets back the intent
+  the purchase closed.
+  """
+  def undo_purchase(%User{id: user_id}, %Purchase{user_id: user_id} = purchase) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:events, fn repo, _ ->
+      {:ok,
+       repo.all(
+         from e in Activity.Event,
+           where:
+             e.user_id == ^user_id and
+               fragment("?->>'purchase_id'", e.payload) == ^purchase.id
+       )}
+    end)
+    |> Ecto.Multi.run(:entry, fn repo, %{events: events} ->
+      reopen_entry(repo, user_id, events)
+    end)
+    |> Ecto.Multi.run(:deleted_events, fn repo, %{events: events} ->
+      ids = Enum.map(events, & &1.id)
+      {count, _} = repo.delete_all(from e in Activity.Event, where: e.id in ^ids)
+      {:ok, count}
+    end)
+    |> Ecto.Multi.delete_all(
+      :ownerships,
+      from(o in Ownership, where: o.user_id == ^user_id and o.purchase_id == ^purchase.id)
+    )
+    |> Ecto.Multi.delete(:purchase, purchase)
+    |> Repo.transaction()
+    |> result(:purchase)
+  end
+
+  def undo_purchase(%User{}, %Purchase{}), do: {:error, :not_found}
+
+  @doc "Sum of what the user paid for purchases in the month of `today`."
+  def month_spending(%User{id: id}, today \\ Date.utc_today()) do
+    first = today |> Date.beginning_of_month() |> DateTime.new!(~T[00:00:00], "Etc/UTC")
+    next = today |> Date.end_of_month() |> Date.add(1) |> DateTime.new!(~T[00:00:00], "Etc/UTC")
+
+    Repo.one(
+      from p in Purchase,
+        where: p.user_id == ^id and p.purchased_at >= ^first and p.purchased_at < ^next,
+        select: coalesce(sum(p.price_cents), 0)
+    )
+  end
+
+  @doc """
+  The price a screen shows for a release, optionally of one media. Every screen reads
+  prices here and only here: today it is the user's latest observation, and the store
+  price takes its place later without touching the screens.
+  """
+  def current_price(user, release_id, format \\ nil)
+
+  def current_price(%User{} = user, release_id, nil),
+    do: latest_price_observation(user, release_id)
+
+  def current_price(%User{id: id}, release_id, format),
+    do:
+      Repo.one(
+        from p in PriceObservation,
+          where: p.user_id == ^id and p.release_id == ^release_id and p.format == ^format,
+          order_by: [desc: p.observed_at],
+          limit: 1
+      )
+
+  @doc "The most recent `current_price/3` among a game's releases, optionally of one media."
+  def current_game_price(%User{} = user, releases, format \\ nil) do
+    releases
+    |> Enum.map(&current_price(user, &1.id, format))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.max_by(& &1.observed_at, DateTime, fn -> nil end)
   end
 
   @doc "Gets a purchase scoped to a user."
@@ -168,7 +237,6 @@ defmodule Dockd.Purchasing do
       :format,
       :price_cents,
       :currency,
-      :store_credit_used_cents,
       :purchased_at,
       :is_preorder,
       :retailer,
@@ -191,22 +259,13 @@ defmodule Dockd.Purchasing do
         :format,
         :price_cents,
         :currency,
-        :store_credit_used_cents,
         :purchased_at,
         :is_preorder,
         :retailer
       ])
-      |> validate_required([
-        :user_id,
-        :release_id,
-        :format,
-        :price_cents,
-        :purchased_at,
-        :retailer
-      ])
+      |> validate_required([:user_id, :release_id, :format, :purchased_at])
       |> assoc_constraint(:release)
       |> validate_number(:price_cents, greater_than_or_equal_to: 0)
-      |> validate_number(:store_credit_used_cents, greater_than_or_equal_to: 0)
 
   defp price_changeset(s, a),
     do:
@@ -220,7 +279,7 @@ defmodule Dockd.Purchasing do
 
   defp insert_event(repo, attrs), do: repo.insert(Activity.changeset(%Activity.Event{}, attrs))
 
-  defp close_entry_after_purchase(repo, user_id, game_id) do
+  defp close_entry_after_purchase(repo, user_id, game_id, purchase_id) do
     case repo.one(
            from e in Entry,
              where: e.user_id == ^user_id and e.game_id == ^game_id,
@@ -243,13 +302,14 @@ defmodule Dockd.Purchasing do
         changeset = Entry.changeset(entry, attrs)
 
         with {:ok, updated} <- repo.update(changeset),
-             {:ok, _} <- insert_transition_events(repo, user_id, game_id, entry, updated) do
+             {:ok, _} <-
+               insert_transition_events(repo, user_id, game_id, entry, updated, purchase_id) do
           {:ok, updated}
         end
     end
   end
 
-  defp insert_transition_events(repo, user_id, game_id, before, after_state) do
+  defp insert_transition_events(repo, user_id, game_id, before, after_state, purchase_id) do
     events =
       [
         {:purchase_intent, before.purchase_intent, after_state.purchase_intent},
@@ -265,7 +325,7 @@ defmodule Dockd.Purchasing do
         game_id: game_id,
         type: type,
         occurred_at: DateTime.utc_now(),
-        payload: %{field: field, from: old, to: new}
+        payload: %{field: field, from: old, to: new, purchase_id: purchase_id}
       }
 
       case insert_event(repo, attrs) do
@@ -275,47 +335,24 @@ defmodule Dockd.Purchasing do
     end)
   end
 
-  defp debit_credit(_repo, _user_id, %Purchase{store_credit_used_cents: 0}), do: {:ok, nil}
+  # The entry fields the undone purchase changed, back to their `from` values, without new
+  # events: the purchase never happened.
+  defp reopen_entry(repo, user_id, events) do
+    changes =
+      for %{type: type, payload: %{"field" => field, "from" => from}} <- events,
+          type in [:intent_changed, :backlogged],
+          into: %{},
+          do: {field, from}
 
-  defp debit_credit(repo, user_id, %Purchase{} = purchase) do
-    balance =
-      repo.one(
-        from b in Dockd.Wallet.StoreBalance,
-          where: b.user_id == ^user_id and b.store == :eshop and b.currency == ^purchase.currency,
-          lock: "FOR UPDATE"
-      )
+    case {changes, events |> Enum.map(& &1.game_id) |> Enum.find(& &1)} do
+      {empty, _} when map_size(empty) == 0 ->
+        {:ok, nil}
 
-    cond do
-      is_nil(balance) ->
-        {:error, credit_error("não há saldo eShop na moeda da compra")}
-
-      balance.amount_cents < purchase.store_credit_used_cents ->
-        {:error, credit_error("saldo eShop insuficiente para o crédito informado")}
-
-      true ->
-        balance
-        |> Ecto.Changeset.change(
-          amount_cents: balance.amount_cents - purchase.store_credit_used_cents
-        )
-        |> repo.update()
+      {changes, game_id} ->
+        case repo.one(from e in Entry, where: e.user_id == ^user_id and e.game_id == ^game_id) do
+          nil -> {:ok, nil}
+          entry -> entry |> Entry.changeset(changes) |> repo.update()
+        end
     end
-  end
-
-  defp credit_error(message),
-    do:
-      Ecto.Changeset.add_error(
-        %Ecto.Changeset{data: %Purchase{}, changes: %{}, errors: [], valid?: false},
-        :store_credit_used_cents,
-        message
-      )
-
-  defp consume_reservations(repo, user_id, game_id) do
-    {count, _} =
-      repo.delete_all(
-        from r in Dockd.Wallet.BalanceReservation,
-          where: r.user_id == ^user_id and r.game_id == ^game_id and r.store == :eshop
-      )
-
-    {:ok, count}
   end
 end

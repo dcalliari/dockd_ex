@@ -2,7 +2,6 @@ alias Dockd.Accounts
 alias Dockd.Catalog
 alias Dockd.Library
 alias Dockd.Purchasing
-alias Dockd.Wallet
 
 # Seeds are intentionally idempotent. Use only against a throwaway database.
 if Catalog.list_games() == [] do
@@ -116,17 +115,6 @@ if Catalog.list_games() == [] do
       purchased_at: DateTime.utc_now(),
       retailer: "Nintendo eShop",
       is_preorder: true
-    })
-
-  {:ok, _balance} =
-    Wallet.create_balance(owner, %{store: :eshop, amount_cents: 10000, currency: "BRL"})
-
-  {:ok, _reservation} =
-    Wallet.create_reservation(owner, %{
-      store: :eshop,
-      game_id: preorder.game.id,
-      amount_cents: 6990,
-      note: "Reserva da pré-venda"
     })
 
   veto = Enum.at(games, 5)

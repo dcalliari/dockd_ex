@@ -9,53 +9,27 @@ defmodule Dockd.Planner do
   alias Dockd.Purchasing
   alias Dockd.Purchasing.Purchase
   alias Dockd.Repo
-  alias Dockd.Wallet.{BalanceReservation, StoreBalance}
 
   @state_event_types [:started, :paused, :resumed, :finished, :abandoned, :backlogged, :activated]
 
-  @doc "Builds the home summary for the default user's current state."
-  def summary(%User{id: user_id}, today \\ Date.utc_today()) do
-    balances = Repo.all(from b in StoreBalance, where: b.user_id == ^user_id)
-    reservations = Repo.all(from r in BalanceReservation, where: r.user_id == ^user_id)
-    purchases = Repo.all(from p in Purchase, where: p.user_id == ^user_id)
-    currency = (List.first(balances) || %{currency: "BRL"}).currency
-    amount = Enum.reduce(balances, 0, &(&1.amount_cents + &2))
-    reserved = Enum.reduce(reservations, 0, &(&1.amount_cents + &2))
-
-    committed = Enum.reduce(purchases, 0, &(&1.price_cents + &2))
-
-    out_of_pocket =
-      Enum.reduce(purchases, 0, fn purchase, total ->
-        total + purchase.price_cents - (purchase.store_credit_used_cents || 0)
-      end)
-
-    month_start = Date.beginning_of_month(today)
-
-    spent_month =
-      purchases
-      |> Enum.filter(
-        &(Date.compare(DateTime.to_date(&1.purchased_at), month_start) in [:eq, :gt])
-      )
-      |> Enum.reduce(0, &(&1.price_cents + &2))
+  @doc "Builds the summary for a user's current state: spending, calendar and backlog."
+  def summary(%User{} = user, today \\ Date.utc_today()) do
+    purchases = Repo.all(from p in Purchase, where: p.user_id == ^user.id)
 
     money = %{
-      balance_cents: amount,
-      reserved_cents: reserved,
-      free_cents: amount - reserved,
-      committed_cents: committed,
-      out_of_pocket_cents: out_of_pocket,
-      spent_month_cents: spent_month,
-      currency: currency
+      committed_cents: Enum.reduce(purchases, 0, &((&1.price_cents || 0) + &2)),
+      spent_month_cents: Purchasing.month_spending(user, today),
+      currency: "BRL"
     }
 
-    calendar = upcoming_releases(%User{id: user_id}, today)
-    backlog = backlog(%User{id: user_id})
+    calendar = upcoming_releases(user, today)
+    backlog = backlog(user)
 
     %{
       money: money,
       calendar: calendar,
-      calendar_empty_reason: calendar_empty_reason(%User{id: user_id}, calendar, today),
-      opportunities: purchase_opportunities(%User{id: user_id}, today, money),
+      calendar_empty_reason: calendar_empty_reason(user, calendar, today),
+      opportunities: purchase_opportunities(user, today),
       backlog: backlog,
       recommendation: recommendation_summary(List.first(backlog))
     }
@@ -64,15 +38,6 @@ defmodule Dockd.Planner do
   @doc "Lists wanted releases, excluding vetoed versions."
   def upcoming_releases(%User{id: user_id}, today \\ Date.utc_today()) do
     vetoed = from v in ReleaseVeto, where: v.user_id == ^user_id, select: v.release_id
-
-    reservations =
-      Repo.all(
-        from r in BalanceReservation,
-          where: r.user_id == ^user_id,
-          group_by: r.game_id,
-          select: {r.game_id, sum(r.amount_cents)}
-      )
-      |> Map.new()
 
     Repo.all(
       from r in Release,
@@ -94,13 +59,10 @@ defmodule Dockd.Planner do
             )
         }
     )
-    |> Enum.map(&Map.put(&1, :reserved_cents, Map.get(reservations, &1.game.id, 0)))
   end
 
   @doc "Lists launched or undated desires with a dated price verdict."
-  def purchase_opportunities(%User{id: user_id}, today \\ Date.utc_today(), money \\ nil) do
-    money = money || summary_money(%User{id: user_id})
-
+  def purchase_opportunities(%User{id: user_id}, today \\ Date.utc_today()) do
     releases =
       Repo.all(
         from r in Release,
@@ -118,7 +80,7 @@ defmodule Dockd.Planner do
     releases
     |> Enum.map(fn item ->
       observation = Purchasing.latest_price_observation(%User{id: user_id}, item.release.id)
-      verdict = purchase_verdict(item.entry, observation, money)
+      verdict = purchase_verdict(item.entry, observation)
 
       item
       |> Map.put(:observation, observation)
@@ -137,23 +99,10 @@ defmodule Dockd.Planner do
   def release_date_label(%Date{month: 12, day: 31, year: year}), do: "#{year}, a definir"
   def release_date_label(%Date{} = date), do: Calendar.strftime(date, "%d/%m/%Y")
 
-  defp summary_money(%User{id: user_id}) do
-    balances = Repo.all(from b in StoreBalance, where: b.user_id == ^user_id)
-    reservations = Repo.all(from r in BalanceReservation, where: r.user_id == ^user_id)
-    currency = (List.first(balances) || %{currency: "BRL"}).currency
-
-    %{
-      free_cents:
-        Enum.reduce(balances, 0, &(&1.amount_cents + &2)) -
-          Enum.reduce(reservations, 0, &(&1.amount_cents + &2)),
-      currency: currency
-    }
-  end
-
-  defp purchase_verdict(_entry, nil, _money),
+  defp purchase_verdict(_entry, nil),
     do: %{verdict: :record_price, label: "Registrar preço", reason: "Sem observação de preço."}
 
-  defp purchase_verdict(entry, observation, wallet) when is_struct(observation) do
+  defp purchase_verdict(entry, observation) when is_struct(observation) do
     stale? = Purchasing.stale?(observation, DateTime.utc_now())
 
     if stale? do
@@ -163,11 +112,11 @@ defmodule Dockd.Planner do
         reason: "A última observação está desatualizada; confirme o valor antes de decidir."
       }
     else
-      purchase_verdict_with_observation(observation, entry, wallet)
+      purchase_verdict_with_observation(observation, entry)
     end
   end
 
-  defp purchase_verdict_with_observation(observation, entry, wallet) do
+  defp purchase_verdict_with_observation(observation, entry) do
     cond do
       is_nil(entry.target_price_cents) ->
         %{
@@ -183,18 +132,11 @@ defmodule Dockd.Planner do
           reason: "A observação está acima do alvo de preço registrado."
         }
 
-      observation.price_cents > wallet.free_cents ->
-        %{
-          verdict: :wait,
-          label: "Esperar",
-          reason: "Está abaixo do alvo, mas não cabe no saldo livre disponível."
-        }
-
       true ->
         %{
           verdict: :buy,
           label: "Comprar agora",
-          reason: "A observação está abaixo do alvo e cabe no livre."
+          reason: "A observação está abaixo do alvo."
         }
     end
   end

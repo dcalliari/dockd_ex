@@ -75,14 +75,6 @@ defmodule DockdWeb.Router do
     post "/igdb/games/:igdb_id/import", IGDBController, :import
     post "/igdb/sync", IGDBController, :sync
     post "/igdb/match", IGDBController, :match
-    get "/wallet/balances", WalletController, :balances
-    post "/wallet/balances", WalletController, :create_balance
-    get "/wallet/reservations", WalletController, :reservations
-    post "/wallet/reservations", WalletController, :create_reservation
-    put "/wallet/balances/:id", WalletController, :update_balance
-    delete "/wallet/balances/:id", WalletController, :delete_balance
-    put "/wallet/reservations/:id", WalletController, :update_reservation
-    delete "/wallet/reservations/:id", WalletController, :delete_reservation
 
     resources "/games", GameController, only: [:index, :show, :create, :update] do
       resources "/releases", ReleaseController, only: [:index, :show, :create, :update, :delete]

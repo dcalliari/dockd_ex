@@ -633,37 +633,196 @@ defmodule DockdWeb.DockdComponents do
   end
 
   @doc """
-  The Comprei form, the same in Comprar and on the game page: the version when there is
-  more than one, the price paid (the last seen price by default), media and store.
+  Comprei, the same in Comprar and on the game page (Comprei · A, `maquetes/compra.html`).
+  Before: the button. With more than one version or media: the choices, each one the
+  purchase. After, while the screen is open: what was paid, which opens its own value, and
+  Desfazer. The row shows the new Backlog tag; the game page already has it in its menu.
   """
   attr :id, :string, required: true
-  attr :releases, :list, required: true, doc: "the first one is preselected"
-  attr :price, :string, default: ""
+  attr :game_id, :string, required: true
+  attr :choices, :list, default: nil, doc: "from `GameEvents.buying/2`"
+  attr :purchase, :map, default: nil, doc: "the purchase made on this screen"
+  attr :form, :map, default: nil
+  attr :error, :string, default: nil
+  attr :place, :string, default: "row", values: ~w(row hero)
 
-  def purchase_form(assigns) do
+  def buy_control(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :editing,
+        assigns.form && assigns.form.kind == :paid && assigns.form.key == assigns.game_id
+      )
+
     ~H"""
-    <form id={@id} class="dk-inline-form" phx-submit="save_purchase">
-      <select :if={length(@releases) > 1} name="release_id" aria-label="Versão">
-        <option :for={release <- @releases} value={release.id}>{release_label(release)}</option>
-      </select>
-      <input :if={length(@releases) == 1} type="hidden" name="release_id" value={hd(@releases).id} />
-      <input
-        type="text"
-        name="price"
-        inputmode="decimal"
-        placeholder="199,90"
-        aria-label="Preço pago"
-        value={@price}
-        autofocus
-      />
-      <select name="format" aria-label="Mídia">
-        <option value="digital">Digital</option>
-        <option value="physical">Físico</option>
-      </select>
-      <input type="text" name="retailer" placeholder="eShop" aria-label="Onde comprou" />
-      <.btn type="submit" size="sm" variant="primary">Comprei</.btn>
-      <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
+    <div id={@id} class="dk-buy">
+      <%= cond do %>
+        <% @purchase -> %>
+          <.status_chip :if={@place == "row"} status={:backlog} />
+          <form :if={@editing} class="dk-buy__paid" phx-submit="save_paid">
+            <input type="hidden" name="game_id" value={@game_id} />
+            <label class={["dk-form__field", @error && "is-error"]}>
+              <span class="dk-money">
+                <input
+                  name="price"
+                  inputmode="decimal"
+                  placeholder="199,90"
+                  aria-label="Valor pago"
+                  value={money_input(@purchase.price_cents)}
+                  autofocus
+                />
+              </span>
+              <span :if={@error} class="dk-field__error">{@error}</span>
+            </label>
+            <.btn type="submit" size="sm" variant="primary">Registrar valor</.btn>
+            <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
+          </form>
+          <.paid :if={!@editing} purchase={@purchase} game_id={@game_id} />
+          <button
+            :if={!@editing}
+            type="button"
+            class="dk-link"
+            phx-click="undo_purchase"
+            phx-value-game_id={@game_id}
+          >
+            Desfazer
+          </button>
+        <% @choices -> %>
+          <div class="dk-choice" role="group" aria-label="Comprou qual">
+            <button
+              :for={choice <- @choices}
+              type="button"
+              phx-click="buy"
+              phx-value-game_id={@game_id}
+              phx-value-release_id={choice.release_id}
+              phx-value-media={choice.media}
+            >
+              {choice.label}
+            </button>
+          </div>
+          <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
+        <% true -> %>
+          <.btn
+            id={"#{@id}-button"}
+            variant={if(@place == "hero", do: "primary", else: "secondary")}
+            size={if(@place == "hero", do: "md", else: "sm")}
+            phx-click="buy"
+            phx-value-game_id={@game_id}
+          >
+            Comprei
+          </.btn>
+      <% end %>
+    </div>
+    """
+  end
+
+  attr :purchase, :map, required: true
+  attr :game_id, :string, required: true
+
+  defp paid(assigns) do
+    ~H"""
+    <button
+      type="button"
+      class={["dk-price", "dk-price--paid", !@purchase.price_cents && "dk-price--none"]}
+      phx-click="paid_form"
+      phx-value-game_id={@game_id}
+    >
+      <%= if @purchase.price_cents do %>
+        <b>{money(@purchase.price_cents, @purchase.currency)}</b>
+        <small>
+          pago em {date_pt_br(@purchase.purchased_at)}{if @purchase.retailer,
+            do: " · #{@purchase.retailer}"}
+        </small>
+      <% else %>
+        <b>Sem valor</b>
+      <% end %>
+    </button>
+    """
+  end
+
+  defp money_input(nil), do: ""
+  defp money_input(cents), do: cents |> money() |> String.replace("R$ ", "")
+
+  @doc """
+  The manual price record, opened by clicking a price in Comprar or on the game page: the
+  version and media when there is a choice, the price seen and where, and the prices
+  already seen for the same game underneath.
+  """
+  attr :id, :string, required: true
+  attr :form, :map, required: true
+  attr :error, :string, default: nil
+
+  def price_form(assigns) do
+    media =
+      assigns.form.releases |> Enum.flat_map(&Dockd.Catalog.Release.media/1) |> Enum.uniq()
+
+    assigns =
+      assign(assigns,
+        release_options: Enum.map(assigns.form.releases, &{&1.id, release_label(&1)}),
+        media_options: Enum.map(media, &{Atom.to_string(&1), enum_label(&1)})
+      )
+
+    ~H"""
+    <form id={@id} class="dk-form" phx-submit="save_price">
+      <.choice_field name="release_id" label="Versão" options={@release_options} />
+      <.choice_field name="format" label="Mídia" options={@media_options} />
+      <label class={["dk-form__field", @error && "is-error"]}>
+        <span>Preço visto</span>
+        <span class="dk-money">
+          <input
+            name="price"
+            inputmode="decimal"
+            placeholder="199,90"
+            aria-label="Preço visto"
+            autofocus
+          />
+        </span>
+        <span :if={@error} class="dk-field__error">{@error}</span>
+      </label>
+      <label class="dk-form__field">
+        <span>Onde</span>
+        <input name="source" value="eShop" aria-label="Onde viu" />
+      </label>
+      <div class="dk-form__actions">
+        <.btn type="submit" size="sm" variant="primary">Registrar preço</.btn>
+        <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
+      </div>
+      <ul :if={@form.seen != []} class="dk-seen" aria-label="Preços vistos">
+        <li :for={seen <- @form.seen}>
+          <b>{money(seen.price_cents, seen.currency)}</b>
+          <span>{meta([seen.source, enum_label(seen.format), @form.names[seen.release_id]])}</span>
+          <time>{date_pt_br(seen.observed_at)}</time>
+        </li>
+      </ul>
     </form>
+    """
+  end
+
+  @doc """
+  A choice among the few options that exist, as radio buttons under a `t-label`. The first
+  option is selected; a single option is not a choice and shows as text.
+  """
+  attr :name, :string, required: true
+  attr :label, :string, required: true
+  attr :options, :list, required: true, doc: "`{value, label}` pairs"
+
+  def choice_field(assigns) do
+    ~H"""
+    <div class="dk-form__field">
+      <span>{@label}</span>
+      <%= case @options do %>
+        <% [{value, text}] -> %>
+          <input type="hidden" name={@name} value={value} />
+          <span class="dk-media">{text}</span>
+        <% options -> %>
+          <div class="dk-choice" role="radiogroup" aria-label={@label}>
+            <label :for={{{value, text}, index} <- Enum.with_index(options)}>
+              <input type="radio" name={@name} value={value} checked={index == 0} />
+              <span>{text}</span>
+            </label>
+          </div>
+      <% end %>
+    </div>
     """
   end
 
@@ -681,7 +840,8 @@ defmodule DockdWeb.DockdComponents do
   attr :class, :any, default: nil
 
   attr :rest, :global,
-    include: ~w(disabled form name value phx-click phx-value-id phx-value-status)
+    include:
+      ~w(disabled form name value phx-click phx-value-id phx-value-status phx-value-game_id)
 
   slot :inner_block, required: true
 
@@ -724,9 +884,17 @@ defmodule DockdWeb.DockdComponents do
   @doc "Three-letter Portuguese month of a date."
   def month_label(%Date{month: month}), do: Enum.at(@months, month - 1)
 
+  @doc """
+  A seen price with its date, or `Sem preço`. With `game_id` it is the control that opens
+  the manual price record (`price_form/1`), like the status tag opens the status menu;
+  `release_id` narrows it to one version.
+  """
   attr :observation, :map, default: nil, doc: "a price observation, or nil"
   attr :now, DateTime, default: nil
   attr :id, :string, default: nil
+  attr :game_id, :string, default: nil
+  attr :release_id, :string, default: nil
+  attr :open, :boolean, default: false
 
   def price(assigns) do
     now = assigns.now || DateTime.utc_now()
@@ -737,13 +905,40 @@ defmodule DockdWeb.DockdComponents do
     assigns = assign(assigns, :stale, stale)
 
     ~H"""
-    <span :if={@observation} id={@id} class={["dk-price", @stale && "dk-price--stale"]}>
-      <b>{money(@observation.price_cents, @observation.currency)}</b>
-      <small>
-        visto em {date_pt_br(@observation.observed_at)}{if @observation.source,
-          do: " · #{@observation.source}"}{if @stale, do: " · desatualizado"}
-      </small>
+    <button
+      :if={@game_id}
+      id={@id}
+      type="button"
+      class={["dk-price", @stale && "dk-price--stale", !@observation && "dk-price--none"]}
+      aria-expanded={to_string(@open)}
+      phx-click="price_form"
+      phx-value-game_id={@game_id}
+      phx-value-release_id={@release_id}
+    >
+      <.price_text observation={@observation} stale={@stale} />
+    </button>
+    <span
+      :if={!@game_id and @observation}
+      id={@id}
+      class={["dk-price", @stale && "dk-price--stale"]}
+    >
+      <.price_text observation={@observation} stale={@stale} />
     </span>
+    """
+  end
+
+  attr :observation, :map, default: nil
+  attr :stale, :boolean, default: false
+
+  defp price_text(%{observation: nil} = assigns), do: ~H"<b>Sem preço</b>"
+
+  defp price_text(assigns) do
+    ~H"""
+    <b>{money(@observation.price_cents, @observation.currency)}</b>
+    <small>
+      visto em {date_pt_br(@observation.observed_at)}{if @observation.source,
+        do: " · #{@observation.source}"}{if @stale, do: " · desatualizado"}
+    </small>
     """
   end
 

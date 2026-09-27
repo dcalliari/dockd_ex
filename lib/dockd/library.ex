@@ -135,9 +135,9 @@ defmodule Dockd.Library do
   @doc """
   Removes a game from the user's library: its entry and every ownership of its releases.
 
-  What the game cost stays: purchases, price observations, wallet movements and the event
-  log are history, not library membership, so re-adding the game finds them again. The
-  removal itself is logged as a `:removed` event.
+  What the game cost stays: purchases, price observations and the event log are history,
+  not library membership, so re-adding the game finds them again. The removal itself is
+  logged as a `:removed` event.
   """
   def remove_game(%User{id: user_id} = user, %Game{id: game_id}) do
     Repo.transaction(fn ->

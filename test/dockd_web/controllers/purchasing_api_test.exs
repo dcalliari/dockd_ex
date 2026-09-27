@@ -1,7 +1,7 @@
 defmodule DockdWeb.PurchasingApiTest do
   use DockdWeb.ConnCase, async: false
   import OpenApiSpex.TestAssertions
-  alias Dockd.{Activity, Catalog, Library, Purchasing, Repo, Wallet}
+  alias Dockd.{Activity, Catalog, Library, Purchasing, Repo}
 
   setup :register_api_user
 
@@ -46,22 +46,12 @@ defmodule DockdWeb.PurchasingApiTest do
     assert_schema(veto, "PurchasingResponse", DockdWeb.ApiSpec.spec())
   end
 
-  test "purchase closes the intent, credit, reservation, and event cycle", %{
+  test "purchase closes the intent and logs the cycle", %{
     release: release,
     user: user
   } do
     {:ok, entry} =
       Library.create_entry(user, %{game_id: release.game_id, purchase_intent: :want, backlog: :no})
-
-    {:ok, balance} =
-      Wallet.create_balance(user, %{store: :eshop, amount_cents: 30_000, currency: "BRL"})
-
-    {:ok, reservation} =
-      Wallet.create_reservation(user, %{
-        store: :eshop,
-        game_id: release.game_id,
-        amount_cents: 35_000
-      })
 
     assert {:ok, purchase} =
              Purchasing.create_purchase(user, %{
@@ -69,21 +59,18 @@ defmodule DockdWeb.PurchasingApiTest do
                format: :digital,
                price_cents: 8_500,
                currency: "BRL",
-               store_credit_used_cents: 8_500,
                purchased_at: ~U[2026-09-22 12:00:00Z],
                retailer: "eShop"
              })
 
     assert Repo.get!(Library.Entry, entry.id).purchase_intent == :none
     assert Repo.get!(Library.Entry, entry.id).backlog == :backlog
-    assert Repo.get!(Wallet.StoreBalance, balance.id).amount_cents == 21_500
-    refute Repo.get(Wallet.BalanceReservation, reservation.id)
 
     events = Activity.list_events(user)
     assert Enum.any?(events, &(&1.type == :purchased and &1.game_id == release.game_id))
     assert Enum.any?(events, &(&1.type == :intent_changed and &1.game_id == release.game_id))
     assert Enum.any?(events, &(&1.type == :backlogged and &1.game_id == release.game_id))
-    assert purchase.store_credit_used_cents == 8_500
+    assert purchase.price_cents == 8_500
   end
 
   test "purchasing routes return validation errors", %{conn: conn, release: release} do

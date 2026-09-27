@@ -1,7 +1,7 @@
 defmodule Dockd.DomainTest do
   use Dockd.DataCase, async: false
   import Dockd.DomainFixtures
-  alias Dockd.{Activity, Library, Purchasing, Wallet}
+  alias Dockd.{Activity, Library, Purchasing}
   alias Dockd.Activity.Event
 
   setup do
@@ -43,12 +43,6 @@ defmodule Dockd.DomainTest do
              })
 
     assert changeset.errors[:price_cents]
-
-    assert {:ok, _} =
-             Wallet.create_balance(user, %{store: :eshop, amount_cents: 10, currency: "BRL"})
-
-    assert {:error, changeset} = Wallet.create_balance(user, %{store: :eshop, amount_cents: 10})
-    assert changeset.errors[:user_id]
 
     assert {:ok, ownership} =
              Library.create_ownership(user, %{

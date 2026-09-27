@@ -3,11 +3,10 @@ alias Dockd.Catalog
 alias Dockd.Library
 alias Dockd.Purchasing
 alias Dockd.Repo
-alias Dockd.Wallet
 
 Ecto.Adapters.SQL.query!(
   Repo,
-  "TRUNCATE users_tokens, events, balance_reservations, store_balances, price_observations, purchases, ownerships, release_vetoes, entries, releases, games, users RESTART IDENTITY CASCADE"
+  "TRUNCATE users_tokens, events, price_observations, purchases, ownerships, release_vetoes, entries, releases, games, users RESTART IDENTITY CASCADE"
 )
 
 {:ok, owner} = Accounts.register_user(%{email: "e2e@dockd.local", password: "senha-da-jornada-e2e"})
@@ -138,15 +137,5 @@ end
 
 _discovery_candidate = create_game.("Discovery Candidate", nil, %{})
 _visitor_pick = create_game.("Visitor Pick", Date.add(today, 60), %{})
-
-{:ok, _balance} = Wallet.create_balance(owner, %{store: :eshop, amount_cents: 30_000, currency: "BRL"})
-
-{:ok, _reservation} =
-  Wallet.create_reservation(owner, %{
-    store: :eshop,
-    game_id: future_alpha.game.id,
-    amount_cents: 35_000,
-    note: "Reserva de teste"
-  })
 
 IO.puts("Dockd E2E fixture loaded: #{length(owned_games)} owned games and 30 wishlist entries")

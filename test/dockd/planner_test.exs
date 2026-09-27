@@ -1,7 +1,7 @@
 defmodule Dockd.PlannerTest do
   use Dockd.DataCase
   alias Dockd.Activity.Event
-  alias Dockd.{Catalog, Library, Planner, Purchasing, Wallet}
+  alias Dockd.{Catalog, Library, Planner, Purchasing}
   alias Dockd.Catalog.Game
   alias Dockd.Library.Entry
   import Dockd.DomainFixtures
@@ -11,17 +11,13 @@ defmodule Dockd.PlannerTest do
     %{user: user}
   end
 
-  test "summary calculates integer balance and reservations", %{user: user} do
-    {:ok, _} = balance_fixture(user, %{amount_cents: 10_001, currency: "BRL"})
-    game = game_fixture()
-
-    {:ok, _} =
-      Wallet.create_reservation(user, %{store: :eshop, game_id: game.id, amount_cents: 2_501})
+  test "summary spends what purchases cost, this month and in total", %{user: user} do
+    release = release_fixture(game_fixture())
+    {:ok, _} = purchase_fixture(user, release, %{price_cents: 6_990})
 
     money = Planner.summary(user).money
-    assert money.balance_cents == 10_001
-    assert money.reserved_cents == 2_501
-    assert money.free_cents == 7_500
+    assert money.committed_cents == 6_990
+    assert money.spent_month_cents == 6_990
     assert money.currency == "BRL"
   end
 
@@ -69,7 +65,6 @@ defmodule Dockd.PlannerTest do
       })
 
     {:ok, _} = Library.create_entry(user, %{game_id: missing_game.id, purchase_intent: :want})
-    {:ok, _} = balance_fixture(user, %{amount_cents: 10_000})
 
     {:ok, _} =
       Purchasing.create_price_observation(user, %{
@@ -100,25 +95,6 @@ defmodule Dockd.PlannerTest do
     assert by_title["Missing price"].verdict_reason == "Sem observação de preço."
   end
 
-  test "calendar exposes reservations and negative free balance", %{user: user} do
-    game = game_fixture(%{title: "Reserved launch"})
-
-    {:ok, release} =
-      Catalog.create_release(game.id, %{platform: :switch, release_date: ~D[2026-12-01]})
-
-    {:ok, _} = Library.create_entry(user, %{game_id: game.id, purchase_intent: :want})
-    {:ok, _} = balance_fixture(user, %{amount_cents: 30_000})
-
-    {:ok, _} =
-      Wallet.create_reservation(user, %{store: :eshop, game_id: game.id, amount_cents: 35_000})
-
-    summary = Planner.summary(user, ~D[2026-01-01])
-
-    assert summary.money.free_cents == -5_000
-    assert [%{release: %{id: release_id}, reserved_cents: 35_000}] = summary.calendar
-    assert release_id == release.id
-  end
-
   test "calendar empty reason explains undated releases", %{user: user} do
     game = game_fixture(%{title: "Undated desire"})
     {:ok, _release} = Catalog.create_release(game.id, %{platform: :switch})
@@ -133,19 +109,6 @@ defmodule Dockd.PlannerTest do
   test "release date label preserves year and marks year-only placeholders" do
     assert Planner.release_date_label(~D[2027-12-31]) == "2027, a definir"
     assert Planner.release_date_label(~D[2027-12-15]) == "15/12/2027"
-  end
-
-  test "credit is not double counted in committed and out of pocket totals", %{user: user} do
-    {:ok, _} = balance_fixture(user, %{amount_cents: 2_000, currency: "BRL"})
-    game = game_fixture()
-    release = release_fixture(game)
-
-    {:ok, _} =
-      purchase_fixture(user, release, %{price_cents: 6_990, store_credit_used_cents: 2_000})
-
-    money = Planner.summary(user).money
-    assert money.committed_cents == 6_990
-    assert money.out_of_pocket_cents == 4_990
   end
 
   test "calendar excludes vetoed releases and labels availability", %{user: user} do
