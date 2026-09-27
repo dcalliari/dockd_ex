@@ -325,6 +325,33 @@ defmodule DockdWeb.DockdComponents do
   defp destinations,
     do: [{"Biblioteca", "/"}, {"Comprar", "/comprar"}, {"Descobrir", "/descobrir"}]
 
+  @doc """
+  The one-line footer of every screen but Entrar: small wordmark, Sobre and the IGDB
+  credit. Above the bottom navigation on phones, clear of it.
+  """
+  attr :bottom_nav, :boolean,
+    default: false,
+    doc: "true when the phone bottom navigation is shown"
+
+  def footer(assigns) do
+    ~H"""
+    <footer id="site-footer" class={["dk-footer", @bottom_nav && "dk-footer--above-nav"]}>
+      <p class="dk-footer__line">
+        <.link navigate="/" class="dk-wordmark dk-wordmark--sm" aria-label="Dockd, início">
+          dockd<i>.</i>
+        </.link>
+        <span aria-hidden="true">·</span>
+        <.link id="footer-about" navigate={~p"/sobre"}>Sobre</.link>
+        <span aria-hidden="true">·</span>
+        <span>
+          Dados de jogos por
+          <a href="https://www.igdb.com" target="_blank" rel="noopener noreferrer">IGDB</a>
+        </span>
+      </p>
+    </footer>
+    """
+  end
+
   attr :id, :string, default: nil
 
   slot :tab, required: true do

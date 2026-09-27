@@ -15,14 +15,14 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 ## Texto
 
 - Escreva em pt-BR, na voz de quem usa: **+ Adicionar**, **Comprei**, **Reservar**, **Registrar preço**. O botão diz o que acontece; nunca "Salvar" ou "Confirmar".
-- Nenhuma string de interface passa de seis palavras. Exceções: estado vazio e confirmação de ação irreversível.
+- Nenhuma string de interface passa de seis palavras. Exceções: estado vazio, confirmação de ação irreversível e as três frases de Sobre.
 - Sem slogan, subtítulo, eyebrow ou sermão. A navegação já diz onde a pessoa está; a tela não repete o nome em um título grande.
 - Cada informação aparece uma vez por tela. Um valor padrão não é informação: um jogo sem preço observado não mostra "R$ 0,00" nem "Sem alvo", mostra `Sem preço` uma vez, em `ink-muted`.
 - Preço nunca é "preço atual". É `t-num` com `visto em dd/mm/aaaa` em `t-meta`. Passados 30 dias, a data fica em `warn` com a palavra desatualizado.
 - Datas em `dd/mm/aaaa`; mês abreviado em caixa alta sem ponto no bloco de data (`SET`, `OUT`). Dinheiro em `R$ 1.249,90`.
 - Metadado separado por ponto mediano: `Switch 2 · 2026 · Team Cherry`. Nunca vírgula, nunca barra, nunca espaço duplo.
 - Sem emoji, sem ponto de exclamação.
-- O crédito do IGDB (`Dados de jogos por IGDB`) não é rodapé de toda tela. Fica em `t-meta`, `ink-muted`, uma vez, no fim de onde os dados do IGDB aparecem: na página do jogo, na mesma linha do link `Mais informações no IGDB`, e no fim dos resultados de uma busca em Descobrir. As faixas da vitrine, a Biblioteca, Comprar e Entrar não o levam.
+- O crédito do IGDB (`Dados de jogos por IGDB`) fica em `t-meta`, `ink-muted`, no fim de onde os dados do IGDB aparecem: na página do jogo, na mesma linha do link `Mais informações no IGDB`, e no fim dos resultados de uma busca em Descobrir. Fora disso, só na linha do Footer e em Sobre.
 
 ## Cor
 
@@ -70,6 +70,10 @@ A mídia é um segundo eixo, por versão: Físico, Digital ou Key card, sempre c
 O status só se troca pelo StatusMenu, o mesmo sobre a capa (Biblioteca, Descobrir) e na página do jogo: o chip atual é o controle, apontar para ele abre os outros estados embaixo, e clicar nele desmarca. No toque, o primeiro toque abre e o segundo desmarca. Desmarcar é a única forma de tirar um jogo da biblioteca: não há lixeira, link de remoção, confirmação nem aviso, e compra, preço visto, saldo e histórico ficam. Ver StatusMenu.
 
 Na página do jogo, plataforma e exclusividade da obra não vão no texto do herói: ficam na legenda da capa, `SWITCH 2` à esquerda e `EXCLUSIVO` em `red-ink` à direita, e só quando a obra é exclusiva.
+
+## Rodapé
+
+Uma linha só no fim de toda tela, menos Entrar e Criar conta: wordmark pequeno, `Sobre` e `Dados de jogos por IGDB`, em `t-meta` `ink-muted` sobre um fio `line`, na largura do conteúdo. No celular termina acima da barra inferior. Sobre (`/sobre`) diz o que é o Dockd em no máximo três frases, sem título, slogan nem apresentação, e leva o crédito do IGDB. Termos e Privacidade entram na mesma linha só quando o Dockd abrir para outras pessoas. Ver Footer.
 
 ## Histórico
 

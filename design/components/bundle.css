@@ -120,6 +120,14 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-bottomnav a { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-top: 2px solid transparent; margin-top: -1px; }
 .dk-bottomnav a[aria-current="page"] { color: var(--ink); border-top-color: var(--red); }
 
+/* Footer */
+.dk-footer { padding: 0 0 var(--space-5); }
+.dk-footer__line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); margin: 0; padding-top: var(--space-4); border-top: 1px solid var(--line); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-footer__line a { transition: color 120ms; }
+.dk-footer__line a:hover { color: var(--ink); }
+.dk-footer__line span a { text-decoration: underline; text-underline-offset: 3px; }
+.dk-wordmark--sm { font-size: 13px; line-height: 16px; }
+
 /* SearchField */
 .dk-search { position: relative; }
 .dk-search input { width: 100%; height: var(--control-height); padding: 0 var(--space-3) 0 36px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; }

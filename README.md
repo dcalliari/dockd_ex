@@ -27,7 +27,7 @@ Quatro telas, desenhadas a partir do design system em [`design/`](design/FONTE.m
 - Sem conta, a Vitrine, Descobrir e a página do jogo mostram só o catálogo; a etiqueta `+ Adicionar` leva ao Entrar e volta à mesma capa. Biblioteca, Comprar, preço, posse, status e histórico exigem a conta.
 - API JSON versionada em `/api/v1` e especificação em `/api/openapi`. Cada chamada leva `Authorization: Bearer <token>`, o token que `Copiar token da API`, no menu da conta, gera e copia; um novo substitui o anterior. O catálogo continua sendo administrado só pela API, por qualquer conta.
 - Tema segue o sistema operacional; não há seletor de tema.
-- Integração opcional com IGDB para sincronizar dados de jogos. O uso não comercial exige atribuição visível à fonte, presente no rodapé de toda página. No deploy por compose, as variáveis do IGDB são fornecidas pelo `.env`.
+- Integração opcional com IGDB para sincronizar dados de jogos. O uso não comercial exige atribuição visível à fonte, presente no rodapé de toda página menos Entrar, na página do jogo e na busca. No deploy por compose, as variáveis do IGDB são fornecidas pelo `.env`.
 
 ### Próximos passos
 

@@ -32,6 +32,7 @@ defmodule DockdWeb.Router do
       live "/", LibraryLive, :index
       live "/descobrir", DiscoverLive, :index
       live "/jogos/:id", GameLive, :show
+      live "/sobre", AboutLive, :show
       live "/entrar", SignInLive, :new
       live "/criar-conta", SignInLive, :register
       live "/entrar/:token", MagicLinkLive, :new

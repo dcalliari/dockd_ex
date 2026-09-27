@@ -147,7 +147,12 @@ defmodule DockdWeb.SignInLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope} current={page_title(@mode)}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      current={page_title(@mode)}
+      footer={false}
+    >
       <:bleed>
         <div id="entrar-backdrop" class="dk-auth-backdrop">
           <div :if={@wall != []} id="entrar-wall" class="dk-auth-backdrop__wall" aria-hidden="true">

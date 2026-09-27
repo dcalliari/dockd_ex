@@ -1,8 +1,8 @@
 defmodule DockdWeb.Layouts do
   @moduledoc """
-  Application shell: top navigation, page container, bottom navigation on phones and
-  flash messages. A visitor gets the visitor NavBar and no bottom navigation: Descobrir is
-  already in the wordmark row.
+  Application shell: top navigation, page container, the one-line footer, bottom
+  navigation on phones and flash messages. A visitor gets the visitor NavBar and no bottom
+  navigation: Descobrir is already in the wordmark row.
   """
   use DockdWeb, :html
 
@@ -17,6 +17,7 @@ defmodule DockdWeb.Layouts do
   attr :search, :string, default: ""
   attr :search_live, :boolean, default: false
   attr :current_scope, :map, default: nil
+  attr :footer, :boolean, default: true, doc: "false on Entrar, whose covers fill the screen"
   slot :bleed, doc: "full-width content between the NavBar and the page, like the Entrar covers"
   slot :inner_block, required: true
 
@@ -32,6 +33,7 @@ defmodule DockdWeb.Layouts do
     <main class="dk-page">
       {render_slot(@inner_block)}
     </main>
+    <.footer :if={@footer} bottom_nav={!!@current_scope} />
     <.bottom_nav :if={@current_scope} current={@current} />
     <.flash_group flash={@flash} />
     """

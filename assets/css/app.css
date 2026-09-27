@@ -130,10 +130,24 @@ img { display: block; max-width: 100%; }
 .dk-credit a { text-decoration: underline; text-underline-offset: 3px; }
 .dk-credit a + a { margin-left: 0; }
 
+/* Footer: uma linha em t-meta sobre um fio line, em toda tela menos Entrar */
+.dk-footer { width: min(100%, var(--container-max)); margin: 0 auto; padding: 0 var(--space-4) var(--space-5); }
+.dk-footer__line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); margin: 0; padding-top: var(--space-4); border-top: 1px solid var(--line); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-footer__line a { transition: color 120ms; }
+.dk-footer__line a:hover { color: var(--ink); }
+.dk-footer__line span a { text-decoration: underline; text-underline-offset: 3px; }
+@media (min-width: 768px) { .dk-footer { padding-inline: var(--space-5); } }
+
+/* Sobre: três frases e o crédito do IGDB */
+.dk-about { max-width: 560px; margin-top: var(--space-6); }
+.dk-about p:first-child { margin: 0; }
+.dk-about .dk-credit { margin-top: var(--space-4); }
+
 /* NavBar (topo) e BottomNav (celular) */
 .dk-nav { position: sticky; top: 0; z-index: 3; height: var(--nav-height); display: flex; align-items: center; gap: var(--space-5); padding: 0 var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
 .dk-wordmark { font-size: 22px; line-height: 24px; font-weight: 900; font-stretch: 125%; letter-spacing: -0.02em; color: var(--ink); }
 .dk-wordmark i { font-style: normal; color: var(--red); }
+.dk-wordmark--sm { font-size: 13px; line-height: 16px; }
 .dk-nav__links { display: flex; gap: var(--space-4); }
 .dk-nav__link { padding: 4px 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-bottom: 2px solid transparent; transition: color 120ms; }
 .dk-nav__link:hover { color: var(--ink); }
@@ -155,7 +169,7 @@ img { display: block; max-width: 100%; }
   .dk-nav--searching .dk-nav__search { display: block; position: absolute; left: var(--space-4); right: var(--space-4); width: auto; }
   .dk-nav--searching .dk-wordmark, .dk-nav--searching .dk-nav__icon, .dk-nav--searching .dk-account, .dk-nav--searching .dk-nav__guest-phone { visibility: hidden; }
   .dk-bottomnav { display: flex; }
-  .dk-page { padding-bottom: calc(var(--nav-height) + var(--space-6)); }
+  .dk-footer--above-nav { padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-5)); }
 }
 
 /* AccountMenu: o nome na barra abre o menu no padrão dos filtros (design/maquetes/entrar.html) */

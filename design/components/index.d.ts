@@ -17,3 +17,5 @@ export interface EmptyState { text: string; action?: { label: string; href: stri
 export interface StatusMenu { value: Status | null; options: Status[]; since?: string; size?: "md" | "sm"; ask?: { label: string }[]; onChange: (next: Status | null) => void }
 export interface History { items: { what: string; relative: string; who: string; current?: boolean }[] }
 export interface SectionHead { title: string; count?: number; action?: { label: string; href: string } }
+/** The one line at the end of every screen but Entrar: wordmark, Sobre and the IGDB credit. `aboveBottomNav` clears the phone bottom navigation. */
+export interface Footer { aboveBottomNav?: boolean }
