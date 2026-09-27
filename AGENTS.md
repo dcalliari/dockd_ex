@@ -26,7 +26,7 @@ custom classes must fully style the input
 - O status só muda pelo `status_menu/1`, igual em toda tela; clicar na etiqueta atual desmarca e é a única saída da biblioteca (`Library.set_status/4` com `nil`). Ação que aparece em mais de uma tela passa por `DockdWeb.GameEvents`, com o mesmo componente e texto (regra 6 de `design/README.md`).
 - Nunca diálogo nativo do navegador (`confirm`, `alert`, `prompt`, `data-confirm`): confirmação acontece na interface (regra 7 de `design/README.md`, garantida por `DockdWeb.NativeDialogTest`).
 - Componentes vivem em `DockdWeb.DockdComponents`; textos em pt-BR, no máximo seis palavras, sem título repetindo a navegação.
-- Tela lê preço só por `Dockd.Purchasing.current_price/3` e `current_game_price/3`, o ponto único que o preço da loja substitui. Não há saldo de loja nem reserva no produto.
+- Tela lê preço só por `Dockd.Purchasing.current_price/3` e `current_game_price/3`: o preço da eShop quando a loja vende a versão digital, senão a última observação do usuário. Não há saldo de loja nem reserva no produto.
 
 ### JS and CSS guidelines
 
@@ -471,6 +471,8 @@ And **never** do this:
 Os caminhos suportados estão documentados no [README](README.md). Use `mix setup` e `mix phx.server` para desenvolvimento nativo, ou `docker compose up --build` para o ambiente autocontido. O overlay `compose.traefik.yml` adiciona o proxy reverso a uma rede externa.
 
 Variáveis relevantes: `DOCKD_DB_PASSWORD`, `DOCKD_DB_USER`, `DOCKD_DB_HOST`, `DOCKD_DB_NAME`, `DATABASE_URL`, `SECRET_KEY_BASE`, `PHX_HOST`, `TRAEFIK_NETWORK` e `TRAEFIK_ENTRYPOINT`. Os nomes e exemplos ficam em [`.env.example`](.env.example); valores locais ficam em `.env`.
+
+Preço de loja é dado de catálogo (`Dockd.Pricing`, tabelas `store_listings` e `store_prices`), sincronizado da eShop Brasil pelo `SyncScheduler` depois do IGDB; `price_observations` continua sendo do usuário. Testes da eShop usam as respostas gravadas em `test/support/fixtures/eshop` via `Dockd.EshopStub` e não acessam a rede.
 
 Os contextos de domínio estão em `lib/dockd/`, o design system em `DockdWeb.DockdComponents`, as telas em `lib/dockd_web/live/` e a API segue o padrão `/api/v1` com contrato em `lib/dockd_web/api_spec.ex`. O cenário demonstrativo está em `priv/repo/seeds.exs` e é idempotente.
 
