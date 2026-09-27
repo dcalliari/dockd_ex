@@ -52,16 +52,36 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-status--larguei { background: var(--line-strong); color: var(--surface); opacity: .75; }
 .dk-poster--faded img { opacity: .55; }
 
-/* StatusControl: the current chip is the control; the other four appear beside it on hover, tap or focus */
-.dk-status-control { position: relative; display: flex; align-items: center; gap: var(--space-2); min-height: 22px; }
-.dk-status-control .dk-status { cursor: pointer; }
-.dk-status-control__since { font-size: 12px; line-height: 16px; color: var(--ink-muted); transition: opacity 120ms; }
-.dk-status-control__options { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: var(--space-2); padding-left: var(--dk-tray-offset, 88px); opacity: 0; pointer-events: none; transition: opacity 120ms; }
-.dk-status-control__options .dk-status { opacity: .55; transition: opacity 120ms; }
-.dk-status-control__options .dk-status:hover, .dk-status-control__options .dk-status:focus-visible { opacity: 1; }
-.dk-status-control:hover .dk-status-control__options, .dk-status-control:focus-within .dk-status-control__options, .dk-status-control.is-open .dk-status-control__options { opacity: 1; pointer-events: auto; }
-.dk-status-control:hover .dk-status-control__since, .dk-status-control:focus-within .dk-status-control__since, .dk-status-control.is-open .dk-status-control__since { opacity: 0; }
-@media (hover: none) { .dk-status-control:hover:not(.is-open) .dk-status-control__options { opacity: 0; pointer-events: none; } .dk-status-control:hover:not(.is-open) .dk-status-control__since { opacity: 1; } }
+/* StatusMenu: o único controle de status. A etiqueta atual abre as outras ao apontar e,
+   clicada, desmarca; no toque, o primeiro toque abre e o segundo desmarca. */
+.dk-status-menu { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); }
+.dk-status-menu__current { display: inline-flex; border-radius: var(--radius-sm); }
+.dk-status-menu__current .dk-status, .dk-status-menu__options .dk-status { cursor: pointer; outline: 2px solid transparent; outline-offset: 1px; transition: outline-color 120ms; }
+.dk-status-menu.is-open .dk-status-menu__current .dk-status, .dk-status-menu__options .dk-status:hover { outline-color: var(--line-strong); }
+.dk-status-menu.is-open .dk-status-menu__current[phx-click] .dk-status { text-decoration: line-through; }
+.dk-status--add { background: var(--scrim); color: var(--on-red); }
+.dk-status-menu__since { font-size: 12px; line-height: 16px; color: var(--ink-muted); white-space: nowrap; }
+.dk-status-menu__options { position: absolute; left: 0; top: calc(100% + var(--space-1)); z-index: 5; display: none; flex-direction: column; align-items: flex-start; gap: var(--space-1); width: max-content; max-width: 220px; padding: var(--space-1); background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+/* Ponte sobre o vão entre a etiqueta e as opções, para o ponteiro não fechar o menu. */
+.dk-status-menu__options::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: calc(var(--space-1) + 2px); }
+.dk-status-menu.is-open > .dk-status-menu__options, .dk-status-menu:has(:focus-visible) > .dk-status-menu__options { display: flex; }
+@media (hover: hover) {
+  .dk-status-menu:hover > .dk-status-menu__options { display: flex; }
+  .dk-status-menu:hover .dk-status-menu__current .dk-status { outline-color: var(--line-strong); }
+  .dk-status-menu__current[phx-click]:hover .dk-status { text-decoration: line-through; }
+}
+.dk-status-menu__ask { gap: 0; padding: var(--space-1) 0; }
+.dk-status-menu__ask > span { padding: 4px var(--space-3); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-status-menu__ask > button { width: 100%; padding: 6px var(--space-3); font-size: 13px; line-height: 18px; font-weight: 500; text-align: left; }
+.dk-status-menu__ask > button:hover { background: var(--surface-sunken); }
+.dk-status-menu__ask > .dk-link { font-weight: 600; }
+/* Sobre a capa o menu ocupa a largura do cartão, para as opções nunca passarem da borda. */
+.dk-card > .dk-status-menu { position: absolute; left: var(--space-2); right: var(--space-2); top: var(--space-2); z-index: 2; align-items: flex-start; pointer-events: none; }
+.dk-card > .dk-status-menu > * { pointer-events: auto; }
+.dk-card > .dk-status-menu .dk-status-menu__options { max-width: 100%; }
+.dk-card > .dk-status-menu.is-open, .dk-card > .dk-status-menu:focus-within { z-index: 6; }
+@media (hover: hover) { .dk-card > .dk-status-menu:hover { z-index: 6; } }
+.dk-hero__text > .dk-status-menu { align-self: flex-start; }
 
 /* MediaTag */
 .dk-media { display: inline-flex; align-items: center; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); white-space: nowrap; }
@@ -109,7 +129,7 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 /* GameCard + grid */
 .dk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--space-4) var(--space-3); }
 @media (min-width: 768px) { .dk-grid { grid-template-columns: repeat(auto-fill, minmax(var(--cover-min), 1fr)); } }
-.dk-card { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.dk-card { position: relative; display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 .dk-card__title { font-size: 14px; line-height: 18px; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .dk-card__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
 .dk-card__text { display: flex; flex-direction: column; gap: 2px; }

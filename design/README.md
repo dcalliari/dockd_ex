@@ -1,6 +1,6 @@
 dockd. é uma biblioteca pessoal de jogos de Switch e Switch 2: o que tenho, o que quero, o que estou jogando e o que vou comprar. A interface segue a família Letterboxd e Backloggd: a capa é o conteúdo, o texto é metadado, e cada tela tem uma ação primária. Paleta vermelho, branco e preto, uma família tipográfica, dois temas.
 
-## Cinco regras de consistência
+## Seis regras de consistência
 
 Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 
@@ -9,10 +9,11 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 3. **Três preenchimentos sólidos: `red`, `ink` e `gold`.** `gold` existe só no chip Quero. Todo o resto é superfície, fio ou texto.
 4. **Borda tem 1px e é `line-strong` quando é controle, `line` quando é separação.** Não existe 1,5px, não existe 2px, exceto o indicador de aba ativa.
 5. **Número é tabular e alinhado à direita, com a data ao lado.** Dinheiro sem data não existe.
+6. **Uma ação, um controle, um texto, um efeito.** Uma ação que aparece em mais de uma tela usa o mesmo componente, as mesmas palavras e grava o mesmo efeito em todas, e a regra de domínio fica num lugar só (`Dockd.Library`, `Dockd.Purchasing`), chamada por um só tratador de eventos (`DockdWeb.GameEvents`). Uma tela não ganha um atalho próprio para algo que outra tela já faz. O inventário está em `maquetes/status.html`.
 
 ## Texto
 
-- Escreva em pt-BR, na voz de quem usa: **Quero jogar**, **Comprei**, **Começar**, **Tirar da lista**. O botão diz o que acontece; nunca "Salvar" ou "Confirmar".
+- Escreva em pt-BR, na voz de quem usa: **+ Adicionar**, **Comprei**, **Reservar**, **Registrar preço**. O botão diz o que acontece; nunca "Salvar" ou "Confirmar".
 - Nenhuma string de interface passa de seis palavras. Exceções: estado vazio e confirmação de ação irreversível.
 - Sem slogan, subtítulo, eyebrow ou sermão. A navegação já diz onde a pessoa está; a tela não repete o nome em um título grande.
 - Cada informação aparece uma vez por tela. Um valor padrão não é informação: um jogo sem preço observado não mostra "R$ 0,00" nem "Sem alvo", mostra `Sem preço` uma vez, em `ink-muted`.
@@ -43,7 +44,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 - `radius-sm` em tudo que se toca; `radius-md` só na capa em grade e na página do jogo. `radius-full` está reservado e não é usado.
 - A coluna esquerda de toda linha tem `thumb-height`: capa de 33 por 44 ou bloco de data de 44 por 44. Assim todas as linhas de uma lista têm a mesma altura, com ou sem capa.
 - A grade de capas usa `repeat(auto-fill, minmax(cover-min, 1fr))`, gap `space-4` por `space-3`. A capa é sempre `cover-ratio` com `poster-edge` interno; sem imagem, é `surface-sunken` com o título em `t-meta` no canto inferior. Nunca gradiente, nunca iniciais.
-- Em Descobrir, passar o mouse sobre a capa cobre a arte inteira com `scrim` em 160ms e centraliza a ação `Quero jogar`; um balão em `ink` acima da capa mostra plataforma e ano. Em tela de toque não há hover: a ação fica embaixo da capa. O título fica sempre embaixo da capa.
+- Em Descobrir a capa leva o mesmo StatusMenu da Biblioteca, no canto superior esquerdo: `+ Adicionar` num jogo fora da biblioteca, o status num jogo dela. O título fica sempre embaixo da capa.
 - Entrar e Criar conta são a única tela com capas de fundo: as do catálogo cobrem a tela sob `scrim`, sem etiqueta, e o formulário fica num painel `surface` com `radius-md`, o único cartão da tela, no centro acima de 768px e na base no celular. Maquete `maquetes/entrar-v2.html`, caminho C.
 
 ## Navegação
@@ -64,7 +65,9 @@ Um jogo tem um status visível, derivado do domínio (`ownerships` e `entries.pl
 
 A mídia é um segundo eixo, por versão: Físico, Digital ou Key card, sempre como MediaTag em `t-label`, nunca como cor nem como ícone.
 
-Na página do jogo o status é trocado pelo StatusControl: o chip atual é o controle, sem borda nem seta, e os outros quatro aparecem ao lado ao passar o mouse ou tocar. Plataforma e exclusividade da obra não vão no texto do herói: ficam na legenda da capa, `SWITCH 2` à esquerda e `EXCLUSIVO` em `red-ink` à direita, e só quando a obra é exclusiva.
+O status só se troca pelo StatusMenu, o mesmo sobre a capa (Biblioteca, Descobrir) e na página do jogo: o chip atual é o controle, apontar para ele abre os outros estados embaixo, e clicar nele desmarca. No toque, o primeiro toque abre e o segundo desmarca. Desmarcar é a única forma de tirar um jogo da biblioteca: não há lixeira, link de remoção, confirmação nem aviso, e compra, preço visto, saldo e histórico ficam. Ver StatusMenu.
+
+Na página do jogo, plataforma e exclusividade da obra não vão no texto do herói: ficam na legenda da capa, `SWITCH 2` à esquerda e `EXCLUSIVO` em `red-ink` à direita, e só quando a obra é exclusiva.
 
 ## Histórico
 
@@ -72,7 +75,7 @@ O log de eventos vira um trilho vertical, do mais recente ao mais antigo, uma li
 
 ## Ícones
 
-Heroicons outline em 24px, os mesmos que o projeto já carrega, em `currentColor`, inseridos inline pelo componente `<.icon>` do Phoenix. Um ícone entra só quando substitui a palavra que caberia ali, e são cinco casos: lupa na busca, seta para voltar, x para fechar, chevron no seletor de status, mais para adicionar. Nenhum ícone em chip, tag, botão com rótulo ou destino de navegação. Sem emoji.
+Heroicons outline em 24px, os mesmos que o projeto já carrega, em `currentColor`, inseridos inline pelo componente `<.icon>` do Phoenix. Um ícone entra só quando substitui a palavra que caberia ali, e são cinco casos: lupa na busca, seta para voltar, x para fechar, chevron nos menus da barra de filtros e da conta, mais para adicionar. Nenhum ícone em chip, tag, botão com rótulo ou destino de navegação. Sem emoji.
 
 ## Movimento
 

@@ -1,0 +1,28 @@
+<!-- @dsCard group="Ações" height=220 -->
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>StatusMenu</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&amp;display=swap"></head>
+<body><div class="dk-preview">
+<div style="display:flex;gap:var(--space-7);align-items:flex-start;min-height:180px">
+<div class="dk-status-menu">
+<button type="button" class="dk-status-menu__current" aria-haspopup="true" aria-expanded="false" aria-label="Jogando: tirar da biblioteca" title="Tirar da biblioteca" data-clear><span class="dk-status dk-status--jogando">Jogando</span></button>
+<span class="dk-status-menu__since">desde 22/09/2026</span>
+<div class="dk-status-menu__options" role="group" aria-label="Mudar status"><button type="button" class="dk-status dk-status--backlog">Backlog</button><button type="button" class="dk-status dk-status--zerado">Zerado</button><button type="button" class="dk-status dk-status--larguei">Larguei</button></div>
+</div>
+<div class="dk-status-menu is-open">
+<button type="button" class="dk-status-menu__current" aria-haspopup="true" aria-expanded="true"><span class="dk-status dk-status--add">+ Adicionar</span></button>
+<div class="dk-status-menu__options" role="group" aria-label="Mudar status"><button type="button" class="dk-status dk-status--quero">Quero</button><button type="button" class="dk-status dk-status--backlog">Backlog</button><button type="button" class="dk-status dk-status--jogando">Jogando</button><button type="button" class="dk-status dk-status--zerado">Zerado</button><button type="button" class="dk-status dk-status--larguei">Larguei</button></div>
+</div>
+<div class="dk-status-menu is-open">
+<button type="button" class="dk-status-menu__current" aria-haspopup="true" aria-expanded="true"><span class="dk-status dk-status--add">+ Adicionar</span></button>
+<div class="dk-status-menu__options dk-status-menu__ask" role="group"><span>Tem em qual versão?</span><button type="button">Switch 2 · Físico</button><button type="button">Switch 2 · Digital</button><button type="button" class="dk-link">Cancelar</button></div>
+</div>
+</div>
+<script>
+// Só para a prévia: clicar na etiqueta atual desmarca.
+document.querySelectorAll('[data-clear]').forEach(function (b) {
+  b.addEventListener('click', function () { b.innerHTML = '<span class="dk-status dk-status--add">+ Adicionar</span>'; b.removeAttribute('data-clear'); });
+});
+</script>
+</div></body>
+</html>

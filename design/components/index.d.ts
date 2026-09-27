@@ -13,6 +13,7 @@ export interface GameRow { title: string; lead: { coverUrl?: string } | { date: 
 export interface DateBlock { date: string; precision: "day" | "month" | "year"; soon?: boolean }
 export interface Price { cents?: number; observedAt?: string }
 export interface EmptyState { text: string; action?: { label: string; href: string } }
-export interface StatusControl { value: Status; since: string; onChange: (next: Status) => void }
+/** The one status control, on covers (size sm) and on the game page (md). `null` clears the status and takes the game out of the library. */
+export interface StatusMenu { value: Status | null; options: Status[]; since?: string; size?: "md" | "sm"; ask?: { label: string }[]; onChange: (next: Status | null) => void }
 export interface History { items: { what: string; relative: string; who: string; current?: boolean }[] }
 export interface SectionHead { title: string; count?: number; action?: { label: string; href: string } }
