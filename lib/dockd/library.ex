@@ -4,10 +4,11 @@ defmodule Dockd.Library do
   import Ecto.Changeset
   alias Dockd.Accounts.User
   alias Dockd.Activity
-  alias Dockd.Catalog.Game
+  alias Dockd.Catalog.{Game, Release}
   alias Dockd.Library.Entry
   alias Dockd.Library.Ownership
   alias Dockd.Library.ReleaseVeto
+  alias Dockd.Library.Shelf
   alias Dockd.Repo
 
   @doc "Lists entries for a user, preloading their games."
@@ -67,17 +68,53 @@ defmodule Dockd.Library do
   end
 
   @doc """
-  Moves a game to one of the five visible statuses.
+  Moves a game to one of the five visible statuses, or out of the library with `nil`.
+
+  `nil` is the only way a game leaves the library, see `remove_game/2`.
 
   `:backlog` needs at least one owned release; without it, returns `{:error, :needs_ownership}`
-  so the caller can ask which version and media. Every transition writes its event through
+  so the caller can ask which version and media, and calls again with
+  `ownership: %{release_id: id, ownership_type: :physical | :digital}` to record the
+  ownership and the status together. Every transition writes its event through
   `update_entry/3`.
   """
-  def set_status(%User{} = user, %Game{} = game, status) when is_atom(status) do
+  def set_status(user, game, status, opts \\ [])
+
+  def set_status(%User{} = user, %Game{} = game, nil, _opts), do: remove_game(user, game)
+
+  def set_status(%User{} = user, %Game{} = game, :backlog, ownership: attrs) do
+    Repo.transaction(fn ->
+      with {:ok, _} <- own_release(user, game, attrs),
+           {:ok, entry} <- set_status(user, game, :backlog) do
+        entry
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  def set_status(%User{} = user, %Game{} = game, status, []) when is_atom(status) do
     case status_attrs(status, game.id in owned_game_ids(user)) do
       {:error, reason} -> {:error, reason}
       attrs -> upsert_entry(user, game, attrs)
     end
+  end
+
+  defp own_release(user, game, %{release_id: release_id, ownership_type: type}) do
+    if Repo.exists?(from r in Release, where: r.id == ^release_id and r.game_id == ^game.id),
+      do:
+        create_ownership(user, %{
+          release_id: release_id,
+          ownership_type: type,
+          acquired_at: DateTime.utc_now()
+        }),
+      else: {:error, :not_found}
+  end
+
+  @doc "The statuses a game can move to from its shelf item: never its own, and never Quero once owned."
+  def status_options(%{status: status, ownerships: ownerships}) do
+    owned = if ownerships == [], do: [], else: [:quero]
+    Shelf.statuses() -- [status | owned]
   end
 
   defp status_attrs(:quero, false), do: %{purchase_intent: :want, play_state: :unplayed}
@@ -95,20 +132,36 @@ defmodule Dockd.Library do
     end
   end
 
-  @doc "Removes a game from the user's library: its entry and every ownership of its releases."
+  @doc """
+  Removes a game from the user's library: its entry and every ownership of its releases.
+
+  What the game cost stays: purchases, price observations, wallet movements and the event
+  log are history, not library membership, so re-adding the game finds them again. The
+  removal itself is logged as a `:removed` event.
+  """
   def remove_game(%User{id: user_id} = user, %Game{id: game_id}) do
     Repo.transaction(fn ->
-      Repo.delete_all(
-        from o in Ownership,
-          join: r in Dockd.Catalog.Release,
-          on: r.id == o.release_id,
-          where: o.user_id == ^user_id and r.game_id == ^game_id
-      )
+      {owned, _} =
+        Repo.delete_all(
+          from o in Ownership,
+            join: r in Release,
+            on: r.id == o.release_id,
+            where: o.user_id == ^user_id and r.game_id == ^game_id
+        )
 
-      case get_entry_for_game(user, game_id) do
-        nil -> :ok
-        entry -> Repo.delete!(entry)
-      end
+      entry = get_entry_for_game(user, game_id)
+      if entry, do: Repo.delete!(entry)
+
+      if entry || owned > 0,
+        do:
+          Repo.insert!(
+            Activity.changeset(%Activity.Event{}, %{
+              user_id: user_id,
+              game_id: game_id,
+              type: :removed,
+              occurred_at: DateTime.utc_now()
+            })
+          )
 
       :ok
     end)

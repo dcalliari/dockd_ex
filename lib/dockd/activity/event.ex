@@ -15,7 +15,8 @@ defmodule Dockd.Activity.Event do
         :abandoned,
         :backlogged,
         :activated,
-        :vetoed
+        :vetoed,
+        :removed
       ]
 
     field :occurred_at, :utc_datetime_usec

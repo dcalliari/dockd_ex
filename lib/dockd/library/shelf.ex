@@ -17,12 +17,16 @@ defmodule Dockd.Library.Shelf do
   alias Dockd.Library.{Entry, Ownership}
   alias Dockd.Repo
 
+  @statuses [:quero, :backlog, :jogando, :zerado, :larguei]
   @tabs ~w(todos jogando backlog quero zerado)
   @wanting [:want, :planned, :preordered]
 
   defstruct [:game, :entry, :status, :platforms, :year, ownerships: [], releases: []]
 
-  @doc "Statuses in display order."
+  @doc "The five statuses, in display order."
+  def statuses, do: @statuses
+
+  @doc "Biblioteca tabs in display order."
   def tabs, do: @tabs
 
   @doc "Derives the status from an entry (or nil) and whether any release is owned."
@@ -129,6 +133,14 @@ defmodule Dockd.Library.Shelf do
     do: Enum.sort_by(items, &{-(&1.year || 0), String.downcase(&1.game.title)})
 
   defp sort(items, _), do: items
+
+  @doc "The release out first; undated releases come last."
+  def first_release(%__MODULE__{releases: releases}),
+    do:
+      Enum.min_by(releases, &{is_nil(&1.release_date), &1.release_date}, &first?/2, fn -> nil end)
+
+  defp first?({same, a}, {same, b}) when not is_nil(a), do: Date.compare(a, b) != :gt
+  defp first?({undated_a, _}, {undated_b, _}), do: undated_a <= undated_b
 
   @doc "Media types the user owns for the item."
   def media(%__MODULE__{ownerships: ownerships}),
