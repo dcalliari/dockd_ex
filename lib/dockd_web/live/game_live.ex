@@ -183,7 +183,6 @@ defmodule DockdWeb.GameLive do
       flash={@flash}
       current_scope={@current_scope}
       current={@user && "Biblioteca"}
-      igdb_url={igdb_url(@game)}
     >
       <p class="dk-back">
         <.link :if={@user} id="game-back" navigate={~p"/"} class="dk-link">
@@ -296,6 +295,7 @@ defmodule DockdWeb.GameLive do
 
       <.section_head :if={@history != []} title="Histórico" />
       <.history :if={@history != []} id="game-history" items={@history} />
+      <.igdb_credit id="game-credit" url={igdb_url(@game)} />
     </Layouts.app>
     """
   end

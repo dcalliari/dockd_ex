@@ -21,6 +21,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 - Datas em `dd/mm/aaaa`; mês abreviado em caixa alta sem ponto no bloco de data (`SET`, `OUT`). Dinheiro em `R$ 1.249,90`.
 - Metadado separado por ponto mediano: `Switch 2 · 2026 · Team Cherry`. Nunca vírgula, nunca barra, nunca espaço duplo.
 - Sem emoji, sem ponto de exclamação.
+- O crédito do IGDB (`Dados de jogos por IGDB`) não é rodapé de toda tela. Fica em `t-meta`, `ink-muted`, uma vez, no fim de onde os dados do IGDB aparecem: na página do jogo, na mesma linha do link `Mais informações no IGDB`, e no fim dos resultados de uma busca em Descobrir. As faixas da vitrine, a Biblioteca, Comprar e Entrar não o levam.
 
 ## Cor
 

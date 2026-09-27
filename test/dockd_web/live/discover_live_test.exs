@@ -35,6 +35,17 @@ defmodule DockdWeb.DiscoverLiveTest do
     refute has_element?(view, "#discover-results", "Something else")
   end
 
+  test "credits IGDB only under search results", %{conn: conn} do
+    {:ok, view, _html} = live(conn, "/descobrir")
+    refute has_element?(view, ".dk-credit")
+
+    {:ok, view, _html} = live(conn, "/descobrir?q=discovery")
+    assert has_element?(view, "#discover-results + #discover-credit", "IGDB")
+
+    {:ok, view, _html} = live(conn, "/descobrir?q=nothing-matches")
+    refute has_element?(view, ".dk-credit")
+  end
+
   test "the add chip sets a status in one tap", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/descobrir?q=candidate")
     assert has_element?(view, "#result-#{ctx.candidate.id} .dk-status--add")
