@@ -125,6 +125,15 @@ defmodule DockdWeb.GameLiveTest do
     assert has_element?(view, "#game-history .dk-history__item--current", "Saiu da biblioteca")
   end
 
+  test "a version sold on the eShop shows the store price", %{conn: conn} = ctx do
+    store_price_fixture(ctx.release_2, %{regular_cents: 43_990})
+    {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+
+    assert has_element?(view, "#price-#{ctx.release_2.id}", "R$ 439,90")
+    assert has_element?(view, "#price-#{ctx.release_2.id}", "eShop")
+    refute has_element?(view, "#price-#{ctx.release.id}", "eShop")
+  end
+
   test "the price opens the manual record in place", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
 

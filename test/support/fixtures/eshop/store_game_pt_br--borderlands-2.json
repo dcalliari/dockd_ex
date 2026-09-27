@@ -1,0 +1,140 @@
+{
+ "hits": [
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Borderlands 3: Edição Ultimate",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000031761",
+   "objectID": "7100031761"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Tales from the Borderlands",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000030250",
+   "objectID": "7100030250"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "New Tales from the Borderlands",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000035177",
+   "objectID": "7100035177"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "New Tales from the Borderlands: Edição Deluxe",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "BUNDLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70070000015070",
+   "objectID": "7700015070"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Borderlands 3: Director's Cut",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000041799",
+   "objectID": "7500041799"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Borderlands 3: Dublagens adicionais",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000040888",
+   "objectID": "7500040888"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Borderlands 3 - Designer's Cut",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000040887",
+   "objectID": "7500040887"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Borderlands 3: O Psicopata Krieg e o Fantástico Furdunço",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000022844",
+   "objectID": "7500022844"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Borderlands 3: Armas, Amor e Tentáculos",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000022843",
+   "objectID": "7500022843"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Borderlands 3: O Assalto de Moxxi ao Jack Dinheirão",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000022767",
+   "objectID": "7500022767"
+  }
+ ],
+ "nbHits": 12,
+ "page": 0,
+ "nbPages": 2,
+ "hitsPerPage": 10,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "Borderlands 2",
+ "params": "query=Borderlands+2&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+ "renderingContent": {},
+ "processingTimeMS": 3,
+ "processingTimingsMS": {
+  "_request": {
+   "queue": 1,
+   "roundTrip": 107
+  },
+  "extensions": 1,
+  "fetch": {
+   "total": 1
+  },
+  "total": 3
+ },
+ "serverTimeMS": 4
+}

@@ -1,0 +1,153 @@
+{
+ "hits": [
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Teenage Mutant Ninja Turtles: Splintered Fate - Slash Character DLC",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000072777",
+   "objectID": "7500072777",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "TMNT: Splintered Fate - Platinum Edition",
+   "dlcType": "ROM Bundle",
+   "eshopDetails": {
+    "productType": "BUNDLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70070000039287",
+   "objectID": "7700039287",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Teenage Mutant Ninja Turtles: Splintered Fate - Samurai Armor Pack",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000072782",
+   "objectID": "7500072782",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Teenage Mutant Ninja Turtles: Splintered Fate Nintendo Switch 2 Edition upgrade pack",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": true,
+   "nsuid": "70050000065664",
+   "objectID": "7500065664",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Teenage Mutant Ninja Turtles: Splintered Fate - Alopex Character DLC",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000066047",
+   "objectID": "7500066047",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "TMNT: Splintered Fate and Slash Character DLC",
+   "dlcType": "ROM Bundle",
+   "eshopDetails": {
+    "productType": "BUNDLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70070000039300",
+   "objectID": "7700039300",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "TMNT: Splintered Fate and Metalhead",
+   "dlcType": "ROM Bundle",
+   "eshopDetails": {
+    "productType": "BUNDLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70070000035263",
+   "objectID": "7700035263",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "TMNT: Splintered Fate - Gold Edition",
+   "dlcType": "ROM Bundle",
+   "eshopDetails": {
+    "productType": "BUNDLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70070000034877",
+   "objectID": "7700034877",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "TMNT: Splintered Fate and Casey Jones",
+   "dlcType": "ROM Bundle",
+   "eshopDetails": {
+    "productType": "BUNDLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70070000026686",
+   "objectID": "7700026686",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Teenage Mutant Ninja Turtles: Splintered Fate",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000078903",
+   "objectID": "7100078903",
+   "_distinctSeqID": 0
+  }
+ ],
+ "nbHits": 14,
+ "page": 0,
+ "nbPages": 2,
+ "hitsPerPage": 10,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "Splintered Fate",
+ "params": "query=Splintered+Fate&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+ "renderingContent": {},
+ "processingTimeMS": 4,
+ "processingTimingsMS": {
+  "_request": {
+   "queue": 1,
+   "roundTrip": 98
+  },
+  "extensions": 1,
+  "extractDocsToPromoteDetails": {
+   "pinRetrieval": {
+    "total": 1
+   },
+   "total": 1
+  },
+  "total": 4
+ },
+ "serverTimeMS": 5
+}

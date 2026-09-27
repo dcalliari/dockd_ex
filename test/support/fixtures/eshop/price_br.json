@@ -1,0 +1,144 @@
+{
+ "personalized": false,
+ "country": "BR",
+ "prices": [
+  {
+   "title_id": 70010000063714,
+   "sales_status": "onsale",
+   "regular_price": {
+    "amount": "R$ 389,90",
+    "currency": "BRL",
+    "raw_value": "389.9"
+   },
+   "gold_point": {
+    "basic_gift_gp": "0",
+    "basic_gift_rate": "0",
+    "consume_gp": "0",
+    "extra_gold_points": [],
+    "gift_gp": "0",
+    "gift_rate": "0"
+   }
+  },
+  {
+   "title_id": 70010000096821,
+   "sales_status": "onsale",
+   "regular_price": {
+    "amount": "R$ 439,90",
+    "currency": "BRL",
+    "raw_value": "439.9"
+   },
+   "gold_point": {
+    "basic_gift_gp": "0",
+    "basic_gift_rate": "0",
+    "consume_gp": "0",
+    "extra_gold_points": [],
+    "gift_gp": "0",
+    "gift_rate": "0"
+   }
+  },
+  {
+   "title_id": 70010000001017,
+   "sales_status": "onsale",
+   "regular_price": {
+    "amount": "R$ 149,90",
+    "currency": "BRL",
+    "raw_value": "149.9"
+   },
+   "gold_point": {
+    "basic_gift_gp": "0",
+    "basic_gift_rate": "0",
+    "consume_gp": "0",
+    "extra_gold_points": [],
+    "gift_gp": "0",
+    "gift_rate": "0"
+   }
+  },
+  {
+   "title_id": 70010000098812,
+   "sales_status": "onsale",
+   "regular_price": {
+    "amount": "R$ 349,90",
+    "currency": "BRL",
+    "raw_value": "349.9"
+   },
+   "gold_point": {
+    "basic_gift_gp": "0",
+    "basic_gift_rate": "0",
+    "consume_gp": "0",
+    "extra_gold_points": [],
+    "gift_gp": "0",
+    "gift_rate": "0"
+   }
+  },
+  {
+   "title_id": 70010000107421,
+   "sales_status": "onsale",
+   "regular_price": {
+    "amount": "R$ 389,90",
+    "currency": "BRL",
+    "raw_value": "389.9"
+   },
+   "gold_point": {
+    "basic_gift_gp": "0",
+    "basic_gift_rate": "0",
+    "consume_gp": "0",
+    "extra_gold_points": [],
+    "gift_gp": "0",
+    "gift_rate": "0"
+   }
+  },
+  {
+   "title_id": 70010000007926,
+   "sales_status": "not_found"
+  },
+  {
+   "title_id": 70010000062593,
+   "sales_status": "onsale",
+   "regular_price": {
+    "amount": "R$ 159,90",
+    "currency": "BRL",
+    "raw_value": "159.9"
+   },
+   "discount_price": {
+    "amount": "R$ 39,97",
+    "currency": "BRL",
+    "raw_value": "39.97",
+    "start_datetime": "2026-09-25T07:00:00Z",
+    "end_datetime": "2026-10-17T06:59:59Z"
+   },
+   "gold_point": {
+    "basic_gift_gp": "0",
+    "basic_gift_rate": "0",
+    "consume_gp": "0",
+    "extra_gold_points": [],
+    "gift_gp": "0",
+    "gift_rate": "0"
+   }
+  },
+  {
+   "title_id": 70010000126640,
+   "sales_status": "unreleased"
+  },
+  {
+   "title_id": 70010000083034,
+   "sales_status": "sales_termination"
+  },
+  {
+   "title_id": 70010000003208,
+   "sales_status": "onsale",
+   "regular_price": {
+    "amount": "R$ 27,99",
+    "currency": "BRL",
+    "raw_value": "27.99"
+   },
+   "gold_point": {
+    "basic_gift_gp": "0",
+    "basic_gift_rate": "0",
+    "consume_gp": "0",
+    "extra_gold_points": [],
+    "gift_gp": "0",
+    "gift_rate": "0"
+   }
+  }
+ ]
+}

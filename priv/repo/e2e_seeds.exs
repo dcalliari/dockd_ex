@@ -1,12 +1,13 @@
 alias Dockd.Accounts
 alias Dockd.Catalog
 alias Dockd.Library
+alias Dockd.Pricing.{StoreListing, StorePrice}
 alias Dockd.Purchasing
 alias Dockd.Repo
 
 Ecto.Adapters.SQL.query!(
   Repo,
-  "TRUNCATE users_tokens, events, price_observations, purchases, ownerships, release_vetoes, entries, releases, games, users RESTART IDENTITY CASCADE"
+  "TRUNCATE users_tokens, store_prices, store_listings, events, price_observations, purchases, ownerships, release_vetoes, entries, releases, games, users RESTART IDENTITY CASCADE"
 )
 
 {:ok, owner} = Accounts.register_user(%{email: "e2e@dockd.local", password: "senha-da-jornada-e2e"})
@@ -78,6 +79,35 @@ future_veto = create_game.("Future Veto", Date.add(today, 40), %{})
 buyable = create_game.("Buyable Quest", Date.add(today, -30), %{})
 expensive = create_game.("Expensive Quest", Date.add(today, -25), %{})
 mystery = create_game.("Mystery Quest", Date.add(today, -20), %{})
+store_quest = create_game.("Store Quest", Date.add(today, -40), %{})
+
+# The eShop price the daily sync would have recorded, on sale. Store Quest stays out of
+# the library so the queue totals of the other journeys do not change.
+now = DateTime.utc_now()
+
+store_listing =
+  %StoreListing{release_id: store_quest.release.id}
+  |> StoreListing.changeset(%{
+    store: :eshop_br,
+    match: :auto,
+    external_id: "70010000000001",
+    title: "Store Quest",
+    sales_status: "onsale",
+    checked_at: now
+  })
+  |> Repo.insert!()
+
+%StorePrice{listing_id: store_listing.id}
+|> StorePrice.changeset(%{
+  regular_cents: 19_990,
+  discount_cents: 9_990,
+  discount_starts_at: DateTime.add(now, -2, :day),
+  discount_ends_at: DateTime.add(now, 12, :day),
+  sales_status: "onsale",
+  first_seen_at: now,
+  last_seen_at: now
+})
+|> Repo.insert!()
 
 for {data, target} <- [
       {future_alpha, 25_000},

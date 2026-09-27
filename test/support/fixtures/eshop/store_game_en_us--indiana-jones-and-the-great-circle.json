@@ -1,0 +1,74 @@
+{
+ "hits": [
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones and the Great Circle™",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000098812",
+   "objectID": "7100098812",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones and the Great Circle™: The Last Crusade™ Pack - Lion Tamer Whip",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000066564",
+   "objectID": "7500066564",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones and the Great Circle™: The Last Crusade™ Pack - Traveling Suit Outfit",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000066563",
+   "objectID": "7500066563",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones and the Great Circle™: The Order of Giants",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000066562",
+   "objectID": "7500066562",
+   "_distinctSeqID": 0
+  }
+ ],
+ "nbHits": 4,
+ "page": 0,
+ "nbPages": 1,
+ "hitsPerPage": 10,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "Indiana Jones and the Great Circle",
+ "params": "query=Indiana+Jones+and+the+Great+Circle&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+ "renderingContent": {},
+ "processingTimeMS": 2,
+ "processingTimingsMS": {
+  "_request": {
+   "roundTrip": 107
+  },
+  "extensions": 1,
+  "total": 2
+ },
+ "serverTimeMS": 2
+}

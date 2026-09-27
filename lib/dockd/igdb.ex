@@ -153,7 +153,10 @@ defmodule Dockd.IGDB do
 end
 
 defmodule Dockd.IGDB.SyncScheduler do
-  @moduledoc "Supervised scheduler that matches and synchronizes the catalog on boot and daily."
+  @moduledoc """
+  Supervised scheduler that, on boot and daily, matches and synchronizes the catalog
+  with IGDB and then the eShop Brasil prices (`Dockd.Pricing.sync_eshop/1`).
+  """
   use GenServer
 
   def start_link(_), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
@@ -185,6 +188,7 @@ defmodule Dockd.IGDB.SyncScheduler do
   defp run_sync do
     _ = Dockd.Catalog.match_igdb()
     _ = Dockd.Catalog.sync_igdb()
+    _ = Dockd.Pricing.sync_eshop()
   end
 
   defp schedule(interval), do: Process.send_after(self(), :sync, interval)

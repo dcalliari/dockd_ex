@@ -174,6 +174,8 @@ defmodule Dockd.IGDBRequirementsTest do
     assert Repo.get!(Game, wrong.id).igdb_id == nil
   end
 
+  # The eShop step that follows has no search key here and says so in the log.
+  @tag :capture_log
   test "scheduler runs matching before the initial synchronization" do
     Req.Test.stub("igdb-requirements", fn conn ->
       case conn.request_path do

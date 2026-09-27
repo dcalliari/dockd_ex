@@ -1,0 +1,50 @@
+{
+ "hits": [
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "FINAL FANTASY XV POCKET EDITION HD",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000009443",
+   "objectID": "7100009443",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "THEATRHYTHM FBL FINAL FANTASY XVI Pack",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000036421",
+   "objectID": "7500036421",
+   "_distinctSeqID": 0
+  }
+ ],
+ "nbHits": 2,
+ "page": 0,
+ "nbPages": 1,
+ "hitsPerPage": 10,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "Final Fantasy XV",
+ "params": "query=Final+Fantasy+XV&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+ "renderingContent": {},
+ "processingTimeMS": 2,
+ "processingTimingsMS": {
+  "_request": {
+   "roundTrip": 98
+  },
+  "extensions": 1,
+  "total": 2
+ },
+ "serverTimeMS": 2
+}

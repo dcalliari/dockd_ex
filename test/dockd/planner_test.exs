@@ -95,6 +95,36 @@ defmodule Dockd.PlannerTest do
     assert by_title["Missing price"].verdict_reason == "Sem observação de preço."
   end
 
+  test "purchase opportunities judge the eShop price before an older observation", %{
+    user: user
+  } do
+    game = game_fixture(%{title: "On sale"})
+    release = release_fixture(game, %{release_date: ~D[2026-01-01]})
+
+    {:ok, _} =
+      Library.create_entry(user, %{
+        game_id: game.id,
+        purchase_intent: :want,
+        target_price_cents: 9_000
+      })
+
+    {:ok, _} =
+      Purchasing.create_price_observation(user, %{
+        release_id: release.id,
+        format: :digital,
+        price_cents: 20_000,
+        observed_at: DateTime.add(DateTime.utc_now(), -30, :day),
+        source: "OLX"
+      })
+
+    store_price_fixture(release, %{regular_cents: 15_990, discount_cents: 7_990})
+
+    assert [%{verdict: :buy, observation: %{source: "eShop", price_cents: 7_990}} = item] =
+             Planner.purchase_opportunities(user, ~D[2026-02-01])
+
+    refute item.observation_stale?
+  end
+
   test "calendar empty reason explains undated releases", %{user: user} do
     game = game_fixture(%{title: "Undated desire"})
     {:ok, _release} = Catalog.create_release(game.id, %{platform: :switch})

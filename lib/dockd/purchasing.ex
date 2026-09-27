@@ -8,6 +8,7 @@ defmodule Dockd.Purchasing do
   alias Dockd.Library
   alias Dockd.Library.Entry
   alias Dockd.Library.Ownership
+  alias Dockd.Pricing
   alias Dockd.Purchasing.PriceObservation
   alias Dockd.Purchasing.Purchase
   alias Dockd.Repo
@@ -126,15 +127,22 @@ defmodule Dockd.Purchasing do
 
   @doc """
   The price a screen shows for a release, optionally of one media. Every screen reads
-  prices here and only here: today it is the user's latest observation, and the store
-  price takes its place later without touching the screens.
+  prices here and only here: the eShop Brasil price (`Dockd.Pricing.store_price/2`)
+  when the store sells the release digitally, otherwise the user's latest observation,
+  which stays the source for physical copies, used games and what the eShop lacks.
   """
   def current_price(user, release_id, format \\ nil)
 
-  def current_price(%User{} = user, release_id, nil),
+  def current_price(%User{} = user, release_id, format) when format in [nil, :digital],
+    do: Pricing.store_price(release_id) || latest_price_observation(user, release_id, format)
+
+  def current_price(%User{} = user, release_id, format),
+    do: latest_price_observation(user, release_id, format)
+
+  defp latest_price_observation(user, release_id, nil),
     do: latest_price_observation(user, release_id)
 
-  def current_price(%User{id: id}, release_id, format),
+  defp latest_price_observation(%User{id: id}, release_id, format),
     do:
       Repo.one(
         from p in PriceObservation,
@@ -193,9 +201,12 @@ defmodule Dockd.Purchasing do
     |> Repo.insert()
   end
 
-  @doc "Returns whether an observation is older than the threshold, defaulting to seven days."
+  @doc """
+  Returns whether a price observation, or a `Dockd.Pricing.CurrentPrice`, was last
+  seen longer ago than the threshold, defaulting to seven days.
+  """
   def stale?(
-        %PriceObservation{observed_at: observed_at},
+        %{observed_at: observed_at},
         now,
         age_days \\ @default_stale_age_days
       ),

@@ -1,0 +1,63 @@
+{
+ "hits": [
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Pokémon™ Pokopia",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000107421",
+   "objectID": "7100107421",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Pokémon™ Pokopia Bundle (Game + Expansion Pass)",
+   "dlcType": "ROM Bundle",
+   "eshopDetails": {
+    "productType": "BUNDLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70070000037147",
+   "objectID": "7700037147",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Pokémon™ Pokopia Expansion Pass",
+   "dlcType": "Bundle",
+   "eshopDetails": {
+    "productType": "BUNDLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70070000037146",
+   "objectID": "7700037146",
+   "_distinctSeqID": 0
+  }
+ ],
+ "nbHits": 3,
+ "page": 0,
+ "nbPages": 1,
+ "hitsPerPage": 10,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "Pokémon Pokopia",
+ "params": "query=Pok%C3%A9mon+Pokopia&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+ "renderingContent": {},
+ "processingTimeMS": 2,
+ "processingTimingsMS": {
+  "_request": {
+   "queue": 1,
+   "roundTrip": 100
+  },
+  "extensions": 1,
+  "total": 2
+ },
+ "serverTimeMS": 4
+}

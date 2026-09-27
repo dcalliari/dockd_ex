@@ -1,0 +1,58 @@
+{
+ "hits": [
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "The Legend of Zelda™: Tears of the Kingdom – Nintendo Switch™ 2 Edition",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000096821",
+   "objectID": "7100096821"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "The Legend of Zelda™: Tears of the Kingdom",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000063714",
+   "objectID": "7100063714"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Pacote de melhoria The Legend of Zelda™: Tears of the Kingdom – Nintendo Switch™ 2 Edition",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": true,
+   "nsuid": "70050000056960",
+   "objectID": "7500056960"
+  }
+ ],
+ "nbHits": 3,
+ "page": 0,
+ "nbPages": 1,
+ "hitsPerPage": 10,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "The Legend of Zelda: Tears of the Kingdom",
+ "params": "query=The+Legend+of+Zelda%3A+Tears+of+the+Kingdom&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+ "renderingContent": {},
+ "processingTimeMS": 2,
+ "processingTimingsMS": {
+  "_request": {
+   "roundTrip": 99
+  },
+  "total": 2
+ },
+ "serverTimeMS": 2
+}

@@ -1,0 +1,136 @@
+{
+ "hits": [
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Pokémon™ Legends: Arceus",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000039945",
+   "objectID": "7100039945"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Pokémon™ Violet",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000053971",
+   "objectID": "7100053971"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Pokémon™ Scarlet",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000053966",
+   "objectID": "7100053966"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Pokémon™ Brilliant Diamond",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000039950",
+   "objectID": "7100039950"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Pokémon™ Sword ",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000004496",
+   "objectID": "7100004496"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Pokémon™: Let’s Go, Pikachu!",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000000447",
+   "objectID": "7100000447"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Pokémon™ Shining Pearl",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000039955",
+   "objectID": "7100039955"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Pokémon™: Let’s Go, Eevee!",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000000450",
+   "objectID": "7100000450"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Pokémon™ Shield ",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000004492",
+   "objectID": "7100004492"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Pokémon Mystery Dungeon™: Rescue Team DX",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000012523",
+   "objectID": "7100012523"
+  }
+ ],
+ "nbHits": 45,
+ "page": 0,
+ "nbPages": 5,
+ "hitsPerPage": 10,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "Pokémon Pokopia",
+ "params": "query=Pok%C3%A9mon+Pokopia&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+ "renderingContent": {},
+ "processingTimeMS": 2,
+ "processingTimingsMS": {
+  "_request": {
+   "queue": 1,
+   "roundTrip": 97
+  },
+  "total": 2
+ },
+ "serverTimeMS": 3
+}

@@ -1,0 +1,40 @@
+{
+ "hits": [
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Teenage Mutant Ninja Turtles: Splintered Fate Pacote DLC com todos os personagens",
+   "dlcType": "ROM Bundle",
+   "eshopDetails": {
+    "productType": "BUNDLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70070000033981",
+   "objectID": "7700033981"
+  }
+ ],
+ "nbHits": 1,
+ "page": 0,
+ "nbPages": 1,
+ "hitsPerPage": 10,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "Splintered Fate",
+ "params": "query=Splintered+Fate&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+ "renderingContent": {},
+ "processingTimeMS": 3,
+ "processingTimingsMS": {
+  "_request": {
+   "roundTrip": 96
+  },
+  "extensions": 1,
+  "fetch": {
+   "total": 1
+  },
+  "total": 3
+ },
+ "serverTimeMS": 4
+}

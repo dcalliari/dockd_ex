@@ -17,13 +17,15 @@ defmodule Dockd.Application do
         # {Dockd.Worker, arg},
         # Start to serve requests, typically the last entry
         DockdWeb.Endpoint
-      ] ++ if Dockd.IGDB.configured?(), do: [Dockd.IGDB.SyncScheduler], else: []
+      ] ++ if sync?(), do: [Dockd.IGDB.SyncScheduler], else: []
 
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Dockd.Supervisor]
     Supervisor.start_link(children, opts)
   end
+
+  defp sync?, do: Dockd.IGDB.configured?() or Dockd.Eshop.configured?()
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.

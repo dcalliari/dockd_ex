@@ -1,0 +1,148 @@
+{
+ "hits": [
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Grand Theft Auto: The Trilogy – The Definitive Edition",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "BUNDLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70070000013113",
+   "objectID": "7700013113",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones and the Great Circle™",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000098812",
+   "objectID": "7100098812",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones and the Great Circle™: The Last Crusade™ Pack - Lion Tamer Whip",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000066564",
+   "objectID": "7500066564",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones and the Great Circle™: The Last Crusade™ Pack - Traveling Suit Outfit",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000066563",
+   "objectID": "7500066563",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones and the Great Circle™: The Order of Giants",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000066562",
+   "objectID": "7500066562",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Pinball FX - Indiana Jones™: The Pinball Adventure",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000053621",
+   "objectID": "7500053621",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "O.W.L Projekt",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000087557",
+   "objectID": "7100087557",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "O---O",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000041078",
+   "objectID": "7100041078",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "O.W.L Projekt 2",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000090779",
+   "objectID": "7100090779",
+   "_distinctSeqID": 0
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "O-VOID: Console Edition",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000079250",
+   "objectID": "7100079250",
+   "_distinctSeqID": 0
+  }
+ ],
+ "nbHits": 184,
+ "page": 0,
+ "nbPages": 19,
+ "hitsPerPage": 10,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "Indiana Jones e o Grande Círculo",
+ "params": "query=Indiana+Jones+e+o+Grande+C%C3%ADrculo&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+ "renderingContent": {},
+ "processingTimeMS": 3,
+ "processingTimingsMS": {
+  "_request": {
+   "roundTrip": 105
+  },
+  "fetch": {
+   "total": 1
+  },
+  "total": 3
+ },
+ "serverTimeMS": 4
+}

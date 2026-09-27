@@ -889,7 +889,10 @@ defmodule DockdWeb.DockdComponents do
   the manual price record (`price_form/1`), like the status tag opens the status menu;
   `release_id` narrows it to one version.
   """
-  attr :observation, :map, default: nil, doc: "a price observation, or nil"
+  attr :observation, :map,
+    default: nil,
+    doc: "a `Purchasing.current_price/3`: an observation or the eShop price, or nil"
+
   attr :now, DateTime, default: nil
   attr :id, :string, default: nil
   attr :game_id, :string, default: nil

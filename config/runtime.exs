@@ -35,6 +35,10 @@ config :dockd, :igdb,
   sync_initial_delay: env_integer.("IGDB_SYNC_INITIAL_DELAY_MS", 1000),
   sync_interval: env_integer.("IGDB_SYNC_INTERVAL_MS", 86_400_000)
 
+config :dockd, :eshop,
+  algolia_app_id: System.get_env("ESHOP_ALGOLIA_APP_ID"),
+  algolia_search_key: System.get_env("ESHOP_ALGOLIA_SEARCH_KEY")
+
 if config_env() == :dev do
   # Reload browser tabs when matching files change.
   config :dockd, DockdWeb.Endpoint,

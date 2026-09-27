@@ -28,6 +28,7 @@ Quatro telas, desenhadas a partir do design system em [`design/`](design/FONTE.m
 - API JSON versionada em `/api/v1` e especificação em `/api/openapi`. Cada chamada leva `Authorization: Bearer <token>`, o token que `Copiar token da API`, no menu da conta, gera e copia; um novo substitui o anterior. O catálogo continua sendo administrado só pela API, por qualquer conta.
 - Tema segue o sistema operacional; não há seletor de tema.
 - Integração opcional com IGDB para sincronizar dados de jogos. O uso não comercial exige atribuição visível à fonte, presente no rodapé de toda página menos Entrar, na página do jogo e na busca. No deploy por compose, as variáveis do IGDB são fornecidas pelo `.env`.
+- Preço da eShop Brasil sem digitar: depois da sincronização do IGDB, o Dockd acha o produto da eShop de cada versão (busca do nintendo.com, `ESHOP_ALGOLIA_SEARCH_KEY`) e guarda o preço oficial e as promoções uma vez por dia, gravando só o que muda. Casamento incerto espera revisão; o preço registrado à mão continua valendo para o físico e para o que a eShop não vende. Os endpoints são públicos mas não documentados, e os termos da Nintendo restringem acesso automatizado: é uso pessoal, a um pedido por segundo.
 
 ### Próximos passos
 
@@ -141,7 +142,7 @@ Para carregar o cenário de demonstração em um banco descartável, execute `mi
 
 Para usar um proxy reverso, copie `.env.example`, preencha `PHX_HOST`, `DATABASE_URL`, `SECRET_KEY_BASE`, `TRAEFIK_NETWORK` e `TRAEFIK_ENTRYPOINT`, e execute `docker compose -f compose.traefik.yml up --build`. Esse compose não cria a rede externa: ela deve existir no ambiente escolhido. O serviço reinicia automaticamente após reinicializações do host ou do Docker.
 
-Em produção, `DATABASE_URL` e `SECRET_KEY_BASE` são obrigatórios. `PORT`, `PHX_HOST`, `POOL_SIZE` e `ECTO_IPV6` também são lidos em runtime. No compose Traefik, `IGDB_CLIENT_ID` e `IGDB_CLIENT_SECRET` habilitam a integração; `IGDB_SYNC_INTERVAL_MS` e `IGDB_SYNC_INITIAL_DELAY_MS` são opcionais e usam 86400000 ms e 1000 ms, respectivamente. Migrações de release podem ser executadas com `bin/migrate` dentro da imagem.
+Em produção, `DATABASE_URL` e `SECRET_KEY_BASE` são obrigatórios. `PORT`, `PHX_HOST`, `POOL_SIZE` e `ECTO_IPV6` também são lidos em runtime. No compose Traefik, `IGDB_CLIENT_ID` e `IGDB_CLIENT_SECRET` habilitam a integração; `IGDB_SYNC_INTERVAL_MS` e `IGDB_SYNC_INITIAL_DELAY_MS` são opcionais e usam 86400000 ms e 1000 ms, respectivamente. `ESHOP_ALGOLIA_SEARCH_KEY` habilita o casamento com a eShop Brasil, que roda no mesmo ciclo. Migrações de release podem ser executadas com `bin/migrate` dentro da imagem.
 
 Contas em produção:
 

@@ -1,0 +1,138 @@
+{
+ "hits": [
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "The Square Ones",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000130813",
+   "objectID": "7100130813"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "MY HERO ONE'S JUSTICE 2",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000018825",
+   "objectID": "7100018825"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Snoopy & The Great Mystery Club",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000094798",
+   "objectID": "7100094798"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "The Great Ace Attorney Chronicles",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000024294",
+   "objectID": "7100024294"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "THE LOST DINO: SURVIVAL EXPEDITION",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000097326",
+   "objectID": "7100097326"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Snoopy & The Great Mystery Club",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000112384",
+   "objectID": "7100112384"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones e o Grande Círculo™",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000098812",
+   "objectID": "7100098812"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Bone's Cafe",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000061306",
+   "objectID": "7100061306"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Mannequin Mayhem - Physics Ragdoll Shooter",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000104610",
+   "objectID": "7100104610"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Mine Clicker - Base Craft Building Game",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000092600",
+   "objectID": "7100092600"
+  }
+ ],
+ "nbHits": 226,
+ "page": 0,
+ "nbPages": 23,
+ "hitsPerPage": 10,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "Indiana Jones and the Great Circle",
+ "params": "query=Indiana+Jones+and+the+Great+Circle&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+ "renderingContent": {},
+ "processingTimeMS": 3,
+ "processingTimingsMS": {
+  "_request": {
+   "roundTrip": 102
+  },
+  "fetch": {
+   "total": 1
+  },
+  "total": 3
+ },
+ "serverTimeMS": 3
+}

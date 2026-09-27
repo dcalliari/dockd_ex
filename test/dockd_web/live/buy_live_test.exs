@@ -87,6 +87,21 @@ defmodule DockdWeb.BuyLiveTest do
     assert has_element?(view, "#price-#{ctx.available.id}", "R$ 99,90")
   end
 
+  test "the eShop price feeds the price, the estimate and Comprei without typing",
+       %{conn: conn} = ctx do
+    store_price_fixture(ctx.available_release, %{regular_cents: 27_990})
+    {:ok, view, _html} = live(conn, "/comprar")
+
+    assert has_element?(view, "#price-#{ctx.available.id}", "R$ 279,90")
+    assert has_element?(view, "#price-#{ctx.available.id}", "eShop")
+    assert has_element?(view, "#estimate-digital", "R$ 279,90")
+
+    view |> element("#buy-#{ctx.available.id}-button") |> render_click()
+
+    assert [%{price_cents: 27_990, format: :digital, retailer: "eShop"}] =
+             Purchasing.list_purchases(ctx.user, ctx.available_release.id)
+  end
+
   test "Comprei buys in one tap with the price seen, then Desfazer undoes it",
        %{conn: conn} = ctx do
     observe(ctx.user, ctx.available_release, :digital, 9_990)

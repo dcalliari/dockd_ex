@@ -61,7 +61,10 @@ defmodule Dockd.Planner do
     )
   end
 
-  @doc "Lists launched or undated desires with a dated price verdict."
+  @doc """
+  Lists launched or undated desires with a dated price verdict, judged on
+  `Purchasing.current_price/3`: the eShop price, or the user's last observation.
+  """
   def purchase_opportunities(%User{id: user_id}, today \\ Date.utc_today()) do
     releases =
       Repo.all(
@@ -79,7 +82,7 @@ defmodule Dockd.Planner do
 
     releases
     |> Enum.map(fn item ->
-      observation = Purchasing.latest_price_observation(%User{id: user_id}, item.release.id)
+      observation = Purchasing.current_price(%User{id: user_id}, item.release.id)
       verdict = purchase_verdict(item.entry, observation)
 
       item

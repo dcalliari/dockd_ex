@@ -1,0 +1,87 @@
+{
+ "hits": [
+  {
+   "platformCode": "NINTENDO_SWITCH",
+   "title": "Grand Theft Auto: The Trilogy – The Definitive Edition",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "BUNDLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70070000013113",
+   "objectID": "7700013113"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones e o Grande Círculo™",
+   "dlcType": null,
+   "eshopDetails": {
+    "productType": "TITLE"
+   },
+   "isUpgrade": false,
+   "nsuid": "70010000098812",
+   "objectID": "7100098812"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones e o Grande Círculo™: Pacote A Última Cruzada™ – Chicote de Domador",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000066564",
+   "objectID": "7500066564"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones e o Grande Círculo™: Pacote A Última Cruzada™ – Traje de Viagens",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000066563",
+   "objectID": "7500066563"
+  },
+  {
+   "platformCode": "NINTENDO_SWITCH_2",
+   "title": "Indiana Jones e o Grande Círculo™: A Ordem dos Gigantes",
+   "dlcType": "Individual",
+   "eshopDetails": {
+    "productType": "ADD_ON_CONTENT"
+   },
+   "isUpgrade": false,
+   "nsuid": "70050000066562",
+   "objectID": "7500066562"
+  }
+ ],
+ "nbHits": 5,
+ "page": 0,
+ "nbPages": 1,
+ "hitsPerPage": 10,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "Indiana Jones e o Grande Círculo",
+ "params": "query=Indiana+Jones+e+o+Grande+C%C3%ADrculo&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+ "renderingContent": {},
+ "processingTimeMS": 3,
+ "processingTimingsMS": {
+  "_request": {
+   "roundTrip": 101
+  },
+  "extensions": 1,
+  "extractDocsToPromoteDetails": {
+   "pinRetrieval": {
+    "total": 1
+   },
+   "total": 1
+  },
+  "total": 3
+ },
+ "serverTimeMS": 3
+}
