@@ -18,6 +18,14 @@ defmodule Dockd.Eshop do
 
   def price_batch, do: @price_batch
 
+  # Compose passes an unset variable as an empty string.
+  defp app_id do
+    case config(:algolia_app_id) do
+      id when is_binary(id) and id != "" -> id
+      _ -> @default_app_id
+    end
+  end
+
   @doc "Whether the title search has a key. Prices need none."
   def configured? do
     key = config(:algolia_search_key)
@@ -30,7 +38,7 @@ defmodule Dockd.Eshop do
   """
   def search(locale, query) when is_map_key(@indexes, locale) and is_binary(query) do
     if configured?() do
-      app_id = config(:algolia_app_id) || @default_app_id
+      app_id = app_id()
 
       :post
       |> request("https://#{app_id}-dsn.algolia.net/1/indexes/#{@indexes[locale]}/query",

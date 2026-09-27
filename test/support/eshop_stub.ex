@@ -53,6 +53,8 @@ defmodule Dockd.EshopStub do
     {:ok, body, conn} = Plug.Conn.read_body(conn)
     %{"query" => query} = Jason.decode!(body)
     ["1", "indexes", index, "query"] = conn.path_info
+    [app_id] = Plug.Conn.get_req_header(conn, "x-algolia-application-id")
+    assert conn.host == "#{app_id}-dsn.algolia.net" and app_id =~ ~r/^[A-Z0-9]+$/
     report(test_pid, conn, :search, {index, query})
 
     file = "#{index}--#{slug(query)}.json"

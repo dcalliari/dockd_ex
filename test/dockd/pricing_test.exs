@@ -70,6 +70,14 @@ defmodule Dockd.PricingTest do
       refute Repo.exists?(from l in StoreListing, where: like(l.external_id, "7005%"))
     end
 
+    test "an empty app id, as compose passes it, falls back to nintendo.com's" do
+      Application.put_env(:dockd, :eshop, EshopStub.config(algolia_app_id: ""))
+      game_with("Rayman Legends", [:switch])
+
+      assert {:ok, %{auto: 1}} = Pricing.match_eshop()
+      assert_received {:eshop_request, :search, {"store_game_pt_br", "Rayman Legends"}, _}
+    end
+
     test "stops searching once every platform has a safe match" do
       game_with("The Legend of Zelda: Tears of the Kingdom", [:switch, :switch_2])
       Pricing.match_eshop()
