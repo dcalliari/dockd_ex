@@ -97,6 +97,14 @@ Decidido em 27/09/2026 (`maquetes/compra.html`, caminho A). O Dockd não guarda 
 - **Totals** é a linha no topo de Comprar, no estilo do metadado: o total estimado da fila por mídia, Físico e Digital separados, cada um com a cobertura (`em 2 de 15`), e `Gasto em setembro` quando há compra no mês. Soma sem preço nenhum não aparece.
 - No histórico, `Comprou: R$ 79,90` marca o estado, e a posse que veio da compra não se repete como Registrou a posse.
 
+## Escolher na eShop
+
+Decidido em 27/09/2026 (`maquetes/casar-eshop.html`, caminho A). O preço da eShop vem da sincronização diária; quando ela não tem certeza de qual produto da loja é a versão, a versão espera em `/eshop`, uma tela fora dos três destinos, aberta pelo item `Escolher na eShop` do menu da conta com a contagem. O item some quando a fila esvazia. Qualquer conta decide, porque o produto da loja é dado do catálogo.
+
+- **MatchRow** é a versão (capa, título, plataforma e quantos candidatos) com até três produtos da loja embaixo, cada um com o preço no Brasil, `visto em` e `É este`. O título do produto abre a página dele no nintendo.com. `Não está na eShop` fecha a lista; é Button porque grava.
+- Escolher e recusar mudam a linha no lugar: a versão passa a mostrar o produto e o preço, ou `fora da eShop`, com `Desfazer`, que traz os candidatos de volta. Sem diálogo nem aviso. A linha resolvida fica até a próxima visita.
+- No celular o candidato ocupa duas linhas: o título inteiro, depois preço e botão.
+
 ## Histórico
 
 O log de eventos vira um trilho vertical, do mais recente ao mais antigo, uma linha por ação: verbo em negrito, tempo relativo em `ink-muted` ao lado (`há 3 dias`), data exata e versão embaixo em `t-meta`. Dois marcadores e só: `red` na ação que definiu o estado atual, `ink` nas demais. Sem ícone por tipo de ação, sem agrupamento por mês. Ver History.
