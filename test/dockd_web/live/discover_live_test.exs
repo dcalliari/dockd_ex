@@ -48,6 +48,34 @@ defmodule DockdWeb.DiscoverLiveTest do
     refute has_element?(view, "#result-#{ctx.candidate.id} .dk-status--add")
   end
 
+  test "clicking the current tag takes the game out, in place", %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/descobrir?q=listed")
+
+    view |> element("#status-result-#{ctx.listed.id} .dk-status-menu__current") |> render_click()
+
+    assert Library.get_entry_for_game(ctx.user, ctx.listed.id) == nil
+    assert has_element?(view, "#result-#{ctx.listed.id}:not([data-status]) .dk-status--add")
+  end
+
+  test "Backlog without ownership asks the version on the card", %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/descobrir?q=candidate")
+
+    view
+    |> element("#status-result-#{ctx.candidate.id} button[phx-value-status=backlog]")
+    |> render_click()
+
+    assert has_element?(view, "#status-result-#{ctx.candidate.id} .dk-status-menu__ask")
+
+    view
+    |> element(
+      "#status-result-#{ctx.candidate.id} button[phx-click=own][phx-value-media=digital]"
+    )
+    |> render_click()
+
+    assert has_element?(view, "#result-#{ctx.candidate.id}[data-status=backlog]")
+    refute has_element?(view, "#status-result-#{ctx.candidate.id} button[phx-value-status=quero]")
+  end
+
   test "the navigation search of other screens lands here", %{conn: conn} do
     conn = get(conn, "/descobrir", q: "else")
     assert html_response(conn, 200) =~ "Something else"

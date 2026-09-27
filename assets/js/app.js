@@ -8,32 +8,55 @@ import topbar from "../vendor/topbar"
 
 // O tema segue o sistema operacional: nenhum estado guardado no navegador.
 
-const StatusTray = {
+// StatusMenu (DockdComponents.status_menu): com mouse, apontar abre as opções e clicar na
+// etiqueta atual desmarca. No toque não há apontar: o primeiro toque abre, o segundo desmarca.
+// `data-open` é o servidor pedindo o menu aberto (URL com abrir, ou a pergunta da versão).
+const canHover = window.matchMedia("(hover: hover)")
+
+const StatusMenu = {
   mounted() {
-    const current = this.el.querySelector(":scope > .dk-status")
-    const options = this.el.querySelector(".dk-status-control__options")
-    const layout = () => {
-      if (current && options) options.style.paddingLeft = `${current.offsetWidth + 8}px`
-    }
-    layout()
-    if (document.fonts) document.fonts.ready.then(layout)
-    current?.addEventListener("click", () => {
-      const open = this.el.classList.toggle("is-open")
-      current.setAttribute("aria-expanded", String(open))
+    this.open = false
+    this.el.addEventListener("click", event => {
+      const current = event.target.closest(".dk-status-menu__current")
+      if (!current) {
+        if (event.target.closest("[phx-click]")) this.open = false
+        return
+      }
+      const shown = this.open || this.serverOpen() || canHover.matches
+      if (current.hasAttribute("phx-click") && shown) {
+        this.open = false
+        return
+      }
+      event.preventDefault()
+      event.stopPropagation()
+      this.open = !(this.open || this.serverOpen())
+      if (!this.open && this.serverOpen()) this.pushEvent("close_status", {})
+      this.apply()
     })
-    this.close = event => {
-      if (!this.el.contains(event.target)) this.el.classList.remove("is-open")
+    this.closeOutside = event => {
+      if (this.el.contains(event.target)) return
+      if (this.serverOpen()) this.pushEvent("close_status", {})
+      if (this.open) {
+        this.open = false
+        this.apply()
+      }
     }
-    document.addEventListener("click", this.close)
+    document.addEventListener("click", this.closeOutside)
+    this.apply()
   },
   updated() {
-    const current = this.el.querySelector(":scope > .dk-status")
-    const options = this.el.querySelector(".dk-status-control__options")
-    if (current && options) options.style.paddingLeft = `${current.offsetWidth + 8}px`
-    this.el.classList.remove("is-open")
+    this.apply()
   },
   destroyed() {
-    document.removeEventListener("click", this.close)
+    document.removeEventListener("click", this.closeOutside)
+  },
+  serverOpen() {
+    return this.el.dataset.open === "true"
+  },
+  apply() {
+    const open = this.open || this.serverOpen()
+    this.el.classList.toggle("is-open", open)
+    this.el.querySelector(".dk-status-menu__current")?.setAttribute("aria-expanded", String(open))
   },
 }
 
@@ -55,7 +78,7 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, StatusTray, NavSearch},
+  hooks: {...colocatedHooks, StatusMenu, NavSearch},
 })
 
 // Show progress bar on live navigation and form submits

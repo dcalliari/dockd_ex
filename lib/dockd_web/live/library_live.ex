@@ -2,14 +2,18 @@ defmodule DockdWeb.LibraryLive do
   @moduledoc """
   Biblioteca: every game the owner relates to, one status each, as a grid of covers. At
   the same address a visitor gets the catalog showcase (`DockdWeb.Showcase`).
+
+  A status change keeps the grid still: the card stays where it is with its new tag, and a
+  cleared one shows + Adicionar until the tabs or filters change.
   """
   use DockdWeb, :live_view
 
-  alias Dockd.{Catalog, Library}
+  alias Dockd.Library
   alias Dockd.Library.Shelf
-  alias DockdWeb.{Showcase, UserAuth}
+  alias DockdWeb.{GameEvents, Showcase, UserAuth}
 
   @filters ~w(tab plat media sort)
+  @game_events GameEvents.events()
 
   @impl true
   def mount(_params, _session, %{assigns: %{current_scope: nil}} = socket) do
@@ -24,12 +28,9 @@ defmodule DockdWeb.LibraryLive do
     items = Shelf.list(user)
 
     {:ok,
-     assign(socket,
-       page_title: "Biblioteca",
-       user: user,
-       items: items,
-       counts: Shelf.counts(items)
-     )}
+     socket
+     |> assign(page_title: "Biblioteca", user: user, items: items, counts: Shelf.counts(items))
+     |> GameEvents.init()}
   end
 
   @impl true
@@ -43,35 +44,20 @@ defmodule DockdWeb.LibraryLive do
   end
 
   @impl true
-  def handle_event("set_status", %{"game_id" => game_id, "status" => status}, socket) do
-    game = Catalog.get_game!(game_id)
-    status = Enum.find(statuses(), &(Atom.to_string(&1) == status))
-
-    case Library.set_status(socket.assigns.user, game, status) do
-      {:ok, _} -> {:noreply, reload(socket)}
-      {:error, :needs_ownership} -> {:noreply, push_navigate(socket, to: ~p"/jogos/#{game.id}")}
-      {:error, _} -> {:noreply, put_flash(socket, :error, "Não foi possível mudar o status.")}
-    end
-  end
-
-  def handle_event("remove", %{"game_id" => game_id}, socket) do
-    {:ok, :ok} = Library.remove_game(socket.assigns.user, Catalog.get_game!(game_id))
-    {:noreply, reload(socket)}
-  end
+  def handle_event(event, params, socket) when event in @game_events,
+    do: GameEvents.handle_event(event, params, socket, &reload/1)
 
   defp reload(socket) do
     items = Shelf.list(socket.assigns.user)
+    fresh = Map.new(items, &{&1.game.id, &1})
 
-    assign(socket,
-      items: items,
-      counts: Shelf.counts(items),
-      visible: Shelf.filter(items, socket.assigns.filters)
-    )
+    visible =
+      Enum.map(socket.assigns.visible, fn item ->
+        Map.get(fresh, item.game.id, %{item | status: nil, entry: nil, ownerships: []})
+      end)
+
+    assign(socket, items: items, counts: Shelf.counts(items), visible: visible)
   end
-
-  # Backlog stays available without ownership: the game page asks the version.
-  defp available(%{ownerships: []}), do: statuses()
-  defp available(_owned), do: statuses() -- [:quero]
 
   defp compact(filters),
     do: filters |> Enum.reject(fn {_k, v} -> v in ["", nil, "todos", "titulo"] end) |> Map.new()
@@ -133,7 +119,7 @@ defmodule DockdWeb.LibraryLive do
             path={&library_path(@filters, "sort", &1)}
           />
         </div>
-        <span id="library-count" class="dk-count">{count_label(length(@visible))}</span>
+        <span id="library-count" class="dk-count">{count_label(Enum.count(@visible, & &1.status))}</span>
       </div>
 
       <div :if={@visible != []} id="library-grid" class="dk-grid">
@@ -152,19 +138,10 @@ defmodule DockdWeb.LibraryLive do
           <.status_menu
             id={"status-#{item.game.id}"}
             status={item.status}
-            available={available(item)}
+            options={Library.status_options(item)}
             values={%{game_id: item.game.id}}
+            ask={GameEvents.ask(@asking, item)}
           />
-          <button
-            type="button"
-            class="dk-card__trash"
-            aria-label={"Tirar #{item.game.title} da biblioteca"}
-            phx-click="remove"
-            phx-value-game_id={item.game.id}
-            data-confirm={"Tirar #{item.game.title} da biblioteca?"}
-          >
-            <.icon name="hero-trash" />
-          </button>
           <.link navigate={~p"/jogos/#{item.game.id}"} class="dk-card__text">
             <span class="dk-card__title">{item.game.title}</span>
             <span class="dk-card__meta">

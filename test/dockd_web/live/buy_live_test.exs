@@ -94,4 +94,14 @@ defmodule DockdWeb.BuyLiveTest do
     assert Shelf.item(ctx.user, ctx.available).status == :backlog
     assert [%{price_cents: 9_990}] = Purchasing.list_purchases(ctx.user, ctx.available_release.id)
   end
+
+  test "Comprei without a price says the same as on the game page", %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/comprar")
+
+    view |> element("#queue-#{ctx.available.id} button", "Comprei") |> render_click()
+    view |> form("#buy-form-#{ctx.available.id}", %{"price" => ""}) |> render_submit()
+
+    assert has_element?(view, "#flash-group", "Informe o preço pago.")
+    assert has_element?(view, "#queue-#{ctx.available.id}")
+  end
 end

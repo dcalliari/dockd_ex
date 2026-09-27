@@ -8,7 +8,7 @@ test("a new game goes from Descobrir to the Biblioteca as Quero and can be start
   const results = page.getByTestId("discover-results").or(page.locator("#discover-results"));
   const candidate = results.locator(".dk-card").filter({ hasText: "Discovery Candidate" });
   await expect(candidate).toBeVisible();
-  await candidate.locator("summary").click();
+  await candidate.locator(".dk-status-menu__current").hover();
   await candidate.locator("button[phx-value-status=quero]").click();
   await expect(candidate.locator(".dk-status--quero")).toBeVisible();
 
@@ -21,7 +21,8 @@ test("a new game goes from Descobrir to the Biblioteca as Quero and can be start
   await expect(page.getByRole("heading", { name: "Discovery Candidate" })).toBeVisible();
   await expect(page.locator("#buy-button")).toBeVisible();
 
-  await page.locator("button.dk-status--jogando[phx-click=set_status]").click({ force: true });
+  await page.locator("#game-status .dk-status-menu__current").hover();
+  await page.locator("#game-status button.dk-status--jogando").click();
   await expect(page.locator("#game-history")).toContainText("Começou a jogar");
 
   await page.locator("#game-back").click();

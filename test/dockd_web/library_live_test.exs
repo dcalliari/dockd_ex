@@ -5,6 +5,7 @@ defmodule DockdWeb.LibraryLiveTest do
   import Dockd.DomainFixtures
 
   alias Dockd.Library
+  alias Dockd.Library.Shelf
 
   setup :register_and_log_in_user
 
@@ -87,8 +88,8 @@ defmodule DockdWeb.LibraryLiveTest do
     assert html =~ ~s(class="dk-bottomnav")
   end
 
-  test "changes a status straight from the grid", %{conn: conn} = ctx do
-    {:ok, view, _html} = live(conn, "/")
+  test "changes a status straight from the grid, and the card stays put", %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/?tab=backlog")
 
     view
     |> element("#status-#{ctx.owned.id} button[phx-value-status=jogando]")
@@ -96,21 +97,68 @@ defmodule DockdWeb.LibraryLiveTest do
 
     assert has_element?(view, "#shelf-#{ctx.owned.id}[data-status=jogando]")
     assert has_element?(view, "#library-tabs a", "Jogando 2")
-    assert has_element?(view, "#status-#{ctx.owned.id} button[phx-value-status=quero][disabled]")
+    refute has_element?(view, "#status-#{ctx.owned.id} button[phx-value-status=quero]")
 
-    assert has_element?(
+    refute has_element?(
              view,
-             "#status-#{ctx.wanted.id} button[phx-value-status=backlog]:not([disabled])"
+             "#status-#{ctx.owned.id} .dk-status-menu__options .dk-status--jogando"
+           )
+
+    refute has_element?(view, "#shelf-#{ctx.wanted.id}")
+
+    {:ok, view, _html} = live(conn, "/")
+    assert has_element?(view, "#status-#{ctx.wanted.id} button[phx-value-status=backlog]")
+
+    refute has_element?(
+             view,
+             "#status-#{ctx.wanted.id} .dk-status-menu__options .dk-status--quero"
            )
   end
 
-  test "takes a game out of the library", %{conn: conn} = ctx do
+  test "clicking the current tag takes the game out, in place", %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/")
+    refute has_element?(view, ".dk-card__trash")
+
+    view |> element("#status-#{ctx.owned.id} .dk-status-menu__current") |> render_click()
+
+    assert Shelf.item(ctx.user, ctx.owned).status == nil
+    assert Library.get_entry_for_game(ctx.user, ctx.owned.id) == nil
+    assert has_element?(view, "#shelf-#{ctx.owned.id}:not([data-status]) .dk-status--add")
+    assert has_element?(view, "#library-tabs a", "Todos 2")
+    assert has_element?(view, "#library-tabs a", "Backlog 0")
+
+    view
+    |> element("#status-#{ctx.owned.id} button[phx-value-status=quero]")
+    |> render_click()
+
+    assert has_element?(view, "#shelf-#{ctx.owned.id}[data-status=quero]")
+    assert has_element?(view, "#library-tabs a", "Todos 3")
+
+    view |> element("#library-tabs a", "Backlog") |> render_click()
+    refute has_element?(view, "#shelf-#{ctx.owned.id}")
+  end
+
+  test "Backlog without ownership asks the version on the card", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/")
 
-    view |> element("#shelf-#{ctx.wanted.id} button.dk-card__trash") |> render_click()
+    view
+    |> element("#status-#{ctx.wanted.id} button[phx-value-status=backlog]")
+    |> render_click()
 
-    refute has_element?(view, "#shelf-#{ctx.wanted.id}")
-    assert has_element?(view, "#library-count", "2 jogos")
-    assert Library.get_entry_for_game(ctx.user, ctx.wanted.id) == nil
+    assert has_element?(
+             view,
+             "#status-#{ctx.wanted.id}.is-open .dk-status-menu__ask",
+             "Tem em qual versão?"
+           )
+
+    refute has_element?(view, "#status-#{ctx.owned.id} .dk-status-menu__ask")
+
+    view
+    |> element("#status-#{ctx.wanted.id} button[phx-click=own][phx-value-media=physical]")
+    |> render_click()
+
+    assert has_element?(view, "#shelf-#{ctx.wanted.id}[data-status=backlog]")
+    refute has_element?(view, ".dk-status-menu__ask")
+    assert [%{ownership_type: :physical}] = Shelf.item(ctx.user, ctx.wanted).ownerships
   end
 end

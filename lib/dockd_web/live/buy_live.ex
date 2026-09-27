@@ -6,6 +6,9 @@ defmodule DockdWeb.BuyLive do
 
   alias Dockd.Library.Shelf
   alias Dockd.{Purchasing, Wallet}
+  alias DockdWeb.GameEvents
+
+  @game_events GameEvents.events()
 
   @impl true
   def mount(_params, _session, socket) do
@@ -21,7 +24,7 @@ defmodule DockdWeb.BuyLive do
       user
       |> Shelf.list()
       |> Enum.filter(&(&1.status == :quero))
-      |> Enum.map(&Map.put(&1, :first, first_release(&1)))
+      |> Enum.map(&Map.put(&1, :first, Shelf.first_release(&1)))
 
     {dated, undated} = Enum.split_with(items, & &1.first.release_date)
 
@@ -49,15 +52,6 @@ defmodule DockdWeb.BuyLive do
     )
   end
 
-  defp first_release(%Shelf{releases: releases}) do
-    releases
-    |> Enum.sort_by(&{is_nil(&1.release_date), &1.release_date}, fn
-      {nil_a, a}, {nil_b, b} when nil_a == nil_b and not is_nil(a) -> Date.compare(a, b) != :gt
-      {nil_a, _}, {nil_b, _} -> nil_a <= nil_b
-    end)
-    |> List.first()
-  end
-
   # A year-only date sorts after every dated release of the same year.
   defp sort_key(%{first: %{release_date: date, release_date_precision: :year}}),
     do: {date.year, 13, 0, ""}
@@ -66,6 +60,9 @@ defmodule DockdWeb.BuyLive do
     do: {date.year, date.month, date.day, game.title}
 
   @impl true
+  def handle_event(event, params, socket) when event in @game_events,
+    do: GameEvents.handle_event(event, params, socket, &load/1)
+
   def handle_event("reserve_form", %{"game_id" => game_id}, socket),
     do: {:noreply, assign(socket, form: {:reserve, game_id})}
 
@@ -86,23 +83,6 @@ defmodule DockdWeb.BuyLive do
     else
       :error -> {:noreply, put_flash(socket, :error, "Valor inválido. Use 199,90.")}
       _ -> {:noreply, put_flash(socket, :error, "Informe o valor reservado.")}
-    end
-  end
-
-  def handle_event("save_purchase", %{"release_id" => release_id} = params, socket) do
-    with {:ok, cents} when is_integer(cents) <- parse_money(params["price"]),
-         {:ok, _} <-
-           Purchasing.create_purchase(socket.assigns.user, %{
-             release_id: release_id,
-             format: params["format"] || "digital",
-             price_cents: cents,
-             purchased_at: DateTime.utc_now(),
-             retailer: if(params["retailer"] in [nil, ""], do: "eShop", else: params["retailer"])
-           }) do
-      {:noreply, socket |> assign(form: nil) |> load()}
-    else
-      :error -> {:noreply, put_flash(socket, :error, "Preço inválido. Use 199,90.")}
-      _ -> {:noreply, put_flash(socket, :error, "Informe o preço pago.")}
     end
   end
 
@@ -196,40 +176,12 @@ defmodule DockdWeb.BuyLive do
             <.btn size="sm" phx-click="buy_form" phx-value-game_id={item.game.id}>Comprei</.btn>
           </div>
         </div>
-        <form
+        <.purchase_form
           :if={@form == {:buy, item.game.id}}
           id={"buy-form-#{item.game.id}"}
-          class="dk-inline-form"
-          phx-submit="save_purchase"
-        >
-          <select :if={length(item.releases) > 1} name="release_id" aria-label="Versão">
-            <option :for={release <- item.releases} value={release.id}>
-              {enum_label(release.platform)}
-            </option>
-          </select>
-          <input
-            :if={length(item.releases) == 1}
-            type="hidden"
-            name="release_id"
-            value={item.first.id}
-          />
-          <input
-            type="text"
-            name="price"
-            inputmode="decimal"
-            placeholder="199,90"
-            aria-label="Preço pago"
-            value={default_price(@observations[item.game.id])}
-            autofocus
-          />
-          <select name="format" aria-label="Mídia">
-            <option value="digital">Digital</option>
-            <option value="physical">Físico</option>
-          </select>
-          <input type="text" name="retailer" placeholder="eShop" aria-label="Onde comprou" />
-          <.btn type="submit" size="sm" variant="primary">Comprei</.btn>
-          <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
-        </form>
+          releases={[item.first | List.delete(item.releases, item.first)]}
+          price={default_price(@observations[item.game.id])}
+        />
       </div>
       <.empty_state :if={@available == []}>Nada disponível na fila.</.empty_state>
 

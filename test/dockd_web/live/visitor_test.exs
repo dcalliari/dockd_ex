@@ -58,7 +58,7 @@ defmodule DockdWeb.VisitorTest do
       href = ~p"/entrar?#{%{volta: volta}}"
 
       assert has_element?(view, "#result-#{ctx.upcoming.id} a.dk-status-menu[href='#{href}']")
-      refute has_element?(view, "details.dk-status-menu")
+      refute has_element?(view, "div.dk-status-menu")
 
       {:ok, entrar, _html} = live(conn, href)
       assert has_element?(entrar, "#entrar-form input[name=volta][value='#{volta}']")
@@ -84,15 +84,16 @@ defmodule DockdWeb.VisitorTest do
       assert has_element?(view, "#release-#{ctx.release.id}", "Switch")
       refute has_element?(view, "#release-#{ctx.release.id}", "false")
 
+      volta = "/jogos/#{ctx.recent.id}?abrir=status"
+
       assert has_element?(
                view,
-               "#game-sign-in[href='#{~p"/entrar?#{%{volta: "/jogos/#{ctx.recent.id}"}}"}']",
+               "#game-sign-in[href='#{~p"/entrar?#{%{volta: volta}}"}']",
                "+ Adicionar"
              )
 
-      refute has_element?(view, ".dk-status-control button")
+      refute has_element?(view, "#game-status")
       refute has_element?(view, "#buy-button")
-      refute has_element?(view, "#remove-game")
       refute has_element?(view, ".dk-row__end")
       refute has_element?(view, "#game-history")
     end
@@ -112,15 +113,24 @@ defmodule DockdWeb.VisitorTest do
       {:ok, view, _html} =
         live(conn, ~p"/descobrir?#{%{q: "visitor", abrir: "result-#{ctx.upcoming.id}"}}")
 
-      assert has_element?(view, "#status-result-#{ctx.upcoming.id}[open]")
-      refute has_element?(view, "#status-result-#{ctx.recent.id}[open]")
+      assert has_element?(view, "#status-result-#{ctx.upcoming.id}.is-open[data-open=true]")
+      refute has_element?(view, "#status-result-#{ctx.recent.id}.is-open")
 
       view
       |> element("#status-result-#{ctx.upcoming.id} button[phx-value-status=quero]")
       |> render_click()
 
       assert has_element?(view, "#result-#{ctx.upcoming.id}[data-status=quero]")
-      refute has_element?(view, "details.dk-status-menu[open]")
+      refute has_element?(view, ".dk-status-menu.is-open")
+    end
+
+    test "finds the game page control open, and closing it keeps it closed",
+         %{conn: conn} = ctx do
+      {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.recent.id}?abrir=status")
+      assert has_element?(view, "#game-status.is-open")
+
+      render_hook(view, "close_status", %{})
+      refute has_element?(view, "#game-status.is-open")
     end
 
     test "the home page is the library", %{conn: conn} do

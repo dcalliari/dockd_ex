@@ -11,7 +11,9 @@ defmodule DockdWeb.DiscoverLive do
 
   alias Dockd.{Catalog, Library}
   alias Dockd.Library.Shelf
-  alias DockdWeb.UserAuth
+  alias DockdWeb.{GameEvents, UserAuth}
+
+  @game_events GameEvents.events()
 
   # Showcase lists by their `lista` value; the first one opens Descobrir without a search.
   @lists [
@@ -29,6 +31,7 @@ defmodule DockdWeb.DiscoverLive do
     {:ok,
      socket
      |> assign(page_title: "Descobrir", user: user)
+     |> GameEvents.init()
      |> UserAuth.halt_visitor_events(["search"])}
   end
 
@@ -37,32 +40,15 @@ defmodule DockdWeb.DiscoverLive do
     q = params |> Map.get("q", "") |> String.trim()
     list = List.keyfind(@lists, params["lista"], 0, hd(@lists))
 
-    {:noreply, socket |> assign(q: q, list: list, open: params["abrir"]) |> search()}
+    {:noreply, socket |> assign(q: q, list: list) |> GameEvents.init(params["abrir"]) |> search()}
   end
 
   @impl true
   def handle_event("search", %{"q" => q}, socket),
     do: {:noreply, push_patch(socket, to: ~p"/descobrir?#{%{q: String.trim(q)}}")}
 
-  def handle_event("set_status", %{"status" => status} = params, socket) do
-    status = Enum.find(statuses(), &(Atom.to_string(&1) == status))
-    socket = assign(socket, open: nil)
-
-    with {:ok, game} <- resolve_game(params),
-         {:ok, _} <- Library.set_status(socket.assigns.user, game, status) do
-      {:noreply, search(socket)}
-    else
-      {:error, :needs_ownership} ->
-        {:ok, game} = resolve_game(params)
-        {:noreply, push_navigate(socket, to: ~p"/jogos/#{game.id}")}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Não foi possível adicionar.")}
-    end
-  end
-
-  defp resolve_game(%{"game_id" => game_id}), do: {:ok, Catalog.get_game!(game_id)}
-  defp resolve_game(%{"igdb_id" => igdb_id}), do: Catalog.import_igdb(String.to_integer(igdb_id))
+  def handle_event(event, params, socket) when event in @game_events,
+    do: GameEvents.handle_event(event, params, socket, &search/1)
 
   defp search(%{assigns: %{q: "", list: {_, list, _}}} = socket),
     do: assign(socket, results: with_status(Catalog.showcase(list), socket), source: :showcase)
@@ -72,9 +58,19 @@ defmodule DockdWeb.DiscoverLive do
     assign(socket, results: with_status(results, socket), source: source)
   end
 
+  # Each result carries its game's shelf item fields, so the status control reads it like
+  # a Biblioteca card.
   defp with_status(results, %{assigns: %{user: user}}) do
-    shelf = if user, do: user |> Shelf.list() |> Map.new(&{&1.game.id, &1.status}), else: %{}
-    Enum.map(results, &Map.put(&1, :status, &1.game && shelf[&1.game.id]))
+    shelf = if user, do: user |> Shelf.list() |> Map.new(&{&1.game.id, &1}), else: %{}
+
+    Enum.map(results, fn result ->
+      item = result.game && shelf[result.game.id]
+
+      Map.merge(result, %{
+        status: item && item.status,
+        ownerships: (item && item.ownerships) || []
+      })
+    end)
   end
 
   @doc "The DOM id of a result card, also the `abrir` value that opens its menu."
@@ -147,14 +143,10 @@ defmodule DockdWeb.DiscoverLive do
             :if={@user}
             id={"status-#{result_id(result)}"}
             status={result.status}
-            available={
-              if(result.status in [:backlog, :jogando, :zerado, :larguei],
-                do: statuses() -- [:quero],
-                else: statuses()
-              )
-            }
+            options={Library.status_options(result)}
             values={menu_values(result)}
-            open={@open == result_id(result)}
+            open={@status_open == result_id(result)}
+            ask={GameEvents.ask(@asking, result)}
           />
           <span class="dk-card__text">
             <span class="dk-card__title">{result.title}</span>

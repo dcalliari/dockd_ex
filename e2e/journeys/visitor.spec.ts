@@ -33,9 +33,25 @@ test("the tag leads to Entrar and back to the same card with its menu open", asy
 
   await expect(page).toHaveURL(/\/descobrir\?.*abrir=result-/);
   await expect(page).toHaveURL(/[?&]q=Visitor\+Pick/);
-  const menu = card.locator("details.dk-status-menu[open]");
-  await expect(menu).toBeVisible();
+  const menu = card.locator(".dk-status-menu.is-open");
+  await expect(menu.locator(".dk-status-menu__options")).toBeVisible();
   await menu.locator("button[phx-value-status=quero]").click();
   await expect(card.locator(".dk-status--quero")).toBeVisible();
-  await expect(card.locator("details.dk-status-menu[open]")).toHaveCount(0);
+  await expect(card.locator(".dk-status-menu.is-open")).toHaveCount(0);
+});
+
+test("the game page tag leads to Entrar and back with the control open", async ({ page }) => {
+  await page.goto("/descobrir?q=Visitor+Pick");
+  await page.locator("#discover-results .dk-card").filter({ hasText: "Visitor Pick" }).locator(".dk-poster").click();
+  await page.locator("#game-sign-in").click();
+  await expect(page).toHaveURL(/\/entrar\?volta=/);
+
+  await fillEntrar(page, owner.password);
+
+  await expect(page).toHaveURL(/\/jogos\/.*abrir=status/);
+  const control = page.locator("#game-status.is-open");
+  await expect(control.locator(".dk-status-menu__options")).toBeVisible();
+  await control.locator("button.dk-status--jogando").click();
+  await expect(page.locator("#game-status .dk-status-menu__current .dk-status--jogando")).toBeVisible();
+  await expect(page.locator("#game-status.is-open")).toHaveCount(0);
 });

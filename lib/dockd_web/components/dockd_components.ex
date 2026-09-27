@@ -10,7 +10,7 @@ defmodule DockdWeb.DockdComponents do
   use DockdWeb, :verified_routes
   import DockdWeb.CoreComponents, only: [icon: 1, translate_error: 1]
 
-  @statuses [:quero, :backlog, :jogando, :zerado, :larguei]
+  @statuses Dockd.Library.Shelf.statuses()
   @status_labels %{
     quero: "Quero",
     backlog: "Backlog",
@@ -486,65 +486,157 @@ defmodule DockdWeb.DockdComponents do
   end
 
   @doc """
-  The status chip as a control: click opens the five statuses in a small menu.
+  The status control, the same on every screen that shows a game's status.
 
-  `status` nil renders an add chip. `available` lists the statuses the caller can apply
-  directly; the others render muted and disabled. Every option emits `set_status` with the
-  given `values` (`phx-value-*` pairs) plus `phx-value-status`.
+  The current StatusChip is the trigger: pointing at it opens the other statuses below it,
+  and clicking it clears the status, which takes the game out of the library. On a touch
+  screen the first tap opens and the second clears (hook `StatusMenu`). `status` nil renders
+  the add chip. `options` are the statuses offered (`Dockd.Library.status_options/1`); every
+  button sends its event with the `values` pairs. `ask` swaps the options for the versions
+  the game can be owned in, after Backlog on a game without ownership.
   """
   attr :id, :string, required: true
   attr :status, :atom, default: nil
-  attr :available, :list, default: @statuses
+  attr :options, :list, required: true
   attr :values, :map, default: %{}
   attr :size, :string, default: "sm", values: ~w(md sm)
-  attr :open, :boolean, default: false
+  attr :since, :any, default: nil, doc: "when the status was set, shown on the game page"
+  attr :open, :boolean, default: false, doc: "opened by the URL (`abrir`)"
+  attr :ask, :list, default: nil, doc: "`%{label, release_id, media}` choices to own"
 
   def status_menu(assigns) do
+    assigns =
+      assign(assigns,
+        phx_values: Map.new(assigns.values, fn {k, v} -> {"phx-value-#{k}", v} end),
+        shown: assigns.open or assigns.ask != nil
+      )
+
     ~H"""
-    <details id={@id} class="dk-status-menu" open={@open}>
-      <summary aria-label="Mudar status">
-        <.status_chip :if={@status} status={@status} size={@size} />
-        <span :if={!@status} class={["dk-status", "dk-status--add", @size == "sm" && "dk-status--sm"]}>
+    <div
+      id={@id}
+      class={["dk-status-menu", @shown && "is-open"]}
+      phx-hook="StatusMenu"
+      data-open={to_string(@shown)}
+    >
+      <button
+        :if={@status}
+        type="button"
+        class="dk-status-menu__current"
+        aria-haspopup="true"
+        aria-expanded={to_string(@shown)}
+        aria-label={"#{status_label(@status)}: tirar da biblioteca"}
+        title="Tirar da biblioteca"
+        phx-click="set_status"
+        phx-value-status=""
+        {@phx_values}
+      >
+        <.status_chip status={@status} size={@size} />
+      </button>
+      <button
+        :if={!@status}
+        type="button"
+        class="dk-status-menu__current"
+        aria-haspopup="true"
+        aria-expanded={to_string(@shown)}
+      >
+        <span class={["dk-status", "dk-status--add", @size == "sm" && "dk-status--sm"]}>
           + Adicionar
         </span>
-      </summary>
-      <ul class="dk-filter__menu" role="menu">
-        <li :for={option <- statuses()}>
-          <button
-            type="button"
-            role="menuitemradio"
-            aria-current={to_string(option == @status)}
-            disabled={option not in @available}
-            phx-click={
-              Phoenix.LiveView.JS.remove_attribute("open", to: "##{@id}")
-              |> Phoenix.LiveView.JS.push("set_status")
-            }
-            phx-value-status={option}
-            {Map.new(@values, fn {k, v} -> {"phx-value-#{k}", v} end)}
-          >
-            <i class={option}></i>{status_label(option)}
-          </button>
-        </li>
-      </ul>
-    </details>
+      </button>
+      <span :if={@since} class="dk-status-menu__since">desde {date_pt_br(@since)}</span>
+      <div :if={!@ask} class="dk-status-menu__options" role="group" aria-label="Mudar status">
+        <button
+          :for={option <- @options}
+          type="button"
+          class={["dk-status", "dk-status--#{option}"]}
+          phx-click="set_status"
+          phx-value-status={option}
+          {@phx_values}
+        >
+          {status_label(option)}
+        </button>
+      </div>
+      <div :if={@ask} class="dk-status-menu__options dk-status-menu__ask" role="group">
+        <span>Tem em qual versão?</span>
+        <button
+          :for={choice <- @ask}
+          type="button"
+          phx-click="own"
+          phx-value-release_id={choice.release_id}
+          phx-value-media={choice.media}
+          {@phx_values}
+        >
+          {choice.label}
+        </button>
+        <button type="button" class="dk-link" phx-click="close_status">Cancelar</button>
+      </div>
+    </div>
     """
   end
 
   @doc """
   The add chip for a visitor, in the place of `status_menu/1`: a link to Entrar that comes
-  back to `back`. Nothing is saved until the account picks a status.
+  back to `back`, where the same control opens. Nothing is saved until the account picks a
+  status.
   """
   attr :back, :string, required: true
+  attr :id, :string, default: nil
+  attr :size, :string, default: "sm", values: ~w(md sm)
 
   def status_link(assigns) do
     ~H"""
     <.link
+      id={@id}
       href={DockdWeb.UserAuth.sign_in_path(@back)}
       class="dk-status-menu"
       title="Entrar para adicionar"
     >
-      <span class="dk-status dk-status--add dk-status--sm">+ Adicionar</span>
+      <span class={["dk-status", "dk-status--add", @size == "sm" && "dk-status--sm"]}>
+        + Adicionar
+      </span>
     </.link>
+    """
+  end
+
+  @doc "A release by platform, and its edition when it is not the standard one."
+  def release_label(release) do
+    if release.edition in [nil, "", "Edição padrão"],
+      do: enum_label(release.platform),
+      else: "#{enum_label(release.platform)} · #{release.edition}"
+  end
+
+  @doc """
+  The Comprei form, the same in Comprar and on the game page: the version when there is
+  more than one, the price paid (the last seen price by default), media and store.
+  """
+  attr :id, :string, required: true
+  attr :releases, :list, required: true, doc: "the first one is preselected"
+  attr :price, :string, default: ""
+
+  def purchase_form(assigns) do
+    ~H"""
+    <form id={@id} class="dk-inline-form" phx-submit="save_purchase">
+      <select :if={length(@releases) > 1} name="release_id" aria-label="Versão">
+        <option :for={release <- @releases} value={release.id}>{release_label(release)}</option>
+      </select>
+      <input :if={length(@releases) == 1} type="hidden" name="release_id" value={hd(@releases).id} />
+      <input
+        type="text"
+        name="price"
+        inputmode="decimal"
+        placeholder="199,90"
+        aria-label="Preço pago"
+        value={@price}
+        autofocus
+      />
+      <select name="format" aria-label="Mídia">
+        <option value="digital">Digital</option>
+        <option value="physical">Físico</option>
+      </select>
+      <input type="text" name="retailer" placeholder="eShop" aria-label="Onde comprou" />
+      <.btn type="submit" size="sm" variant="primary">Comprei</.btn>
+      <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
+    </form>
     """
   end
 
@@ -653,40 +745,6 @@ defmodule DockdWeb.DockdComponents do
         <div class="dk-history__who">{meta([date_pt_br(item.at) | List.wrap(item[:who])])}</div>
       </li>
     </ol>
-    """
-  end
-
-  attr :status, :atom, default: nil
-  attr :since, DateTime, default: nil
-  attr :options, :list, default: @statuses
-  attr :id, :string, default: "status-control"
-
-  def status_control(assigns) do
-    ~H"""
-    <div id={@id} class="dk-status-control" phx-hook="StatusTray" phx-update="ignore">
-      <button
-        :if={@status}
-        type="button"
-        class={["dk-status", "dk-status--#{@status}"]}
-        aria-haspopup="true"
-        aria-expanded="false"
-      >
-        {status_label(@status)}
-      </button>
-      <span :if={@since} class="dk-status-control__since">desde {date_pt_br(@since)}</span>
-      <div class="dk-status-control__options" role="group" aria-label="Mudar status">
-        <button
-          :for={option <- @options}
-          :if={option != @status}
-          type="button"
-          class={["dk-status", "dk-status--#{option}"]}
-          phx-click="set_status"
-          phx-value-status={option}
-        >
-          {status_label(option)}
-        </button>
-      </div>
-    </div>
     """
   end
 end
