@@ -83,6 +83,32 @@ defmodule Dockd.IGDBSyncTest do
     assert switch_2.digital_available
   end
 
+  test "prefers a future regional date over a past preferred-region date" do
+    future = Date.add(Date.utc_today(), 30)
+    future_unix = future |> DateTime.new!(~T[00:00:00], "Etc/UTC") |> DateTime.to_unix()
+    past_unix = ~D[2025-08-20] |> DateTime.new!(~T[00:00:00], "Etc/UTC") |> DateTime.to_unix()
+
+    stub_igdb(%{
+      "id" => 42,
+      "name" => "Steins;Gate Reboot",
+      "platforms" => [%{"id" => 130}],
+      "release_dates" => [
+        %{"platform" => 130, "region" => 8, "category" => 0, "date" => past_unix},
+        %{"platform" => 130, "region" => 1, "category" => 0, "date" => future_unix}
+      ]
+    })
+
+    {:ok, game} =
+      Catalog.create_game(%{
+        title: "Steins;Gate Reboot",
+        availability: :multiplatform,
+        igdb_id: 42
+      })
+
+    assert {:ok, _} = Catalog.sync_igdb()
+    assert [%{release_date: ^future}] = Catalog.list_releases(game.id)
+  end
+
   test "a year-only date stays a year on every sync" do
     stub_igdb(%{
       "id" => 338_104,

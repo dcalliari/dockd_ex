@@ -288,8 +288,9 @@ defmodule Dockd.Catalog do
       }
     end)
     |> Enum.min_by(fn date ->
-      {region_priority(date.region), if(is_nil(date.date), do: 1, else: 0),
-       date.date || ~D[9999-12-31], date.raw_date || 9_223_372_036_854_775_807}
+      {if(future_date?(date.date), do: 0, else: 1), region_priority(date.region),
+       if(is_nil(date.date), do: 1, else: 0), date.date || ~D[9999-12-31],
+       date.raw_date || 9_223_372_036_854_775_807}
     end)
   end
 
@@ -330,6 +331,9 @@ defmodule Dockd.Catalog do
   end
 
   defp truncate_date(date, :tbd), do: date
+
+  defp future_date?(%Date{} = date), do: Date.compare(date, Date.utc_today()) == :gt
+  defp future_date?(_), do: false
 
   defp region_priority(8), do: 0
   defp region_priority(10), do: 1
