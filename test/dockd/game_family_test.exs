@@ -290,7 +290,7 @@ defmodule Dockd.GameFamilyTest do
     test "the same game: the candidate merges into the game", ctx do
       {:ok, _} = Library.set_status(ctx.user, ctx.definitive, :quero)
 
-      assert {:ok, game} = Catalog.confirm_game_link(ctx.link)
+      assert {:ok, game, _undo} = Catalog.confirm_game_link(ctx.link)
       assert game.id == ctx.aoc.id
       assert Enum.map(game.releases, & &1.platform) |> Enum.sort() == [:switch, :switch_2]
       refute Repo.get(Game, ctx.definitive.id)
@@ -299,6 +299,26 @@ defmodule Dockd.GameFamilyTest do
       assert Repo.get_by!(Entry, user_id: ctx.user.id).game_id == ctx.aoc.id
       assert Catalog.list_review_links() == []
       assert Catalog.get_game_by_igdb_id(400_001).id == ctx.aoc.id
+    end
+
+    test "Desfazer puts the two games back and asks again", ctx do
+      {:ok, _} = Library.set_status(ctx.user, ctx.definitive, :quero)
+      before = snapshot()
+
+      assert {:ok, _game, undo} = Catalog.confirm_game_link(ctx.link)
+      refute Repo.get(Game, ctx.definitive.id)
+
+      assert :ok = Catalog.undo_merge(undo)
+      assert snapshot() == before
+      assert [%{candidate: %{id: candidate}}] = Catalog.list_review_links()
+      assert candidate == ctx.definitive.id
+    end
+
+    test "Desfazer after another game asks again", ctx do
+      {:ok, rejected} = Catalog.reject_game_link(ctx.link)
+      assert {:ok, %{match: :review}} = Catalog.reopen_game_link(rejected)
+      assert Catalog.review_link_count() == 1
+      assert {:error, :not_rejected} = Catalog.reopen_game_link(link(400_001))
     end
 
     test "another game: rejected for good", ctx do
@@ -512,6 +532,44 @@ defmodule Dockd.GameFamilyTest do
       assert Library.Shelf.item(user, game).status == :jogando
     end
 
+    test "Desfazer puts back every row the merge touched", %{user: user} do
+      totk = game_fixture(%{title: "Zelda TotK", igdb_id: 119_388})
+      switch = release_fixture(totk, %{platform: :switch, physical_available: true})
+      loser = game_fixture(%{title: "Zelda TotK NS2", igdb_id: 338_073})
+      loser_switch = release_fixture(loser, %{platform: :switch, physical_available: true})
+      loser_switch_2 = release_fixture(loser, %{platform: :switch_2})
+
+      {:ok, _} =
+        Library.set_status(user, totk, :backlog,
+          ownership: %{release_id: switch.id, ownership_type: :physical}
+        )
+
+      Repo.insert!(%Ownership{
+        user_id: user.id,
+        release_id: loser_switch.id,
+        ownership_type: :physical,
+        acquired_at: ~U[2025-01-01 00:00:00.000000Z]
+      })
+
+      Repo.insert!(%ReleaseVeto{user_id: user.id, release_id: loser_switch.id})
+      Repo.insert!(%ReleaseVeto{user_id: user.id, release_id: switch.id})
+      {:ok, _} = purchase_fixture(user, loser_switch_2, %{price_cents: 43_990})
+      store_price_fixture(loser_switch_2, %{regular_cents: 43_990})
+      store_price_fixture(switch, %{regular_cents: 38_990})
+      Repo.insert!(%StoreListing{release_id: loser_switch.id, store: :eshop_br, match: :review})
+      {:ok, _} = Library.create_entry(user, %{game_id: loser.id, play_state: :playing})
+
+      link =
+        Repo.insert!(%GameLink{igdb_id: 338_073, game_id: totk.id, kind: :port, match: :review})
+
+      before = snapshot()
+
+      assert {:ok, _game, undo} = Catalog.confirm_game_link(link)
+      assert snapshot() != before
+      assert :ok = Catalog.undo_merge(undo)
+      assert snapshot() == before
+    end
+
     test "a store listing in review gives way to an accepted one" do
       winner = game_fixture(%{title: "Winner"})
       loser = game_fixture(%{title: "Loser"})
@@ -530,6 +588,26 @@ defmodule Dockd.GameFamilyTest do
     test "a game never merges into itself" do
       game = game_fixture()
       assert {:error, :same_game} = Catalog.merge_games(game, game)
+    end
+  end
+
+  # Every row a merge can touch, in a stable order.
+  defp snapshot do
+    for schema <- [
+          Game,
+          Release,
+          GameLink,
+          Entry,
+          Ownership,
+          ReleaseVeto,
+          Purchase,
+          PriceObservation,
+          Event,
+          StoreListing,
+          StorePrice
+        ],
+        into: %{} do
+      {schema, schema |> Repo.all() |> Enum.map(&Map.drop(&1, [:__meta__])) |> Enum.sort()}
     end
   end
 

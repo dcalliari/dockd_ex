@@ -850,6 +850,10 @@ defmodule Dockd.Catalog do
   def merge_games(%Game{id: id}, %Game{id: id}, _opts), do: {:error, :same_game}
 
   def merge_games(%Game{} = winner, %Game{} = loser, opts) do
+    with {:ok, game, _undo} <- merge(winner, loser, opts), do: {:ok, game}
+  end
+
+  defp merge(winner, loser, opts) do
     link = %{
       kind: Keyword.get(opts, :kind, :merged),
       match: Keyword.get(opts, :match, :confirmed)
@@ -861,9 +865,26 @@ defmodule Dockd.Catalog do
     |> Ecto.Multi.run(:games, fn repo, _ -> Merge.game(repo, winner.id, loser, link) end)
     |> Repo.transaction()
     |> case do
-      {:ok, _} -> {:ok, get_game!(winner.id)}
-      {:error, _step, reason, _} -> {:error, reason}
+      {:ok, %{releases: releases, entries: entries, games: games}} ->
+        {:ok, get_game!(winner.id), %Merge.Undo{ops: releases ++ entries ++ games}}
+
+      {:error, _step, reason, _} ->
+        {:error, reason}
     end
+  end
+
+  @doc """
+  Puts two merged games back as they were, from what `confirm_game_link/1` returned:
+  the link that asked is in review again. Only while the screen that merged them is
+  open, and before anything else touched them.
+  """
+  def undo_merge(%Merge.Undo{ops: ops}) do
+    case Repo.transaction(fn -> Merge.undo(Repo, ops) end) do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  rescue
+    error in [Ecto.ConstraintError, Postgrex.Error] -> {:error, error}
   end
 
   @doc "Links waiting for a person: `%{link:, game:, candidate:}`, the candidate being the game that may be `game`."
@@ -890,13 +911,22 @@ defmodule Dockd.Catalog do
   @doc "A game link."
   def get_game_link!(id), do: Repo.get!(GameLink, id)
 
-  @doc "It is the same game: the candidate merges into the linked game."
+  @doc """
+  It is the same game: the candidate merges into the linked game. Returns the game and
+  what `undo_merge/1` needs to put them apart again.
+  """
   def confirm_game_link(%GameLink{match: :review} = link) do
     game = Repo.get!(Game, link.game_id)
 
     case Repo.get_by(Game, igdb_id: link.igdb_id) do
-      nil -> link |> GameLink.changeset(%{match: :confirmed}) |> Repo.update()
-      candidate -> merge_games(game, candidate, kind: link.kind, match: :confirmed)
+      nil ->
+        with {:ok, _} <- link |> GameLink.changeset(%{match: :confirmed}) |> Repo.update() do
+          ops = [{:set, GameLink, [link.id], [match: :review, updated_at: link.updated_at]}]
+          {:ok, get_game!(game.id), %Merge.Undo{ops: ops}}
+        end
+
+      candidate ->
+        merge(game, candidate, kind: link.kind, match: :confirmed)
     end
   end
 
@@ -907,6 +937,12 @@ defmodule Dockd.Catalog do
     do: link |> GameLink.changeset(%{match: :rejected}) |> Repo.update()
 
   def reject_game_link(%GameLink{}), do: {:error, :not_in_review}
+
+  @doc "Desfazer after It is another game: the link waits for review again."
+  def reopen_game_link(%GameLink{match: :rejected} = link),
+    do: link |> GameLink.changeset(%{match: :review}) |> Repo.update()
+
+  def reopen_game_link(%GameLink{}), do: {:error, :not_rejected}
 
   def match_igdb(opts \\ []) do
     if Dockd.IGDB.configured?() do
