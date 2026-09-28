@@ -5,12 +5,15 @@ defmodule Dockd.Catalog do
   A release synchronized from IGDB is an eShop release, so it is always marked
   as digitally available. Physical availability remains false unless it was
   already known locally; IGDB does not provide a reliable physical inventory
-  signal for the catalog.
+  signal for the catalog. A standard release on a platform that IGDB does not list for
+  the game, nor for the entries joined to it, is dropped by the sync when nothing refers
+  to it.
   """
   import Ecto.Query
   require Logger
   alias Dockd.Catalog.{Game, GameLink, IgdbFamily, Merge, Release}
   alias Dockd.Library.{Ownership, ReleaseVeto}
+  alias Dockd.Pricing.StoreListing
   alias Dockd.Purchasing.{PriceObservation, Purchase}
   alias Dockd.Repo
 
@@ -54,19 +57,23 @@ defmodule Dockd.Catalog do
 
   @doc "Deletes a release when no user data refers to it."
   def delete_release(%Release{} = release) do
-    blockers =
-      [
-        {:ownership, Ownership},
-        {:purchase, Purchase},
-        {:price_observation, PriceObservation},
-        {:veto, ReleaseVeto}
-      ]
-      |> Enum.filter(fn {_name, schema} ->
-        Repo.exists?(from record in schema, where: record.release_id == ^release.id)
-      end)
-      |> Enum.map(&elem(&1, 0))
+    case blockers(release) do
+      [] -> Repo.delete(release)
+      blockers -> {:error, {:in_use, blockers}}
+    end
+  end
 
-    if blockers == [], do: Repo.delete(release), else: {:error, {:in_use, blockers}}
+  defp blockers(release) do
+    [
+      {:ownership, Ownership},
+      {:purchase, Purchase},
+      {:price_observation, PriceObservation},
+      {:veto, ReleaseVeto}
+    ]
+    |> Enum.filter(fn {_name, schema} ->
+      Repo.exists?(from record in schema, where: record.release_id == ^release.id)
+    end)
+    |> Enum.map(&elem(&1, 0))
   end
 
   @doc """
@@ -118,6 +125,7 @@ defmodule Dockd.Catalog do
       :ok -> :ok
     end
 
+    drop_unlisted_releases(game, external)
     suggestion = suggested_availability(external)
 
     %{
@@ -151,6 +159,53 @@ defmodule Dockd.Catalog do
         release
         |> Release.changeset(attrs)
         |> Repo.update()
+    end
+  end
+
+  # A platform's standard release that neither the game's IGDB entry nor an entry joined
+  # to it lists, as one registered by hand before the sync, is not a version of the game.
+  # It goes away unless someone owns, bought, priced or vetoed it, or the eShop sells it.
+  defp drop_unlisted_releases(game, external) do
+    listed = Enum.map(external_releases(external), &elem(&1, 0))
+
+    unlisted =
+      Repo.all(
+        from r in Release,
+          where:
+            r.game_id == ^game.id and r.edition == ^Release.standard_edition() and
+              r.platform not in ^listed
+      )
+
+    if unlisted != [] do
+      joined = joined_platforms(game)
+
+      for release <- unlisted,
+          release.platform not in joined,
+          blockers(release) == [],
+          not Repo.exists?(
+            from l in StoreListing,
+              where: l.release_id == ^release.id and l.match in [:auto, :confirmed]
+          ),
+          do: Repo.delete!(release)
+    end
+  end
+
+  # The platforms of the IGDB entries joined to the game; every platform when IGDB does
+  # not answer, so nothing is dropped on a guess.
+  defp joined_platforms(game) do
+    ids =
+      Repo.all(
+        from l in GameLink,
+          where: l.game_id == ^game.id and l.match in ^GameLink.accepted(),
+          select: l.igdb_id
+      )
+
+    with [_ | _] <- ids,
+         {:ok, %{body: entries}} <- Dockd.IGDB.get_games(ids) do
+      entries |> Enum.flat_map(&external_releases/1) |> Enum.map(&elem(&1, 0))
+    else
+      [] -> []
+      _error -> [:switch, :switch_2]
     end
   end
 

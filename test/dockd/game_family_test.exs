@@ -332,6 +332,71 @@ defmodule Dockd.GameFamilyTest do
     end
   end
 
+  describe "sync_igdb/0 and the platforms of a game" do
+    # The Switch 2 remake as IGDB gave it on 2026-09-28: no Switch release.
+    @ocarina %{
+      "id" => 405_460,
+      "name" => "The Legend of Zelda: Ocarina of Time",
+      "platforms" => [%{"id" => 508}],
+      "parent_game" => 1029,
+      "release_dates" => [%{"platform" => 508, "date" => 1_793_836_800, "date_format" => 0}]
+    }
+
+    setup do
+      stub_igdb([@ocarina | @entries])
+
+      game =
+        game_fixture(%{
+          title: "The Legend of Zelda: Ocarina of Time",
+          availability: :nintendo_exclusive,
+          igdb_id: 405_460
+        })
+
+      switch =
+        release_fixture(game, %{platform: :switch, physical_available: true})
+
+      %{game: game, switch: switch}
+    end
+
+    test "a release on a platform IGDB does not list for the game goes away", ctx do
+      assert {:ok, _} = Catalog.sync_igdb()
+      assert releases(ctx.game) == [{:switch_2, "Edição padrão", ~D[2026-11-05]}]
+    end
+
+    test "an unlisted release someone bought, or the eShop sells, stays", ctx do
+      {:ok, _} = purchase_fixture(ctx.user, ctx.switch)
+      assert {:ok, _} = Catalog.sync_igdb()
+      assert Enum.any?(releases(ctx.game), &match?({:switch, _, _}, &1))
+
+      other = game_fixture(%{title: "Sold", igdb_id: 9_001})
+      sold = release_fixture(other, %{platform: :switch_2})
+      store_price_fixture(sold)
+
+      solo = %{
+        "id" => 9_001,
+        "name" => "Sold",
+        "platforms" => [%{"id" => 130}],
+        "release_dates" => [%{"platform" => 130, "date" => 1_683_849_600}]
+      }
+
+      stub_igdb([solo, @ocarina | @entries])
+      assert {:ok, _} = Catalog.sync_igdb()
+      assert Enum.any?(releases(other), &match?({:switch_2, _, _}, &1))
+    end
+
+    test "a release an entry joined to the game lists stays", ctx do
+      Repo.insert!(%GameLink{
+        igdb_id: 119_388,
+        game_id: ctx.game.id,
+        kind: :merged,
+        match: :confirmed
+      })
+
+      assert {:ok, _} = Catalog.sync_igdb()
+      assert Enum.any?(releases(ctx.game), &match?({:switch, _, _}, &1))
+    end
+  end
+
   describe "resolve_families/1" do
     test "gives a game its Switch 2 release from the Switch 2 Edition entry" do
       game = game_fixture(%{title: "Zelda TotK", igdb_id: 119_388})
