@@ -331,7 +331,12 @@ defmodule DockdWeb.DockdComponents do
   end
 
   defp destinations,
-    do: [{"Biblioteca", "/"}, {"Comprar", "/comprar"}, {"Descobrir", "/descobrir"}]
+    do: [
+      {"Início", "/"},
+      {"Biblioteca", "/biblioteca"},
+      {"Comprar", "/comprar"},
+      {"Descobrir", "/descobrir"}
+    ]
 
   @doc """
   The one-line footer of every screen but Entrar: small wordmark, Sobre and the IGDB

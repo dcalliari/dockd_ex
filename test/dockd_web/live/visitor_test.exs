@@ -133,10 +133,11 @@ defmodule DockdWeb.VisitorTest do
       refute has_element?(view, "#game-status.is-open")
     end
 
-    test "the home page is the library", %{conn: conn} do
+    test "the home page shows the account rails", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/")
 
-      assert has_element?(view, "#library-tabs")
+      assert has_element?(view, ".dk-nav__link[aria-current=page]", "Início")
+      refute has_element?(view, "#library-tabs")
       refute has_element?(view, "#strip-lancamentos")
       refute has_element?(view, ".dk-nav__guest")
     end

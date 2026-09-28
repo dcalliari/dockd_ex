@@ -6,6 +6,7 @@ import { signIn } from "./sign-in";
 
 test("the tag clears the status on the grid and on the game page, in place", async ({ page }) => {
   await signIn(page);
+  await page.goto("/biblioteca");
   await expect(page.locator(".dk-card__trash")).toHaveCount(0);
 
   const card = page.locator("#library-grid .dk-card").filter({ hasText: "Owned Game 5" });
@@ -44,6 +45,7 @@ test.describe("on a phone", () => {
 
   test("first tap opens, second clears, and nothing overflows", async ({ page }) => {
     await signIn(page);
+    await page.goto("/biblioteca");
     const card = page.locator("#library-grid .dk-card").filter({ hasText: "Future Veto" });
     const menu = card.locator(".dk-status-menu");
 

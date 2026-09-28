@@ -6,7 +6,7 @@ export interface StatusChip { status: Status; size?: "md" | "sm" }
 export interface MediaTag { media: Media }
 export interface Button { variant: "primary" | "secondary"; size?: "md" | "sm"; disabled?: boolean; label: string }
 export interface Tabs { tabs: { label: string; count: number; selected?: boolean; href: string }[] }
-export interface NavBar { current: "Biblioteca" | "Comprar" | "Descobrir"; search?: string }
+export interface NavBar { current: "Início" | "Biblioteca" | "Comprar" | "Descobrir"; search?: string }
 export interface SearchField { placeholder: string; value?: string }
 export interface GameCard { title: string; coverUrl?: string; meta: string; status?: Status; href: string }
 export interface GameRow { title: string; lead: { coverUrl?: string } | { date: DateBlock }; meta: string; end: Price | StatusChip | Button }

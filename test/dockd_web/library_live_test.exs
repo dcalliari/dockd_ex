@@ -45,7 +45,7 @@ defmodule DockdWeb.LibraryLiveTest do
   end
 
   test "shows one derived status per game and the tab counts", %{conn: conn} = ctx do
-    {:ok, view, _html} = live(conn, "/")
+    {:ok, view, _html} = live(conn, "/biblioteca")
 
     assert has_element?(view, "#shelf-#{ctx.wanted.id}[data-status=quero]")
     assert has_element?(view, "#shelf-#{ctx.owned.id}[data-status=backlog]")
@@ -59,29 +59,39 @@ defmodule DockdWeb.LibraryLiveTest do
   end
 
   test "filters by tab, platform and media through the URL", %{conn: conn} = ctx do
-    {:ok, view, _html} = live(conn, "/?tab=backlog")
+    {:ok, view, _html} = live(conn, "/biblioteca?tab=backlog")
     assert has_element?(view, "#shelf-#{ctx.owned.id}")
     refute has_element?(view, "#shelf-#{ctx.wanted.id}")
 
     view |> element("#filter-plat a", "Switch 2") |> render_click()
-    assert_patch(view, "/?plat=switch_2&tab=backlog")
+    assert_patch(view, "/biblioteca?plat=switch_2&tab=backlog")
     assert has_element?(view, "#filter-plat.dk-filter--active summary b", "Switch 2")
     assert has_element?(view, "#library-empty", "Nada aqui.")
 
-    {:ok, view, _html} = live(conn, "/?media=physical")
+    {:ok, view, _html} = live(conn, "/biblioteca?media=physical")
     assert has_element?(view, "#shelf-#{ctx.playing.id}")
     refute has_element?(view, "#shelf-#{ctx.owned.id}")
   end
 
-  test "the navigation search always goes to Descobrir", %{conn: conn} do
+  test "the account home separates current games from the library", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/")
+
+    assert has_element?(view, "#home-playing", "Jogando agora")
+    assert has_element?(view, "#home-playing-#{ctx.playing.id}[data-status=jogando]")
+    assert has_element?(view, "#home-upcoming-#{ctx.wanted.id}[data-status=quero]")
+    assert has_element?(view, ".dk-nav__link[href='/biblioteca']", "Biblioteca")
+    refute has_element?(view, "#library-tabs")
+  end
+
+  test "the navigation search always goes to Descobrir", %{conn: conn} do
+    {:ok, view, _html} = live(conn, "/biblioteca")
 
     assert has_element?(view, "#nav-search-form[action='/descobrir']")
     refute has_element?(view, "#nav-search-form[phx-change]")
   end
 
   test "has no theme toggle and no sidebar", %{conn: conn} do
-    {:ok, _view, html} = live(conn, "/")
+    {:ok, _view, html} = live(conn, "/biblioteca")
 
     refute html =~ "phx:set-theme"
     refute html =~ "dockd-sidebar"
@@ -89,7 +99,7 @@ defmodule DockdWeb.LibraryLiveTest do
   end
 
   test "changes a status straight from the grid, and the card stays put", %{conn: conn} = ctx do
-    {:ok, view, _html} = live(conn, "/?tab=backlog")
+    {:ok, view, _html} = live(conn, "/biblioteca?tab=backlog")
 
     view
     |> element("#status-#{ctx.owned.id} button[phx-value-status=jogando]")
@@ -106,7 +116,7 @@ defmodule DockdWeb.LibraryLiveTest do
 
     refute has_element?(view, "#shelf-#{ctx.wanted.id}")
 
-    {:ok, view, _html} = live(conn, "/")
+    {:ok, view, _html} = live(conn, "/biblioteca")
     assert has_element?(view, "#status-#{ctx.wanted.id} button[phx-value-status=backlog]")
 
     refute has_element?(
@@ -116,7 +126,7 @@ defmodule DockdWeb.LibraryLiveTest do
   end
 
   test "clicking the current tag takes the game out, in place", %{conn: conn} = ctx do
-    {:ok, view, _html} = live(conn, "/")
+    {:ok, view, _html} = live(conn, "/biblioteca")
     refute has_element?(view, ".dk-card__trash")
 
     view |> element("#status-#{ctx.owned.id} .dk-status-menu__current") |> render_click()
@@ -139,7 +149,7 @@ defmodule DockdWeb.LibraryLiveTest do
   end
 
   test "Backlog without ownership asks the version on the card", %{conn: conn} = ctx do
-    {:ok, view, _html} = live(conn, "/")
+    {:ok, view, _html} = live(conn, "/biblioteca")
 
     view
     |> element("#status-#{ctx.wanted.id} button[phx-value-status=backlog]")

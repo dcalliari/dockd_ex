@@ -29,7 +29,7 @@ defmodule DockdWeb.Router do
 
     live_session :default,
       on_mount: [{DockdWeb.UserAuth, :mount_current_scope}, DockdWeb.AccountMenu] do
-      live "/", LibraryLive, :index
+      live "/", HomeLive, :index
       live "/descobrir", DiscoverLive, :index
       live "/jogos/:id", GameLive, :show
       live "/sobre", AboutLive, :show
@@ -40,6 +40,7 @@ defmodule DockdWeb.Router do
       scope "/" do
         pipe_through :require_authenticated_user
 
+        live "/biblioteca", LibraryLive, :index
         live "/comprar", BuyLive, :index
         live "/conferir", CatalogReviewLive, :index
         live "/eshop", CatalogReviewLive, :index

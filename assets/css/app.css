@@ -381,7 +381,7 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 /* Strip: uma linha de capas na vitrine do visitante; no celular rola de lado */
 .dk-strip { display: grid; grid-auto-flow: column; grid-auto-columns: 104px; gap: var(--space-3); overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
 .dk-strip .dk-card { scroll-snap-align: start; }
-@media (min-width: 768px) { .dk-strip { grid-auto-columns: minmax(0, 1fr); overflow: visible; } }
+@media (min-width: 768px) { .dk-strip { grid-auto-columns: minmax(0, 1fr); overflow: visible; } .dk-home-strip { grid-auto-flow: unset; grid-template-columns: repeat(auto-fit, minmax(var(--cover-min), 160px)); } }
 
 /* GameRow */
 .dk-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }

@@ -35,11 +35,12 @@ test("a new account starts with an empty library of its own", async ({ page }) =
   await page.locator("#entrar-submit").click();
 
   await expect(page).toHaveURL("http://localhost:4460/");
-  await expect(page.locator("#library-grid .dk-card")).toHaveCount(0);
+  await expect(page.locator("#library-grid")).toHaveCount(0);
   await expect(page.locator("#account-menu summary")).toContainText("Nova");
 });
 
 test("the owner's library is still there after signing in", async ({ page }) => {
   await signIn(page);
+  await page.goto("/biblioteca");
   await expect(page.locator("#library-grid .dk-card").filter({ hasText: "Owned Adventure" })).toBeVisible();
 });

@@ -51,7 +51,9 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 
 ## Navegação
 
-Acima de 768px: uma barra superior de `nav-height` com o wordmark, os destinos Biblioteca, Comprar e Descobrir, e a busca à direita. Abaixo: a barra superior fica com wordmark e lupa, e os três destinos vão para uma barra inferior fixa de `nav-height`, só texto, com o mesmo indicador `red` do destino ativo. Não há barra lateral, menu hambúrguer nem ícone nos destinos.
+Acima de 768px: uma barra superior de `nav-height` com o wordmark, os destinos Início, Biblioteca, Comprar e Descobrir, e a busca à direita. Abaixo: a barra superior fica com wordmark e lupa, e os quatro destinos vão para uma barra inferior fixa de `nav-height`, só texto, com o mesmo indicador `red` do destino ativo. Não há barra lateral, menu hambúrguer nem ícone nos destinos.
+
+Para a conta, Início é `/`: faixas pessoais de Jogando agora, Em promoção e Da sua lista. Biblioteca é `/biblioteca`, a grade com abas e filtros. Descobrir continua em `/descobrir`, para busca e listas do catálogo. A escolha A está em `maquetes/inicio-conta.html`.
 
 ### Busca única no topo
 

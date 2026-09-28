@@ -26,7 +26,7 @@ defmodule DockdWeb.GameLiveTest do
   test "shows the hero, the caption and the versions", %{conn: conn} = ctx do
     {:ok, view, html} = live(conn, ~p"/jogos/#{ctx.game.id}")
 
-    assert has_element?(view, "#game-back[href='/']")
+    assert has_element?(view, "#game-back[href='/biblioteca']")
     assert has_element?(view, "#game-hero h1", "Metroid Prime 4")
     assert has_element?(view, "#game-meta", "Retro Studios · 2027")
     assert html =~ "Exclusivo"

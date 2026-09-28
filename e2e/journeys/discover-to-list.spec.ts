@@ -12,7 +12,7 @@ test("a new game goes from Descobrir to the Biblioteca as Quero and can be start
   await candidate.locator("button[phx-value-status=quero]").click();
   await expect(candidate.locator(".dk-status--quero")).toBeVisible();
 
-  await page.goto("/?tab=quero");
+  await page.goto("/biblioteca?tab=quero");
   const card = page.locator("#library-grid .dk-card").filter({ hasText: "Discovery Candidate" });
   await expect(card).toBeVisible();
   await expect(card.locator(".dk-status--quero")).toBeVisible();
@@ -26,6 +26,6 @@ test("a new game goes from Descobrir to the Biblioteca as Quero and can be start
   await expect(page.locator("#game-history")).toContainText("Começou a jogar");
 
   await page.locator("#game-back").click();
-  await expect(page).toHaveURL("http://localhost:4460/");
+  await expect(page).toHaveURL("http://localhost:4460/biblioteca");
   await expect(page.locator("#library-grid .dk-card").filter({ hasText: "Discovery Candidate" }).locator(".dk-status--jogando")).toBeVisible();
 });

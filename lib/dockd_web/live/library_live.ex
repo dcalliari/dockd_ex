@@ -8,6 +8,8 @@ defmodule DockdWeb.LibraryLive do
   """
   use DockdWeb, :live_view
 
+  on_mount {DockdWeb.UserAuth, :require_authenticated}
+
   alias Dockd.Library
   alias Dockd.Library.Shelf
   alias DockdWeb.{GameEvents, Showcase, UserAuth}
@@ -62,7 +64,8 @@ defmodule DockdWeb.LibraryLive do
   defp compact(filters),
     do: filters |> Enum.reject(fn {_k, v} -> v in ["", nil, "todos", "titulo"] end) |> Map.new()
 
-  defp library_path(filters, key, value), do: ~p"/?#{compact(Map.put(filters, key, value))}"
+  defp library_path(filters, key, value),
+    do: ~p"/biblioteca?#{compact(Map.put(filters, key, value))}"
 
   defp tab_label("todos"), do: "Todos"
   defp tab_label("jogando"), do: "Jogando"
@@ -160,7 +163,7 @@ defmodule DockdWeb.LibraryLive do
         Sua biblioteca está vazia. <.link navigate={~p"/descobrir"}>Descobrir jogos</.link>
       </.empty_state>
       <.empty_state :if={@visible == [] and @items != []} id="library-empty">
-        Nada aqui. <.link patch={~p"/"}>Ver todos</.link>
+        Nada aqui. <.link patch={~p"/biblioteca"}>Ver todos</.link>
       </.empty_state>
     </Layouts.app>
     """

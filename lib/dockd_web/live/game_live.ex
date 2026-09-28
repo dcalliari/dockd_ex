@@ -311,7 +311,7 @@ defmodule DockdWeb.GameLive do
       current={@user && "Biblioteca"}
     >
       <p class="dk-back">
-        <.link :if={@user} id="game-back" navigate={~p"/"} class="dk-link">
+        <.link :if={@user} id="game-back" navigate={~p"/biblioteca"} class="dk-link">
           <.icon name="hero-arrow-left" /> Biblioteca
         </.link>
         <.link :if={!@user} id="game-back" navigate={~p"/descobrir"} class="dk-link">
