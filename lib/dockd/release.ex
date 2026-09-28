@@ -31,6 +31,28 @@ defmodule Dockd.Release do
     with_repo(fn -> Dockd.Accounts.reset_password(email, password) end)
   end
 
+  @doc ~S"""
+  Prints what joining the catalog's IGDB families does (an edition's game moved to its
+  parent, the Switch 2 Edition as a release, duplicates merged, doubtful ones queued),
+  without changing anything: `bin/dockd eval 'Dockd.Release.families()'`. The daily
+  sync applies it on its own; `families(apply: true)` applies it now.
+  """
+  def families(opts \\ []) do
+    {:ok, _} = Application.ensure_all_started(:req)
+    dry_run = not Keyword.get(opts, :apply, false)
+
+    with_repo(fn -> dry_run |> resolve_families() |> print_steps() end)
+  end
+
+  defp resolve_families(dry_run), do: Dockd.Catalog.resolve_families(dry_run: dry_run)
+
+  defp print_steps(steps) when is_list(steps) do
+    Enum.each(steps, &IO.puts("#{&1.step}\t#{&1.game.title}\t#{&1.igdb_id}\t#{&1.kind}"))
+    length(steps)
+  end
+
+  defp print_steps(error), do: error
+
   defp with_repo(fun) do
     load_app()
     [repo] = repos()

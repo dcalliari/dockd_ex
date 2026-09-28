@@ -100,7 +100,13 @@ defmodule Dockd.LibraryStatusTest do
 
   test "the first release is the one out first, undated last", %{game: game} = ctx do
     undated = release_fixture(game, %{platform: :switch_2, release_date: nil})
-    later = release_fixture(game, %{platform: :switch_2, release_date: ~D[2025-06-05]})
+
+    later =
+      release_fixture(game, %{
+        platform: :switch_2,
+        edition: "Deluxe",
+        release_date: ~D[2025-06-05]
+      })
 
     item = Shelf.item(nil, game)
     assert Shelf.first_release(item).id == ctx.release.id

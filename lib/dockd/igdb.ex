@@ -6,6 +6,9 @@ defmodule Dockd.IGDB do
   @switch_2_id 508
   @token_margin 60_000
 
+  # What says an entry is another entry's edition, Switch 2 Edition, remaster or port.
+  @family_fields "version_parent,version_title,parent_game,game_type"
+
   def switch_platform_id, do: @switch_id
   def switch_2_platform_id, do: @switch_2_id
 
@@ -25,12 +28,12 @@ defmodule Dockd.IGDB do
       do:
         post(
           "games",
-          "search \"#{escape(title)}\"; fields id,name,alternative_names.name,cover.image_id,summary,platforms.id,platforms.name,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher; where platforms = (#{@switch_id},#{@switch_2_id}); limit 20;"
+          "search \"#{escape(title)}\"; fields id,name,alternative_names.name,cover.image_id,summary,platforms.id,platforms.name,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,#{@family_fields}; where platforms = (#{@switch_id},#{@switch_2_id}); limit 20;"
         ),
       else: {:error, :not_configured}
   end
 
-  @showcase_fields "fields id,name,cover.image_id,platforms.id,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher"
+  @showcase_fields "fields id,name,cover.image_id,platforms.id,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,#{@family_fields}"
 
   @doc """
   A showcase list of Switch and Switch 2 works with a cover:
@@ -49,8 +52,10 @@ defmodule Dockd.IGDB do
       else: {:error, :not_configured}
   end
 
+  # An edition is never a showcase card of its own.
   defp showcase_where(:upcoming),
-    do: "first_release_date > #{System.os_time(:second)}; sort first_release_date asc"
+    do:
+      "first_release_date > #{System.os_time(:second)} & version_parent = null; sort first_release_date asc"
 
   defp showcase_where(:recent), do: released_since(90)
   defp showcase_where(:popular), do: released_since(365)
@@ -66,9 +71,36 @@ defmodule Dockd.IGDB do
       do:
         post(
           "games",
-          "where id = (#{Enum.join(ids, ",")}); fields id,name,alternative_names.name,cover.image_id,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.id,platforms.name,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform; limit #{length(ids)};"
+          "where id = (#{Enum.join(ids, ",")}); fields id,name,alternative_names.name,cover.image_id,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.id,platforms.name,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,#{@family_fields}; limit #{length(ids)};"
         ),
       else: {:error, :not_configured}
+  end
+
+  @children_page 500
+
+  @doc """
+  The Switch and Switch 2 entries that are an edition (`version_parent`) or a child
+  (`parent_game`: remaster, expanded game, port, Switch 2 Edition) of any of `ids`,
+  every page of them.
+  """
+  def children(ids) when is_list(ids) and ids != [] do
+    if configured?(), do: children(Enum.join(ids, ","), 0, []), else: {:error, :not_configured}
+  end
+
+  defp children(ids, offset, found) do
+    query =
+      "where (version_parent = (#{ids}) | parent_game = (#{ids})) & platforms = (#{@switch_id},#{@switch_2_id}); fields id,name,platforms.id,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,#{@family_fields}; sort id asc; limit #{@children_page}; offset #{offset};"
+
+    case post("games", query) do
+      {:ok, %{body: page}} when length(page) == @children_page ->
+        children(ids, offset + @children_page, found ++ page)
+
+      {:ok, %{body: page}} ->
+        {:ok, found ++ page}
+
+      error ->
+        error
+    end
   end
 
   defp escape(value), do: String.replace(value, "\\", "\\\\") |> String.replace("\"", "\\\"")

@@ -2,10 +2,12 @@ defmodule Dockd.Catalog.Release do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @standard "Edição padrão"
+
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "releases" do
     field :platform, Ecto.Enum, values: [:switch, :switch_2]
-    field :edition, :string
+    field :edition, :string, default: @standard
     field :release_date, :date
 
     field :release_date_precision, Ecto.Enum,
@@ -18,6 +20,15 @@ defmodule Dockd.Catalog.Release do
     belongs_to :game, Dockd.Catalog.Game, type: :binary_id
     timestamps(type: :utc_datetime_usec)
   end
+
+  @doc """
+  The edition of a platform's base release, the one IGDB creates. Every other edition
+  is a release the store sells under its own name.
+  """
+  def standard_edition, do: @standard
+
+  @doc "Whether a release is the platform's standard edition."
+  def standard?(%__MODULE__{edition: edition}), do: edition in [nil, "", @standard]
 
   @doc """
   The media a release is sold in, physical first. A release that declares neither is
@@ -45,9 +56,17 @@ defmodule Dockd.Catalog.Release do
       :physical_is_key_card
     ])
     |> put_default_date_precision()
+    |> put_standard_edition()
     |> validate_required([:platform, :game_id])
     |> assoc_constraint(:game)
     |> unique_constraint([:game_id, :platform, :edition])
+  end
+
+  defp put_standard_edition(changeset) do
+    case get_field(changeset, :edition) do
+      edition when edition in [nil, ""] -> put_change(changeset, :edition, @standard)
+      edition -> put_change(changeset, :edition, String.trim(edition))
+    end
   end
 
   defp put_default_date_precision(changeset) do
