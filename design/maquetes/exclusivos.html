@@ -518,12 +518,12 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 /* Revisão: lugares em linhas, caminhos em colunas, cada célula com claro sobre escuro */
 .page { width: min(100%, 1680px); }
 .review-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-5); }
-.paths { position: sticky; top: 0; z-index: 8; display: grid; grid-template-columns: 96px repeat(3, minmax(0, 1fr)); gap: var(--space-4); padding: var(--space-3) 0; background: var(--surface); border-bottom: 1px solid var(--line-strong); }
+.paths { position: sticky; top: 0; z-index: 8; display: grid; grid-template-columns: 96px repeat(2, minmax(0, 1fr)); gap: var(--space-4); padding: var(--space-3) 0; background: var(--surface); border-bottom: 1px solid var(--line-strong); }
 .path-head h2 { margin: 0 0 var(--space-2); font-size: 14px; line-height: 18px; font-weight: 700; }
 .path-head h2 b { color: var(--red-ink); margin-right: 6px; }
 .key { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: 0; padding: 0; list-style: none; }
 .key li { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
-.place { display: grid; grid-template-columns: 96px repeat(3, minmax(0, 1fr)); gap: var(--space-4); padding: var(--space-4) 0; border-bottom: 1px solid var(--line); }
+.place { display: grid; grid-template-columns: 96px repeat(2, minmax(0, 1fr)); gap: var(--space-4); padding: var(--space-4) 0; border-bottom: 1px solid var(--line); }
 .place > h3 { margin: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
 .place > h3 small { display: block; font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 12px; }
 .cell { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
@@ -540,39 +540,31 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 .frame .dk-back { margin-bottom: var(--space-4); }
 .cell-tag { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
 
-/* A marca: o nome acessível vem do rótulo, a leitura visual vem da forma e da contagem, nunca só da cor. */
-.xm { position: absolute; z-index: 1; pointer-events: none; }
 
-/* A · Joy-Con: a capa vira a tela. Um controle encaixado à direita é Nintendo; os dois lados, Switch 2. */
-.xa { inset: 0; --jw: 6px; }
-.dk-poster--sm .xa { --jw: 4px; }
-.dk-hero .xa { --jw: 9px; }
-.xa i { position: absolute; top: 0; bottom: 0; width: var(--jw); background: var(--red); }
-.xa i:first-child { right: 0; box-shadow: -1px 0 0 var(--surface); }
-.xa i + i { left: 0; box-shadow: 1px 0 0 var(--surface); }
-.xa i::before { content: ""; position: absolute; left: 50%; width: calc(var(--jw) * .55); aspect-ratio: 1; border-radius: 50%; translate: -50% -50%; background: var(--on-red); }
-.xa i:first-child::before { top: 56%; }
-.xa i + i::before { top: 30%; }
-.dk-poster--sm .xa i::before { display: none; }
-/* O controle esquerdo não encosta na etiqueta. */
-.dk-card:has(.xa i + i) > .dk-status-menu { left: calc(var(--space-2) + 4px); }
+/* O cartão de jogo do console: corpo em retrato, canto superior esquerdo chanfrado, rótulo e a pega com a seta.
+   Preto é o cartão de Switch; vermelho, o de Switch 2. As cores são do objeto e não mudam com o tema. */
+.gc { display: block; height: var(--gc-h, 16px); width: auto; aspect-ratio: 16 / 22; overflow: visible; }
+.gc__body { stroke-width: 1px; vector-effect: non-scaling-stroke; stroke: transparent; }
+.gc--switch .gc__body { fill: #1c1a1a; }
+.gc--switch2 .gc__body { fill: #e60012; }
+.gc__label { fill: #f4f2f1; }
+.gc__arrow { fill: #f4f2f1; opacity: .7; }
+/* No escuro, o cartão preto ganha contorno para não sumir no fundo. */
+[data-theme="dark"] .gc--switch .gc__body { stroke: #8f8886; }
+.gcs { display: inline-flex; align-items: flex-end; gap: 2px; }
 
-/* B · Fita: o marcador de página da biblioteca. Uma fita é Nintendo; duas fitas, Switch 2. */
-.xb { top: -1px; right: 8px; display: flex; gap: 2px; --rw: 13px; filter: drop-shadow(0 1px 1px #0000004d); }
-.dk-poster--sm .xb { right: 3px; gap: 2px; --rw: 8px; }
-.dk-hero .xb { right: 14px; gap: 3px; --rw: 16px; }
-.xb svg { display: block; width: var(--rw); height: calc(var(--rw) * 1.9); overflow: visible; }
-.xb path { fill: var(--red); stroke: var(--surface); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+/* Na linha, o cartucho fica onde estava o texto, logo depois da plataforma. */
+.gcs--inline { margin-left: 6px; vertical-align: -3px; --gc-h: 16px; }
 
-/* C · Selo: um ícone próprio no traço do sistema. O Joy-Con alto é Nintendo; o console deitado, Switch 2. */
-.xc { right: 6px; bottom: 6px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-sm); background: var(--red); color: var(--on-red); box-shadow: 0 0 0 1px var(--surface); }
-.dk-hero .xc { right: 8px; bottom: 8px; width: 32px; height: 32px; }
-.xc svg { width: 18px; height: 18px; }
-.dk-hero .xc svg { width: 24px; height: 24px; }
-.xc-inline { display: inline-block; width: 16px; height: 16px; margin-left: 6px; vertical-align: -4px; color: var(--red-ink); }
-.xc-inline svg { display: block; width: 100%; height: 100%; }
-.xg { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.xg .dot { fill: currentColor; stroke: none; }
+/* Na capa, embaixo à direita: o alto é da etiqueta de status, que chega a ocupar a largura toda no celular. Aro claro sobre qualquer arte. */
+.gcs--cover { position: absolute; z-index: 1; bottom: 6px; right: 6px; gap: 3px; --gc-h: 24px; pointer-events: none; filter: drop-shadow(0 1px 2px #00000080); }
+.gcs--cover .gc__body, [data-theme="dark"] .gcs--cover .gc--switch .gc__body { stroke: #ffffff; }
+.dk-hero .gcs--cover { bottom: 8px; right: 8px; gap: 4px; --gc-h: 34px; }
+.frame--phone .dk-hero .gcs--cover { --gc-h: 28px; }
+
+.zoom { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-5); margin: 0 0 var(--space-5); }
+.zoom figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.zoom .frame { display: flex; align-items: flex-end; gap: var(--space-4); padding: var(--space-4); }
 
 .decision { max-width: 760px; margin: var(--space-6) 0 0; }
 .decision p { margin: 0 0 var(--space-3); font-size: 15px; line-height: 22px; }
@@ -601,11 +593,12 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 <main class="page">
   <header class="review-head"><span class="dk-wordmark">dockd<i>.</i></span><span class="cell-tag">Exclusivos · 28/09/2026</span></header>
 
+  <section class="zoom" id="zoom"></section>
+
   <div class="paths" id="paths">
     <span></span>
-    <div class="path-head" data-path="a"><h2><b>A</b>Joy-Con</h2><ul class="key"></ul></div>
-    <div class="path-head" data-path="b"><h2><b>B</b>Fita</h2><ul class="key"></ul></div>
-    <div class="path-head" data-path="c"><h2><b>C</b>Selo</h2><ul class="key"></ul></div>
+    <div class="path-head" data-path="d1"><h2><b>1</b>Cartucho</h2><ul class="key"></ul></div>
+    <div class="path-head" data-path="d2"><h2><b>2</b>Cartuchos lado a lado</h2><ul class="key"></ul></div>
   </div>
 
   <section class="place" data-screen="buy"><h3>Comprar</h3></section>
@@ -619,12 +612,11 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 
   <section class="decision" id="decisao">
     <div class="dk-section"><h2>Decisão</h2></div>
-    <p><b>C · Selo</b> <span class="tag-rec">recomendado</span></p>
-    <form data-lavish-question="exclusivos" onsubmit="event.preventDefault(); var choice = new FormData(event.currentTarget).get('caminho'); if (choice && window.lavish) window.lavish.queuePrompt('Exclusivos: aprovar o caminho ' + choice + '. Multiplataforma não leva marca e sai do texto.', { tag: 'choice', text: 'Exclusivos: ' + choice, element: event.currentTarget, data: { question: 'exclusivos', answer: choice } });">
+    <p><b>2 · Cartuchos lado a lado</b> <span class="tag-rec">recomendado</span></p>
+    <form data-lavish-question="exclusivos" onsubmit="event.preventDefault(); var choice = new FormData(event.currentTarget).get('caminho'); if (choice && window.lavish) window.lavish.queuePrompt('Exclusivos: aprovar o cartucho, variação ' + choice + '. Multiplataforma não leva marca e sai do texto.', { tag: 'choice', text: 'Exclusivos: ' + choice, element: event.currentTarget, data: { question: 'exclusivos', answer: choice } });">
       <div class="dk-choice" role="radiogroup" aria-label="Caminho">
-        <label><input type="radio" name="caminho" value="A · Joy-Con"><span>A · Joy-Con</span></label>
-        <label><input type="radio" name="caminho" value="B · Fita"><span>B · Fita</span></label>
-        <label><input type="radio" name="caminho" value="C · Selo" checked><span>C · Selo</span></label>
+        <label><input type="radio" name="caminho" value="1 · Cartucho"><span>1 · Cartucho</span></label>
+        <label><input type="radio" name="caminho" value="2 · Cartuchos lado a lado" checked><span>2 · Lado a lado</span></label>
       </div>
       <button type="submit" class="dk-btn dk-btn--primary">Enviar escolha</button>
     </form>
@@ -667,27 +659,27 @@ var BUY = ['mario', 'metroid', 'persona', 'hades', 'silksong'];
 
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
 
-var GLYPH = {
-  n: '<svg class="xg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2.75" width="8" height="18.5" rx="4"/><circle cx="12" cy="8" r="1.75"/><circle class="dot" cx="12" cy="15.25" r="1.1"/></svg>',
-  s2: '<svg class="xg" viewBox="0 0 24 24" aria-hidden="true"><rect x="1.75" y="5.75" width="20.5" height="12.5" rx="3.25"/><path d="M6.25 5.75v12.5M17.75 5.75v12.5"/><circle class="dot" cx="4" cy="9.25" r="1.1"/><circle class="dot" cx="20" cy="14.75" r="1.1"/></svg>'
-};
-var RIBBON = '<svg viewBox="0 0 11 21" aria-hidden="true"><path d="M0 0H11V21L5.5 16L0 21Z"/></svg>';
-
-// A marca vive na capa em A e B; em C, na capa da grade e do herói, e ao lado da plataforma na linha.
-function mark(path, x, where) {
-  if (!x) return '';
-  var aria = ' role="img" aria-label="' + LABEL[x] + '" title="' + LABEL[x] + '"';
-  if (path === 'a') return '<span class="xm xa"' + aria + '><i></i>' + (x === 's2' ? '<i></i>' : '') + '</span>';
-  if (path === 'b') return '<span class="xm xb"' + aria + '>' + RIBBON + (x === 's2' ? RIBBON : '') + '</span>';
-  if (where === 'row') return '';
-  return '<span class="xm xc"' + aria + '>' + GLYPH[x] + '</span>';
+// Cartão de jogo em 16 por 22: chanfro no canto superior esquerdo, rótulo paralelo a ele, seta na pega.
+function gameCard(kind) {
+  return '<svg class="gc gc--' + kind + '" viewBox="0 0 16 22" aria-hidden="true">' +
+    '<path class="gc__body" d="M4.5 .5H14A1.5 1.5 0 0 1 15.5 2V20A1.5 1.5 0 0 1 14 21.5H2A1.5 1.5 0 0 1 .5 20V4.5Z"/>' +
+    '<path class="gc__label" d="M5.3 2.6H13.4V15.4H2.6V5.3Z"/>' +
+    '<path class="gc__arrow" d="M6.4 17.4H9.6L8 19.2Z"/></svg>';
 }
-function inlineMark(path, x) {
-  if (path !== 'c' || !x) return '';
-  return '<span class="xc-inline" role="img" aria-label="' + LABEL[x] + '" title="' + LABEL[x] + '">' + GLYPH[x] + '</span>';
+// 1: um cartucho, preto para exclusivo Nintendo e vermelho para exclusivo Switch 2.
+// 2: os cartuchos das plataformas do exclusivo, lado a lado; Switch 2 sozinho é o vermelho.
+function cards(path, g) {
+  if (!g.x) return [];
+  if (path === 'd1') return [g.x === 's2' ? 'switch2' : 'switch'];
+  return g.platforms.split(' · ').map(function (p) { return p === 'Switch 2' ? 'switch2' : 'switch'; });
+}
+function mark(path, g, where) {
+  var list = cards(path, g);
+  if (!list.length) return '';
+  return '<span class="gcs gcs--' + where + '" role="img" aria-label="' + LABEL[g.x] + '" title="' + LABEL[g.x] + '">' + list.map(gameCard).join('') + '</span>';
 }
 function poster(path, g, size, faded) {
-  return '<a class="dk-poster' + (size ? ' dk-poster--' + size : '') + (faded ? ' dk-poster--faded' : '') + '" href="#"><img src="' + COVER + g.cover + '.jpg" alt="">' + mark(path, g.x, size === 'sm' ? 'row' : 'grid') + '</a>';
+  return '<a class="dk-poster' + (size ? ' dk-poster--' + size : '') + (faded ? ' dk-poster--faded' : '') + '" href="#"><img src="' + COVER + g.cover + '.jpg" alt="">' + (size === 'sm' ? '' : mark(path, g, 'cover')) + '</a>';
 }
 function statusMenu(s, label) {
   var chip = s ? '<span class="dk-status dk-status--' + s + ' dk-status--sm">' + label + '</span>' : '<span class="dk-status dk-status--add dk-status--sm">+ Adicionar</span>';
@@ -710,7 +702,7 @@ var SCREENS = {
   buy: function (path) {
     return '<div class="dk-section"><h2>Disponíveis<span>' + BUY.length + '</span></h2></div>' + BUY.map(function (key) {
       var g = G[key];
-      return '<div class="dk-row">' + poster(path, g, 'sm') + '<div><a class="dk-row__title" href="#">' + esc(g.title) + '</a><div class="dk-row__meta">' + g.platforms + inlineMark(path, g.x) + '</div></div></div>';
+      return '<div class="dk-row">' + poster(path, g, 'sm') + '<div><a class="dk-row__title" href="#">' + esc(g.title) + '</a><div class="dk-row__meta">' + g.platforms + mark(path, g, 'inline') + '</div></div></div>';
     }).join('');
   },
   library: function (path) {
@@ -744,19 +736,30 @@ function frame(path, screen, theme, phone) {
   return f;
 }
 
-var NAMES = { a: 'A · Joy-Con', b: 'B · Fita', c: 'C · Selo' };
+var NAMES = { d1: '1 · Cartucho', d2: '2 · Cartuchos lado a lado' };
+
+// O cartão nos tamanhos de uso, nos dois temas.
+['light', 'dark'].forEach(function (theme) {
+  var f = document.createElement('div');
+  f.className = 'frame';
+  f.dataset.theme = theme;
+  f.innerHTML = [64, 24, 16, 14, 12].map(function (h) {
+    return '<span class="gcs" style="--gc-h:' + h + 'px">' + gameCard('switch') + gameCard('switch2') + '</span>';
+  }).join('');
+  document.getElementById('zoom').appendChild(f);
+});
 
 document.querySelectorAll('.path-head').forEach(function (head) {
   var path = head.dataset.path;
-  head.querySelector('.key').innerHTML = ['s2', 'n'].map(function (x) {
-    var sample = path === 'c' ? inlineMark('c', x) : poster(path, { cover: x === 's2' ? 'coag5n' : 'cob9xh', x: x }, 'sm');
-    return '<li>' + sample + LABEL[x] + '</li>';
-  }).join('') + '<li>' + (path === 'c' ? '' : poster(path, G.persona, 'sm')) + 'Multiplataforma</li>';
+  var samples = path === 'd1' ? [G.mario, G.metroid] : [G.mario, G.metroid, G.dread];
+  head.querySelector('.key').innerHTML = samples.map(function (g) {
+    return '<li>' + mark(path, g, 'inline') + (path === 'd1' ? LABEL[g.x] : g.title) + '</li>';
+  }).join('') + '<li>Multiplataforma</li>';
 });
 
 document.querySelectorAll('.place').forEach(function (place) {
   var screen = place.dataset.screen, phone = place.dataset.phone;
-  ['a', 'b', 'c'].forEach(function (path) {
+  ['d1', 'd2'].forEach(function (path) {
     var cell = document.createElement('div');
     cell.className = 'cell';
     cell.dataset.path = NAMES[path];
