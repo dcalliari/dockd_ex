@@ -27,6 +27,7 @@ custom classes must fully style the input
 - Nunca diálogo nativo do navegador (`confirm`, `alert`, `prompt`, `data-confirm`): confirmação acontece na interface (regra 7 de `design/README.md`, garantida por `DockdWeb.NativeDialogTest`).
 - Componentes vivem em `DockdWeb.DockdComponents`; textos em pt-BR, no máximo seis palavras, sem título repetindo a navegação.
 - Tela lê preço só por `Dockd.Purchasing.current_price/3` e `current_game_price/3`: o preço da eShop quando a loja vende a versão digital, senão a última observação do usuário; o de um jogo é o menor entre as versões e edições não vetadas. Não há saldo de loja nem reserva no produto.
+- Se uma versão já saiu é `Release.launch/3` (precisão da data mais o estado de venda da eShop, `Pricing.sales_statuses/1`); nunca compare `release_date` com hoje. Versão de plataforma que o IGDB não lista para o jogo nem para suas entradas juntadas sai no sync quando nada a usa.
 - Edição (Deluxe, pacote com conteúdo) e Nintendo Switch 2 Edition são versões (`releases.edition`) do mesmo jogo, nunca outro jogo; a versão base de cada plataforma é `Release.standard_edition/0`. As outras entradas IGDB do jogo ficam em `game_links` (`Dockd.Catalog.IgdbFamily` diz quais juntam sozinhas), e juntar dois jogos passa por `Catalog.merge_games/3`.
 
 ### JS and CSS guidelines
