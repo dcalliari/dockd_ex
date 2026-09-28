@@ -246,6 +246,7 @@ img { display: block; max-width: 100%; }
 /* SectionHead */
 .dk-section { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); margin: var(--space-6) 0 var(--space-3); }
 .dk-section:first-child { margin-top: 0; }
+.dk-page > .dk-section:first-child { margin-top: var(--space-4); }
 .dk-section h2 { margin: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
 .dk-section h2 span { margin-left: 6px; font-weight: 400; letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .dk-year-mark { margin: var(--space-3) 0 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
