@@ -67,6 +67,22 @@ defmodule DockdWeb.BuyLiveTest do
     refute has_element?(view, "button", "Reservar")
   end
 
+  test "a game the eShop has not released is never available, whatever its date says",
+       %{conn: conn, user: user} do
+    game = game_fixture(%{title: "Not Out Yet", availability: :switch2_exclusive})
+
+    release =
+      release_fixture(game, %{platform: :switch_2, release_date: Date.add(Date.utc_today(), -270)})
+
+    store_price_fixture(release, %{sales_status: "unreleased", regular_cents: nil})
+    {:ok, _} = entry_fixture(user, game, %{purchase_intent: :want})
+
+    {:ok, view, _html} = live(conn, "/comprar")
+
+    assert has_element?(view, "#queue-#{game.id} .dk-date")
+    refute has_element?(view, "#queue-#{game.id} button", "Comprei")
+  end
+
   test "the line on top shows the month's spending and no estimate without prices",
        %{conn: conn} do
     {:ok, view, _html} = live(conn, "/comprar")

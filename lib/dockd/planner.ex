@@ -6,7 +6,7 @@ defmodule Dockd.Planner do
   alias Dockd.Catalog.{Game, Release}
   alias Dockd.Library
   alias Dockd.Library.{Entry, ReleaseVeto}
-  alias Dockd.Purchasing
+  alias Dockd.{Pricing, Purchasing}
   alias Dockd.Purchasing.Purchase
   alias Dockd.Repo
 
@@ -46,8 +46,7 @@ defmodule Dockd.Planner do
         join: e in Entry,
         on: e.game_id == g.id and e.user_id == ^user_id,
         where:
-          not is_nil(r.release_date) and r.release_date >= ^today and
-            r.edition == ^Release.standard_edition() and
+          not is_nil(r.release_date) and r.edition == ^Release.standard_edition() and
             e.purchase_intent in [:want, :planned, :preordered] and r.id not in subquery(vetoed),
         order_by: r.release_date,
         select: %{
@@ -60,6 +59,14 @@ defmodule Dockd.Planner do
             )
         }
     )
+    |> only_launch(today, [:upcoming])
+  end
+
+  # The rows whose release is in one of `launches` (`Release.launch/3`), with the eShop
+  # sales status that can say a dated release is not out yet.
+  defp only_launch(rows, today, launches) do
+    sales = rows |> Enum.map(& &1.release.id) |> Pricing.sales_statuses()
+    Enum.filter(rows, &(Release.launch(&1.release, today, sales[&1.release.id]) in launches))
   end
 
   @doc """
@@ -76,12 +83,11 @@ defmodule Dockd.Planner do
           on: g.id == r.game_id,
           join: e in Entry,
           on: e.game_id == g.id and e.user_id == ^user_id,
-          where:
-            e.purchase_intent in [:want, :planned, :preordered] and
-              (is_nil(r.release_date) or r.release_date < ^today),
+          where: e.purchase_intent in [:want, :planned, :preordered],
           order_by: [asc: r.release_date, asc: g.title],
           select: %{release: r, game: g, entry: e}
       )
+      |> only_launch(today, [:released, :undated])
 
     releases_by_game = Enum.group_by(rows, & &1.game.id, & &1.release)
 

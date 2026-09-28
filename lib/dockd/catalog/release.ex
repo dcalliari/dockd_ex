@@ -44,6 +44,36 @@ defmodule Dockd.Catalog.Release do
     end
   end
 
+  @doc """
+  Whether a release is out by `today`: `:released`, `:upcoming` (dated, not out yet) or
+  `:undated`. A date known only by month, quarter or year is out once that whole period
+  is over. The eShop sales status, when the store sells the release, holds it back:
+  `unreleased` and `preorder` are never out, whatever the date says. Without a date,
+  a release the store sells or sold is out.
+  """
+  def launch(%__MODULE__{release_date: date} = release, today, sales_status \\ nil) do
+    cond do
+      sales_status in ["unreleased", "preorder"] -> if date, do: :upcoming, else: :undated
+      date && out_by?(release, today) -> :released
+      date -> :upcoming
+      sales_status in ["onsale", "sales_termination"] -> :released
+      true -> :undated
+    end
+  end
+
+  defp out_by?(%{release_date_precision: :tbd}, _today), do: false
+
+  defp out_by?(%{release_date: date, release_date_precision: precision}, today),
+    do: Date.compare(period_end(date, precision), today) != :gt
+
+  defp period_end(date, :year), do: Date.new!(date.year, 12, 31)
+  defp period_end(date, :month), do: Date.end_of_month(date)
+
+  defp period_end(date, :quarter),
+    do: date |> Date.beginning_of_month() |> Date.shift(month: 2) |> Date.end_of_month()
+
+  defp period_end(date, _day), do: date
+
   def changeset(release, attrs) do
     release
     |> cast(attrs, [

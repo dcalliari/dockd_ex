@@ -11,7 +11,7 @@ defmodule DockdWeb.BuyLive do
 
   alias Dockd.Catalog.Release
   alias Dockd.Library.Shelf
-  alias Dockd.Purchasing
+  alias Dockd.{Pricing, Purchasing}
   alias DockdWeb.GameEvents
 
   @game_events GameEvents.events()
@@ -33,10 +33,11 @@ defmodule DockdWeb.BuyLive do
       |> Enum.filter(&(&1.status == :quero or Map.has_key?(bought, &1.game.id)))
       |> Enum.map(&Map.put(&1, :first, Shelf.first_release(&1)))
 
-    {dated, undated} = Enum.split_with(items, & &1.first.release_date)
+    sales = items |> Enum.flat_map(& &1.releases) |> Enum.map(& &1.id) |> Pricing.sales_statuses()
+    launches = Enum.group_by(items, &launch(&1, today, sales))
 
-    {upcoming, available} =
-      Enum.split_with(dated, &(Date.compare(&1.first.release_date, today) == :gt))
+    [upcoming, available, undated] =
+      Enum.map([:upcoming, :released, :undated], &(launches[&1] || []))
 
     wanted = Enum.filter(items, &(&1.status == :quero))
 
@@ -65,9 +66,22 @@ defmodule DockdWeb.BuyLive do
     %{total: Enum.sum_by(prices, & &1.price_cents), priced: length(prices), of: length(sold)}
   end
 
+  # Out once any version is; else upcoming by its first date, or undated.
+  defp launch(item, today, sales) do
+    launches = Enum.map(item.releases, &Release.launch(&1, today, sales[&1.id]))
+
+    cond do
+      :released in launches -> :released
+      :upcoming in launches -> :upcoming
+      true -> :undated
+    end
+  end
+
   # A year-only date sorts after every dated release of the same year.
   defp sort_key(%{first: %{release_date: date, release_date_precision: :year}}),
     do: {date.year, 13, 0, ""}
+
+  defp sort_key(%{first: %{release_date: nil}, game: game}), do: {0, 0, 0, game.title}
 
   defp sort_key(%{first: %{release_date: date}, game: game}),
     do: {date.year, date.month, date.day, game.title}

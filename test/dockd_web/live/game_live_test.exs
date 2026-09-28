@@ -35,6 +35,15 @@ defmodule DockdWeb.GameLiveTest do
     refute html =~ "Edição padrão"
   end
 
+  test "a version the eShop has not released says so", %{conn: conn} = ctx do
+    store_price_fixture(ctx.release_2, %{sales_status: "unreleased", regular_cents: nil})
+    store_price_fixture(ctx.release, %{sales_status: "preorder"})
+    {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+
+    assert has_element?(view, "#release-#{ctx.release_2.id} .dk-row__meta", "não lançado")
+    assert has_element?(view, "#release-#{ctx.release.id} .dk-row__meta", "pré-venda")
+  end
+
   describe "Versões with editions" do
     setup ctx do
       store_price_fixture(ctx.release, %{regular_cents: 29_990})

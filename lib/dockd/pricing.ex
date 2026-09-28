@@ -54,6 +54,22 @@ defmodule Dockd.Pricing do
     )
   end
 
+  @doc """
+  The eShop sales status of each release the store sells, by release id, for
+  `Dockd.Catalog.Release.launch/3`. A release the store does not sell is absent.
+  """
+  def sales_statuses([]), do: %{}
+
+  def sales_statuses(release_ids) do
+    Repo.all(
+      from l in StoreListing,
+        where:
+          l.release_id in ^release_ids and l.match in ^@priced and not is_nil(l.sales_status),
+        select: {l.release_id, l.sales_status}
+    )
+    |> Map.new()
+  end
+
   defp latest_prices,
     do:
       from(p in StorePrice,

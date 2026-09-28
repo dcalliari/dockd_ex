@@ -61,7 +61,7 @@ defmodule Dockd.DomainFixtures do
         store: :eshop_br,
         match: :auto,
         external_id: "7001#{System.unique_integer([:positive])}",
-        sales_status: "onsale"
+        sales_status: Map.get(attrs, :sales_status, "onsale")
       })
       |> Dockd.Repo.insert!()
 

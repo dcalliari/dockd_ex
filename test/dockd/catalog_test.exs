@@ -56,6 +56,42 @@ defmodule Dockd.CatalogTest do
     assert {:error, {:in_use, [:ownership]}} = Catalog.delete_release(release)
   end
 
+  describe "Release.launch/3" do
+    test "a date known by year, quarter or month is out only once the period is over" do
+      year = %Release{release_date: ~D[2026-01-01], release_date_precision: :year}
+      quarter = %Release{release_date: ~D[2026-07-01], release_date_precision: :quarter}
+      month = %Release{release_date: ~D[2026-09-01], release_date_precision: :month}
+
+      assert Release.launch(year, ~D[2026-09-28]) == :upcoming
+      assert Release.launch(year, ~D[2026-12-31]) == :released
+      assert Release.launch(quarter, ~D[2026-09-28]) == :upcoming
+      assert Release.launch(quarter, ~D[2026-09-30]) == :released
+      assert Release.launch(month, ~D[2026-09-28]) == :upcoming
+      assert Release.launch(month, ~D[2026-10-01]) == :released
+    end
+
+    test "a day date is out on the day" do
+      release = %Release{release_date: ~D[2026-11-05], release_date_precision: :day}
+
+      assert Release.launch(release, ~D[2026-11-04]) == :upcoming
+      assert Release.launch(release, ~D[2026-11-05]) == :released
+    end
+
+    test "the eShop holds back a release it has not released, whatever the date says" do
+      past = %Release{release_date: ~D[2026-01-01], release_date_precision: :day}
+
+      assert Release.launch(past, ~D[2026-09-28], "unreleased") == :upcoming
+      assert Release.launch(past, ~D[2026-09-28], "preorder") == :upcoming
+      assert Release.launch(%Release{}, ~D[2026-09-28], "unreleased") == :undated
+    end
+
+    test "without a date, a release is out only when the eShop sells or sold it" do
+      assert Release.launch(%Release{}, ~D[2026-09-28]) == :undated
+      assert Release.launch(%Release{}, ~D[2026-09-28], "onsale") == :released
+      assert Release.launch(%Release{}, ~D[2026-09-28], "sales_termination") == :released
+    end
+  end
+
   test "release key card is castable" do
     changeset =
       Release.changeset(%Release{game_id: Ecto.UUID.generate()}, %{

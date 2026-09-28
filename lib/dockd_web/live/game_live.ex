@@ -33,6 +33,7 @@ defmodule DockdWeb.GameLive do
       item: item,
       versions: versions(item, %{}),
       withdrawn: MapSet.new(),
+      sales: Pricing.sales_statuses(Enum.map(item.releases, & &1.id)),
       prices: %{},
       purchases: %{},
       history: [],
@@ -50,6 +51,7 @@ defmodule DockdWeb.GameLive do
       item: item,
       versions: versions(item, prices),
       withdrawn: MapSet.new(for r <- item.releases, Pricing.withdrawn?(r.id), do: r.id),
+      sales: Pricing.sales_statuses(Enum.map(item.releases, & &1.id)),
       prices: prices,
       purchases: Map.new(purchases, &{&1.id, &1}),
       history: history(user, item, purchases),
@@ -232,6 +234,10 @@ defmodule DockdWeb.GameLive do
       assigns.user != nil and assigns.item.releases != [] and
         (assigns.item.status in [nil, :quero] or Map.has_key?(assigns.bought, assigns.game.id))
 
+  # What the eShop says of a version not out yet; the date alone may not tell.
+  @not_out %{"preorder" => "pré-venda", "unreleased" => "não lançado"}
+  defp not_out(sales_status), do: @not_out[sales_status]
+
   attr :release, :map, required: true
   attr :title, :string, required: true
   attr :item, :map, required: true
@@ -240,6 +246,7 @@ defmodule DockdWeb.GameLive do
   attr :game_id, :string, required: true
   attr :price, :map, default: nil
   attr :withdrawn, :boolean, default: false
+  attr :sales_status, :string, default: nil
   attr :form, :map, default: nil
   attr :form_error, :string, default: nil
   attr :edition, :boolean, default: false, doc: "an edition under its platform's row"
@@ -269,7 +276,8 @@ defmodule DockdWeb.GameLive do
               @release.physical_available && "Físico",
               @release.digital_available && "Digital",
               @release.physical_is_key_card && "Key card",
-              @withdrawn && "fora de venda"
+              @withdrawn && "fora de venda",
+              not_out(@sales_status)
             ])}
           <% end %>
         </div>
@@ -377,6 +385,7 @@ defmodule DockdWeb.GameLive do
           game_id={@game.id}
           price={@prices[version.release.id]}
           withdrawn={MapSet.member?(@withdrawn, version.release.id)}
+          sales_status={@sales[version.release.id]}
           form={@form}
           form_error={@form_error}
         />
@@ -394,6 +403,7 @@ defmodule DockdWeb.GameLive do
               game_id={@game.id}
               price={@prices[edition.id]}
               withdrawn={MapSet.member?(@withdrawn, edition.id)}
+              sales_status={@sales[edition.id]}
               form={@form}
               form_error={@form_error}
               edition
