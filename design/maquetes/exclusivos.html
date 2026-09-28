@@ -554,13 +554,13 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 .gcs { display: inline-flex; align-items: flex-end; gap: 2px; }
 
 /* Na linha, o cartucho fica onde estava o texto, logo depois da plataforma. */
-.gcs--inline { margin-left: 6px; vertical-align: -3px; --gc-h: 16px; }
+.gcs--inline { margin-left: 6px; vertical-align: -2px; --gc-h: 14px; }
 
 /* Na capa, embaixo à direita: o alto é da etiqueta de status, que chega a ocupar a largura toda no celular. Aro claro sobre qualquer arte. */
-.gcs--cover { position: absolute; z-index: 1; bottom: 6px; right: 6px; --gc-h: 24px; pointer-events: none; filter: drop-shadow(0 1px 2px #00000080); }
+.gcs--cover { position: absolute; z-index: 1; bottom: 6px; right: 6px; --gc-h: 20px; pointer-events: none; filter: drop-shadow(0 1px 2px #00000080); }
 .gcs--cover .gc__body, [data-theme="dark"] .gcs--cover .gc--switch .gc__body { stroke: #ffffff; }
-.dk-hero .gcs--cover { bottom: 8px; right: 8px; --gc-h: 34px; }
-.frame--phone .dk-hero .gcs--cover { --gc-h: 28px; }
+.dk-hero .gcs--cover { bottom: 8px; right: 8px; --gc-h: 28px; }
+.frame--phone .dk-hero .gcs--cover { --gc-h: 24px; }
 
 /* Folha: cada desenho nos tamanhos de uso, nos dois temas. */
 .sheet { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); margin: 0 0 var(--space-5); }
@@ -572,7 +572,10 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 
 .paths { align-items: center; }
 .picker { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
-.picker .dk-choice { height: 36px; }
+.paths > .picker, .paths > .key { grid-column: 2 / -1; }
+@media (max-width: 1100px) { .paths > .picker, .paths > .key { grid-column: auto; } }
+.picker .dk-choice { flex-wrap: wrap; }
+.picker .dk-choice > label > span { height: 34px; }
 .tag-rec { display: inline-block; margin-left: var(--space-2); padding: 0 6px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 10px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; vertical-align: 1px; }
 .dk-btn { display: inline-flex; align-items: center; height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-sm); font-size: 14px; line-height: 20px; font-weight: 600; }
 .dk-btn--primary { background: var(--red); color: var(--on-red); }
@@ -585,7 +588,6 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 .dk-choice > label > input:focus-visible + span { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 
 @media (max-width: 1100px) {
-  .picker .dk-choice { height: auto; flex-wrap: wrap; }
   .paths { position: static; }
   .paths, .place { grid-template-columns: minmax(0, 1fr); }
   .paths > :first-child { display: none; }
@@ -727,9 +729,27 @@ var DRAWINGS = {
   } },
   silhueta: { name: 'Silhueta', svg: function () {
     return '<path class="gc__body" d="' + BODY + '"/>';
+  } },
+  // O rótulo com a faixa de cima separada, onde o cartão de verdade leva o logotipo.
+  faixa: { name: 'Faixa', svg: function () {
+    return '<path class="gc__body" d="' + BODY + '"/><path class="gc__label" d="M5.3 2.6H13.4V4.4H3.5ZM2.6 5.6H13.4V15.4H2.6Z"/><path class="gc__detail" d="M6.4 17.4H9.6L8 19.2Z"/>';
+  } },
+  // O verso: o chanfro vai para a direita e aparecem os contatos.
+  verso: { name: 'Verso', svg: function () {
+    return '<path class="gc__body" d="M.5 2A1.5 1.5 0 0 1 2 .5H11.5L15.5 4.5V20A1.5 1.5 0 0 1 14 21.5H2A1.5 1.5 0 0 1 .5 20Z"/>' +
+      '<path class="gc__detail" d="M2.6 10.5h1.9v8.5h-1.9zM5.6 10.5h1.9v8.5h-1.9zM8.5 10.5h1.9v8.5h-1.9zM11.5 10.5h1.9v8.5h-1.9z"/>';
+  } },
+  // O mínimo que ainda é cartão: o corpo e a linha onde o rótulo termina.
+  linha: { name: 'Linha', svg: function () {
+    return '<path class="gc__body" d="' + BODY + '"/><path class="gc__label" d="M2.6 15.2H13.4V16.6H2.6Z"/>';
+  } },
+  // Mais redondo, como os ícones do Switch 2: cantos e chanfro suaves, rótulo arredondado.
+  macio: { name: 'Macio', svg: function () {
+    return '<path class="gc__body" d="M5.2 .5H13A2.5 2.5 0 0 1 15.5 3V19A2.5 2.5 0 0 1 13 21.5H3A2.5 2.5 0 0 1 .5 19V5.2A1.2 1.2 0 0 1 .85 4.35L4.35 .85A1.2 1.2 0 0 1 5.2 .5Z"/>' +
+      '<rect class="gc__label" x="2.7" y="2.7" width="10.6" height="12.6" rx="1.4"/><circle class="gc__detail" cx="8" cy="18.3" r="1"/>';
   } }
 };
-var ORDER = ['rotulo', 'vazado', 'pega', 'silhueta'];
+var ORDER = ['rotulo', 'vazado', 'pega', 'silhueta', 'faixa', 'verso', 'linha', 'macio'];
 var RECOMMENDED = 'pega';
 
 function gameCard(drawing, kind) {
@@ -750,7 +770,7 @@ ORDER.forEach(function (d, i) {
     var f = document.createElement('div');
     f.className = 'frame';
     f.dataset.theme = theme;
-    f.innerHTML = [56, 24, 16, 14, 12].map(function (h) {
+    f.innerHTML = [40, 20, 14, 12].map(function (h) {
       return '<span class="gcs" style="--gc-h:' + h + 'px">' + gameCard(d, 'switch') + gameCard(d, 'switch2') + '</span>';
     }).join('');
     fig.appendChild(f);
