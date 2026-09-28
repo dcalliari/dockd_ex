@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Início com conta · dockd.</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
+<style>
+:root { --surface:#fff;--surface-raised:#f4f2f1;--surface-sunken:#ebe8e6;--line:#dedad8;--line-strong:#8f8886;--ink:#161414;--ink-muted:#6a6462;--on-ink:#fff;--red:#e60012;--red-ink:#d4000f;--gold:#f2c200;--on-gold:#fff;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--radius-sm:3px;--radius-md:6px;--nav-height:56px;--font:"Archivo", "Helvetica Neue", Arial, sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red-ink:#ff5a5a; } }
+* { box-sizing:border-box; } body { margin:0; background:var(--surface); color:var(--ink); font-family:var(--font); -webkit-font-smoothing:antialiased; } a { color:inherit; text-decoration:none; } :focus-visible { outline:2px solid var(--red-ink); outline-offset:2px; }
+.review { width:min(100%, 1680px); margin:0 auto; padding:var(--space-5) var(--space-4) var(--space-7); } .review > header { display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-4); padding-bottom:var(--space-2); border-bottom:1px solid var(--line); } .review h1,.option h2 { margin:0; font-size:11px; line-height:16px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-stretch:90%; color:var(--ink-muted); } .review > header p,.route { margin:0; font-size:12px; line-height:16px; color:var(--ink-muted); } .paths { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-5); margin-top:var(--space-5); } .option { min-width:0; } .option > header { display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-3); margin-bottom:var(--space-2); } .option > header b { font-size:12px; line-height:16px; color:var(--red-ink); font-weight:600; }
+.frame { overflow:hidden; border:1px solid var(--line-strong); border-radius:var(--radius-md); background:var(--surface); } .dk-nav { height:var(--nav-height); display:flex; align-items:center; gap:var(--space-4); padding:0 var(--space-4); border-bottom:1px solid var(--line); } .wordmark { font-size:22px; line-height:24px; font-weight:900; font-stretch:125%; letter-spacing:-.02em; white-space:nowrap; } .wordmark i { color:var(--red); font-style:normal; } .navlinks { display:flex; gap:var(--space-3); min-width:0; } .navlinks a { height:var(--nav-height); display:flex; align-items:center; border-bottom:2px solid transparent; color:var(--ink-muted); font-size:14px; line-height:20px; font-weight:600; white-space:nowrap; } .navlinks a[aria-current="page"] { color:var(--ink); border-bottom-color:var(--red); } .search { width:150px; height:36px; margin-left:auto; padding:0 var(--space-3); border:1px solid var(--line-strong); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink-muted); font:600 12px/16px var(--font); } .account { color:var(--ink-muted); font-size:14px; line-height:20px; font-weight:600; }
+.dk-page { padding:var(--space-4) var(--space-4) var(--space-6); } .dk-section { display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-3); margin:0 0 var(--space-3); padding-bottom:var(--space-2); border-bottom:1px solid var(--line); } .dk-section:not(:first-child) { margin-top:var(--space-6); } .dk-section h3 { margin:0; color:var(--ink-muted); font-size:11px; line-height:16px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-stretch:90%; } .dk-link { color:var(--red-ink); font-size:14px; line-height:20px; font-weight:600; white-space:nowrap; } .dk-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--space-3); } .dk-card { min-width:0; } .poster { position:relative; display:block; aspect-ratio:3 / 4; overflow:hidden; border-radius:var(--radius-md); background:var(--surface-sunken); } .poster img { width:100%; height:100%; object-fit:cover; display:block; } .poster::after { content:""; position:absolute; inset:0; border-radius:inherit; box-shadow:inset 0 0 0 1px #0000001f; pointer-events:none; } .status { position:absolute; left:var(--space-2); top:var(--space-2); z-index:1; display:inline-flex; align-items:center; height:18px; padding:0 6px; border-radius:var(--radius-sm); color:var(--on-ink); background:var(--red); font-size:10px; line-height:16px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-stretch:90%; } .status.quero { background:var(--gold); color:var(--on-gold); } .card-title { display:block; margin-top:var(--space-2); overflow:hidden; color:var(--ink); font-size:14px; line-height:18px; font-weight:700; text-overflow:ellipsis; white-space:nowrap; } .card-meta { display:block; margin-top:2px; overflow:hidden; color:var(--ink-muted); font-size:12px; line-height:16px; text-overflow:ellipsis; white-space:nowrap; } .price { color:var(--ink); font-size:12px; line-height:16px; font-weight:600; font-variant-numeric:tabular-nums; } .price s { color:var(--ink-muted); font-weight:400; }
+@media (max-width:1100px) { .paths { grid-template-columns:1fr; max-width:760px; } .dk-strip { grid-template-columns:repeat(4,minmax(104px,1fr)); } } @media (max-width:620px) { .review { padding:var(--space-4); } .review > header { display:block; } .review > header p { margin-top:var(--space-2); } .dk-nav { gap:var(--space-3); overflow:hidden; } .navlinks { gap:var(--space-2); } .navlinks a { font-size:12px; } .search,.account { display:none; } .dk-strip { grid-auto-flow:column; grid-auto-columns:104px; grid-template-columns:none; overflow-x:auto; padding-bottom:var(--space-1); } }
+</style>
+</head>
+<body>
+<main class="review">
+  <header><h1>Entrada da conta</h1><p>Dados do dump do lab em 28/09/2026</p></header>
+  <div class="paths">
+    <section class="option">
+      <header><h2>A · Início separado</h2></header>
+      <div class="frame">
+        <nav class="dk-nav" aria-label="Principal">
+          <a class="wordmark" href="#">dockd<i>.</i></a>
+          <div class="navlinks"><a href="#" aria-current="page">Início</a><a href="#">Biblioteca</a><a href="#">Comprar</a><a href="#">Descobrir</a></div>
+          <input class="search" aria-label="Buscar no catálogo" value="Buscar no catálogo" readonly>
+          <span class="account">Daniel</span>
+        </nav>
+        <div class="dk-page">
+          <section class="dk-section"><h3>Jogando agora <span>4</span></h3><a class="dk-link" href="#">Ver Biblioteca</a></section>
+          <div class="dk-strip">
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobfzp.jpg" alt="Hollow Knight"><span class="status">Jogando</span></a><a class="card-title" href="#">Hollow Knight</a><span class="card-meta">Switch</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coblhc.jpg" alt="Metal Gear Solid 4"><span class="status">Jogando</span></a><a class="card-title" href="#">Metal Gear Solid 4</a><span class="card-meta">Switch 2</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobbur.jpg" alt="Pokémon Pokopia"><span class="status">Jogando</span></a><a class="card-title" href="#">Pokémon Pokopia</a><span class="card-meta">Switch 2</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co6wrm.jpg" alt="Red Dead Redemption"><span class="status">Jogando</span></a><a class="card-title" href="#">Red Dead Redemption</a><span class="card-meta">Switch</span></article>
+          </div>
+          <section class="dk-section"><h3>Em promoção <span>3</span></h3><a class="dk-link" href="#">Ver Comprar</a></section>
+          <div class="dk-strip">
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co9mzd.jpg" alt="Blue Prince"><span class="status quero">Quero</span></a><a class="card-title" href="#">Blue Prince</a><span class="card-meta"><span class="price">R$ 53,39</span> · <s>R$ 88,99</s></span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coaknx.jpg" alt="Hades II"><span class="status quero">Quero</span></a><a class="card-title" href="#">Hades II</a><span class="card-meta"><span class="price">R$ 76,93</span> · <s>R$ 109,90</s></span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co65ac.jpg" alt="Outer Wilds"><span class="status quero">Quero</span></a><a class="card-title" href="#">Outer Wilds</a><span class="card-meta"><span class="price">R$ 59,99</span> · <s>R$ 99,99</s></span></article>
+          </div>
+          <section class="dk-section"><h3>Da sua lista <span>8</span></h3><a class="dk-link" href="#">Ver todos</a></section>
+          <div class="dk-strip">
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocb28.jpg" alt="Kingdom Hearts Collection"><span class="status quero">Quero</span></a><a class="card-title" href="#">Kingdom Hearts Collection</a><span class="card-meta">Switch 2 · 08/10/2026</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobdqk.jpg" alt="Cairn"><span class="status quero">Quero</span></a><a class="card-title" href="#">Cairn</a><span class="card-meta">Switch 2 · 2027</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coc7mb.jpg" alt="Sports Resort"><span class="status quero">Quero</span></a><a class="card-title" href="#">Sports Resort</a><span class="card-meta">Switch 2 · 22/10/2026</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocvba.jpg" alt="Kirby and the World Beyond"><span class="status quero">Quero</span></a><a class="card-title" href="#">Kirby and the World Beyond</a><span class="card-meta">Switch 2 · 2027</span></article>
+          </div>
+        </div>
+      </div>
+      <p class="route">/ entra aqui · /biblioteca guarda a lista · /descobrir fica com busca e listas</p>
+    </section>
+
+    <section class="option">
+      <header><h2>B · Descobrir como início</h2><b>Recomendado</b></header>
+      <div class="frame">
+        <nav class="dk-nav" aria-label="Principal">
+          <a class="wordmark" href="#">dockd<i>.</i></a>
+          <div class="navlinks"><a href="#">Biblioteca</a><a href="#">Comprar</a><a href="#" aria-current="page">Descobrir</a></div>
+          <input class="search" aria-label="Buscar no catálogo" value="Buscar no catálogo" readonly>
+          <span class="account">Daniel</span>
+        </nav>
+        <div class="dk-page">
+          <section class="dk-section"><h3>Jogando agora <span>4</span></h3><a class="dk-link" href="#">Ver Biblioteca</a></section>
+          <div class="dk-strip">
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobfzp.jpg" alt="Hollow Knight"><span class="status">Jogando</span></a><a class="card-title" href="#">Hollow Knight</a><span class="card-meta">Switch</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coblhc.jpg" alt="Metal Gear Solid 4"><span class="status">Jogando</span></a><a class="card-title" href="#">Metal Gear Solid 4</a><span class="card-meta">Switch 2</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobbur.jpg" alt="Pokémon Pokopia"><span class="status">Jogando</span></a><a class="card-title" href="#">Pokémon Pokopia</a><span class="card-meta">Switch 2</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co6wrm.jpg" alt="Red Dead Redemption"><span class="status">Jogando</span></a><a class="card-title" href="#">Red Dead Redemption</a><span class="card-meta">Switch</span></article>
+          </div>
+          <section class="dk-section"><h3>Em promoção <span>3</span></h3><a class="dk-link" href="#">Ver Comprar</a></section>
+          <div class="dk-strip">
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co9mzd.jpg" alt="Blue Prince"><span class="status quero">Quero</span></a><a class="card-title" href="#">Blue Prince</a><span class="card-meta"><span class="price">R$ 53,39</span> · <s>R$ 88,99</s></span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coaknx.jpg" alt="Hades II"><span class="status quero">Quero</span></a><a class="card-title" href="#">Hades II</a><span class="card-meta"><span class="price">R$ 76,93</span> · <s>R$ 109,90</s></span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co65ac.jpg" alt="Outer Wilds"><span class="status quero">Quero</span></a><a class="card-title" href="#">Outer Wilds</a><span class="card-meta"><span class="price">R$ 59,99</span> · <s>R$ 99,99</s></span></article>
+          </div>
+          <section class="dk-section"><h3>Da sua lista <span>8</span></h3><a class="dk-link" href="#">Ver todos</a></section>
+          <div class="dk-strip">
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocb28.jpg" alt="Kingdom Hearts Collection"><span class="status quero">Quero</span></a><a class="card-title" href="#">Kingdom Hearts Collection</a><span class="card-meta">Switch 2 · 08/10/2026</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobdqk.jpg" alt="Cairn"><span class="status quero">Quero</span></a><a class="card-title" href="#">Cairn</a><span class="card-meta">Switch 2 · 2027</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/coc7mb.jpg" alt="Sports Resort"><span class="status quero">Quero</span></a><a class="card-title" href="#">Sports Resort</a><span class="card-meta">Switch 2 · 22/10/2026</span></article>
+            <article class="dk-card"><a class="poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cocvba.jpg" alt="Kirby and the World Beyond"><span class="status quero">Quero</span></a><a class="card-title" href="#">Kirby and the World Beyond</a><span class="card-meta">Switch 2 · 2027</span></article>
+          </div>
+        </div>
+      </div>
+      <p class="route">/ redireciona a conta para /descobrir · /biblioteca guarda a lista · sem quarto destino</p>
+    </section>
+  </div>
+</main>
+</body>
+</html>
