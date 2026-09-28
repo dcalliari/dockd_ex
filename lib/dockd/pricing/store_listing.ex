@@ -18,6 +18,7 @@ defmodule Dockd.Pricing.StoreListing do
     field :candidates, {:array, :map}, default: []
     field :sales_status, :string
     field :checked_at, :utc_datetime_usec
+    field :family_read_at, :utc_datetime_usec
     belongs_to :release, Dockd.Catalog.Release, type: :binary_id
     has_many :prices, Dockd.Pricing.StorePrice, foreign_key: :listing_id
     timestamps(type: :utc_datetime_usec)
@@ -25,7 +26,16 @@ defmodule Dockd.Pricing.StoreListing do
 
   def changeset(listing, attrs) do
     listing
-    |> cast(attrs, [:store, :external_id, :title, :match, :candidates, :sales_status, :checked_at])
+    |> cast(attrs, [
+      :store,
+      :external_id,
+      :title,
+      :match,
+      :candidates,
+      :sales_status,
+      :checked_at,
+      :family_read_at
+    ])
     |> validate_required([:release_id, :store, :match])
     |> validate_external_id()
     |> assoc_constraint(:release)

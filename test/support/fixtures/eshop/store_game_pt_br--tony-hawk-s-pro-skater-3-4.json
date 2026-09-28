@@ -1,0 +1,145 @@
+{
+  "hits": [
+    {
+      "platformCode": "NINTENDO_SWITCH_2",
+      "title": "Tony Hawk's™ Pro Skater™ 3 + 4",
+      "url": "/pt-br/store/products/tony-hawks-pro-skater-3-plus-4-switch-2/",
+      "dlcType": null,
+      "eshopDetails": {
+        "productType": "TITLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70010000098339",
+      "objectID": "7100098339"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH",
+      "title": "Tony Hawk's™ Pro Skater™ 3 + 4",
+      "url": "/pt-br/store/products/tony-hawks-pro-skater-3-plus-4-switch/",
+      "dlcType": null,
+      "eshopDetails": {
+        "productType": "TITLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70010000083034",
+      "objectID": "7100083034"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH_2",
+      "title": "Tony Hawk's™ Pro Skater™ 3 + 4 - Edição Padrão",
+      "url": "/pt-br/store/products/tony-hawks-pro-skater-3-plus-4-standard-edition-switch-2/",
+      "dlcType": "ROM Bundle",
+      "eshopDetails": {
+        "productType": "BUNDLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70070000028038",
+      "objectID": "7700028038"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH",
+      "title": "Tony Hawk's™ Pro Skater™ 3 + 4 - Edição Padrão",
+      "url": "/pt-br/store/products/tony-hawks-pro-skater-3-plus-4-standard-edition-70070000027243-switch/",
+      "dlcType": "ROM Bundle",
+      "eshopDetails": {
+        "productType": "BUNDLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70070000027243",
+      "objectID": "7700027243"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH_2",
+      "title": "Tony Hawk's™ Pro Skater™ 3 + 4 - Upgrade Edição Deluxe",
+      "url": "/pt-br/store/products/tony-hawks-pro-skater-3-plus-4-deluxe-edition-upgrade-70070000028048-switch-2/",
+      "dlcType": "Pacote",
+      "eshopDetails": {
+        "productType": "BUNDLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70070000028048",
+      "objectID": "7700028048"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH",
+      "title": "Tony Hawk's™ Pro Skater™ 3 + 4 - Upgrade Edição Deluxe",
+      "url": "/pt-br/store/products/tony-hawks-pro-skater-3-plus-4-deluxe-edition-upgrade-70070000026870-switch/",
+      "dlcType": "Pacote",
+      "eshopDetails": {
+        "productType": "BUNDLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70070000026870",
+      "objectID": "7700026870"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH_2",
+      "title": "Tony Hawk's™ Pro Skater™ 3 + 4 - Conteúdo da Edição Deluxe",
+      "url": "/pt-br/store/products/tony-hawks-pro-skater-3-plus-4-deluxe-edition-content-70050000057547-switch-2/",
+      "dlcType": "Individual",
+      "eshopDetails": {
+        "productType": "ADD_ON_CONTENT"
+      },
+      "isUpgrade": false,
+      "nsuid": "70050000057547",
+      "objectID": "7500057547"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH_2",
+      "title": "Tony Hawk's™ Pro Skater™ 3 + 4 - Pacote de Conteúdo",
+      "url": "/pt-br/store/products/tony-hawks-pro-skater-3-plus-4-content-pack-70050000057546-switch-2/",
+      "dlcType": "Individual",
+      "eshopDetails": {
+        "productType": "ADD_ON_CONTENT"
+      },
+      "isUpgrade": false,
+      "nsuid": "70050000057546",
+      "objectID": "7500057546"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH_2",
+      "title": "Tony Hawk's™ Pro Skater™ 3 + 4 - Sombreador Tony Wireframe",
+      "url": "/pt-br/store/products/tony-hawks-pro-skater-3-plus-4-wireframe-tony-shader-70050000057545-switch-2/",
+      "dlcType": "Individual",
+      "eshopDetails": {
+        "productType": "ADD_ON_CONTENT"
+      },
+      "isUpgrade": false,
+      "nsuid": "70050000057545",
+      "objectID": "7500057545"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH",
+      "title": "Tony Hawk's™ Pro Skater™ 3 + 4 - Pacote de Conteúdo",
+      "url": "/pt-br/store/products/tony-hawks-pro-skater-3-plus-4-content-pack-70050000055205-switch/",
+      "dlcType": "Individual",
+      "eshopDetails": {
+        "productType": "ADD_ON_CONTENT"
+      },
+      "isUpgrade": false,
+      "nsuid": "70050000055205",
+      "objectID": "7500055205"
+    }
+  ],
+  "nbHits": 14,
+  "page": 0,
+  "nbPages": 2,
+  "hitsPerPage": 10,
+  "exhaustiveNbHits": true,
+  "exhaustiveTypo": true,
+  "exhaustive": {
+    "nbHits": true,
+    "typo": true
+  },
+  "query": "Tony Hawk's Pro Skater 3 + 4",
+  "params": "query=Tony+Hawk%27s+Pro+Skater+3+%2B+4&hitsPerPage=10&attributesToRetrieve=%5B%22nsuid%22%2C%22title%22%2C%22url%22%2C%22platformCode%22%2C%22eshopDetails.productType%22%2C%22dlcType%22%2C%22isUpgrade%22%5D&attributesToHighlight=%5B%5D&attributesToSnippet=%5B%5D",
+  "renderingContent": {},
+  "processingTimeMS": 2,
+  "processingTimingsMS": {
+    "_request": {
+      "roundTrip": 99
+    },
+    "total": 2
+  },
+  "serverTimeMS": 2
+}

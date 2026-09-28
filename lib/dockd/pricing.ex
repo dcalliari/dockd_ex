@@ -40,7 +40,7 @@ defmodule Dockd.Pricing do
     )
     |> case do
       nil -> nil
-      price -> store_current_price(price, now)
+      price -> %{store_current_price(price, now) | release_id: release_id}
     end
   end
 
@@ -73,6 +73,7 @@ defmodule Dockd.Pricing do
   """
   def sync_eshop(now \\ DateTime.utc_now()) do
     match = run_step("casamento", fn -> match_eshop() end)
+    families = run_step("edições", fn -> match_families(now) end)
     prices = run_step("preços", fn -> sync_eshop_prices(now) end)
 
     case prices do
@@ -83,7 +84,7 @@ defmodule Dockd.Pricing do
         :ok
     end
 
-    %{match: match, prices: prices}
+    %{match: match, families: families, prices: prices}
   end
 
   defp run_step(name, fun) do
@@ -152,7 +153,7 @@ defmodule Dockd.Pricing do
         on: g.id == r.game_id,
         left_join: l in StoreListing,
         on: l.release_id == r.id and l.store == :eshop_br,
-        where: is_nil(l.id) or l.match == :review,
+        where: r.edition == ^Release.standard_edition() and (is_nil(l.id) or l.match == :review),
         order_by: [asc: g.title, asc: r.platform],
         preload: [game: g],
         select: {r, l}
@@ -319,6 +320,194 @@ defmodule Dockd.Pricing do
 
   defp count(counts, decisions),
     do: Enum.reduce(decisions, counts, &Map.update!(&2, &1, fn n -> n + 1 end))
+
+  # ---------------------------------------------------------------------------
+  # Family: the store's editions and Switch 2 Edition of a matched game
+
+  @doc """
+  Reads, once, the product page of every base product matched to a standard release,
+  and from the family Nintendo gives it (`Dockd.Eshop.product/1`):
+
+    * a bundle holding exactly this game (and content) becomes an edition of it, a
+      release of the same platform named as the store sells it, listed and priced at
+      once; only a bundle on sale does;
+    * the same game on the other platform (the Switch 2 Edition) becomes the listing
+      of that platform's release, created when the game lacks it.
+
+  A bundle of several games is a collection, and DLC packs and upgrade packs are not
+  games: none of them becomes a release. A page that cannot be read leaves the release
+  as it was, to try again on the next run. Returns `{:ok, %{read:, editions:, releases:}}`.
+  """
+  def match_families(now \\ DateTime.utc_now()) do
+    listings =
+      Repo.all(
+        from l in StoreListing,
+          join: r in assoc(l, :release),
+          where:
+            l.store == :eshop_br and l.match in ^@priced and is_nil(l.family_read_at) and
+              like(l.external_id, "7001%") and r.edition == ^Release.standard_edition(),
+          order_by: [asc: l.inserted_at],
+          preload: [release: r]
+      )
+
+    {:ok, Enum.reduce(listings, %{read: 0, editions: 0, releases: 0}, &read_family(&1, &2, now))}
+  end
+
+  # Nintendo is asked first, the catalog written after: no transaction waits on the network.
+  defp read_family(listing, counts, now) do
+    case Eshop.product(listing.external_id) do
+      {:ok, product} ->
+        others = Enum.reject(product.variations, &(&1.nsuid == product.nsuid))
+        taken = taken_ids(Enum.map(others, & &1.nsuid))
+
+        editions =
+          others
+          |> Enum.filter(
+            &(String.starts_with?(&1.nsuid, "7007") and &1.nsuid not in taken and
+                edition_of?(&1, product.nsuid))
+          )
+          |> sold()
+
+        platforms =
+          Enum.filter(others, fn other ->
+            String.starts_with?(other.nsuid, "7001") and other.nsuid not in taken and
+              other.platform not in [nil, product.platform]
+          end)
+
+        found =
+          Repo.transaction(fn -> join_family(listing, product, editions, platforms, now) end)
+
+        add_counts(counts, found)
+
+      {:error, reason} ->
+        Logger.warning("eShop: família de #{listing.external_id} não lida: #{inspect(reason)}")
+        counts
+    end
+  end
+
+  defp add_counts(counts, {:ok, %{editions: editions, releases: releases}}),
+    do: %{
+      counts
+      | read: counts.read + 1,
+        editions: counts.editions + editions,
+        releases: counts.releases + releases
+    }
+
+  defp add_counts(counts, _failed), do: counts
+
+  defp join_family(listing, product, editions, platforms, now) do
+    game = Repo.preload(listing.release, [game: :releases], force: true).game
+
+    added =
+      Enum.count(editions, fn {bundle, price} ->
+        add_edition(game, product.title, bundle, price, now)
+      end)
+
+    listed = Enum.count(platforms, &list_other_platform(game, &1))
+    listing |> Ecto.Changeset.change(family_read_at: now) |> Repo.update!()
+    %{editions: added, releases: listed}
+  end
+
+  defp taken_ids(ids),
+    do:
+      Repo.all(
+        from l in StoreListing,
+          where: l.store == :eshop_br and l.external_id in ^ids,
+          select: l.external_id
+      )
+
+  # A bundle whose only game is the base product: the base with content.
+  defp edition_of?(bundle, base_nsuid) do
+    case Eshop.product(bundle.nsuid) do
+      {:ok, %{bundle?: true, contents: contents}} ->
+        Enum.filter(contents, &String.starts_with?(&1.nsuid, "7001")) |> Enum.map(& &1.nsuid) ==
+          [base_nsuid]
+
+      {:ok, _other} ->
+        false
+
+      {:error, reason} ->
+        Logger.warning("eShop: pacote #{bundle.nsuid} não lido: #{inspect(reason)}")
+        false
+    end
+  end
+
+  # The bundles the store sells now, each with its price.
+  defp sold([]), do: []
+
+  defp sold(bundles) do
+    case Eshop.prices(Enum.map(bundles, & &1.nsuid)) do
+      {:ok, prices} ->
+        by_id = Map.new(prices, &{to_string(&1["title_id"]), price_attrs(&1)})
+
+        for bundle <- bundles,
+            %{regular_cents: cents} = price when is_integer(cents) <- [by_id[bundle.nsuid]],
+            do: {bundle, price}
+
+      {:error, reason} ->
+        Logger.warning("eShop: preço das edições falhou: #{inspect(reason)}")
+        []
+    end
+  end
+
+  defp add_edition(game, store_title, bundle, price, now) do
+    base = Enum.find(game.releases, &(&1.platform == bundle.platform and Release.standard?(&1)))
+    name = EshopMatch.edition_name(bundle.title, [game.title, store_title])
+
+    name =
+      if Enum.any?(game.releases, &(&1.platform == bundle.platform and &1.edition == name)),
+        do: String.replace(bundle.title, ["™", "®", "©"], ""),
+        else: name
+
+    with %Release{} <- base,
+         {:ok, release} <-
+           %Release{game_id: game.id}
+           |> Release.changeset(%{
+             platform: bundle.platform,
+             edition: name,
+             release_date: base.release_date,
+             release_date_precision: base.release_date_precision,
+             digital_available: true
+           })
+           |> Repo.insert(),
+         {:ok, listing} <-
+           %StoreListing{release_id: release.id}
+           |> StoreListing.changeset(%{
+             store: :eshop_br,
+             match: :auto,
+             external_id: bundle.nsuid,
+             title: bundle.title,
+             family_read_at: now
+           })
+           |> Repo.insert() do
+      record_price(listing, price, now)
+      true
+    else
+      _ -> false
+    end
+  end
+
+  # The Switch 2 Edition, or the Switch version, of the same game.
+  defp list_other_platform(game, product) do
+    release =
+      Enum.find(game.releases, &(&1.platform == product.platform and Release.standard?(&1))) ||
+        Repo.insert!(
+          Release.changeset(%Release{game_id: game.id}, %{
+            platform: product.platform,
+            digital_available: true
+          })
+        )
+
+    listing = Repo.get_by(StoreListing, release_id: release.id, store: :eshop_br)
+
+    (is_nil(listing) or listing.match == :review) and
+      save_listing(release, listing, %{
+        match: :auto,
+        external_id: product.nsuid,
+        title: product.title,
+        candidates: []
+      }) == :auto
+  end
 
   # ---------------------------------------------------------------------------
   # Review: a person picks the store product the sync could not settle. The listing is

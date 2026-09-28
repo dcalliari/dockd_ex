@@ -1,7 +1,9 @@
 defmodule Dockd.EshopStub do
   @moduledoc """
   Answers eShop requests in tests with responses recorded from Nintendo on
-  2026-09-27 (`test/support/fixtures/eshop`). A request without a recording fails
+  2026-09-27 and 2026-09-28 (`test/support/fixtures/eshop`). A product page is recorded
+  as the part of its `__NEXT_DATA__` that describes the product and its relatives
+  (`product--<nsuid>.json`), served back inside a page. A request without a recording fails
   the test instead of reaching the network. Each request is reported to the test
   process as `{:eshop_request, kind, detail, user_agent}`.
   """
@@ -9,6 +11,7 @@ defmodule Dockd.EshopStub do
 
   @fixtures Path.expand("fixtures/eshop", __DIR__)
   @name "eshop"
+  @american_pages ["70010000107421", "70070000037147"]
 
   def name, do: @name
 
@@ -47,6 +50,31 @@ defmodule Dockd.EshopStub do
       end)
 
     Req.Test.json(conn, %{"personalized" => false, "country" => "BR", "prices" => found})
+  end
+
+  defp respond(%{host: "www.nintendo.com"} = conn, test_pid, _prices) do
+    [locale, "store", "products", nsuid] = conn.path_info
+    report(test_pid, conn, :product, {locale, nsuid})
+    file = "product--#{nsuid}.json"
+
+    cond do
+      # Recorded from the Brazilian page, except those only the American one has.
+      locale == "pt-br" and nsuid in @american_pages ->
+        Plug.Conn.send_resp(conn, 404, "")
+
+      File.exists?(Path.join(@fixtures, file)) ->
+        data = @fixtures |> Path.join(file) |> File.read!()
+
+        conn
+        |> Plug.Conn.put_resp_content_type("text/html")
+        |> Plug.Conn.send_resp(
+          200,
+          ~s(<html><body><script id="__NEXT_DATA__" type="application/json">#{data}</script></body></html>)
+        )
+
+      true ->
+        flunk("no recorded eShop product page for #{locale} #{nsuid}")
+    end
   end
 
   defp respond(conn, test_pid, _prices) do

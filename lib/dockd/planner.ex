@@ -35,7 +35,7 @@ defmodule Dockd.Planner do
     }
   end
 
-  @doc "Lists wanted releases, excluding vetoed versions."
+  @doc "Lists wanted releases, one per platform (its standard edition), excluding vetoed versions."
   def upcoming_releases(%User{id: user_id}, today \\ Date.utc_today()) do
     vetoed = from v in ReleaseVeto, where: v.user_id == ^user_id, select: v.release_id
 
@@ -47,6 +47,7 @@ defmodule Dockd.Planner do
         on: e.game_id == g.id and e.user_id == ^user_id,
         where:
           not is_nil(r.release_date) and r.release_date >= ^today and
+            r.edition == ^Release.standard_edition() and
             e.purchase_intent in [:want, :planned, :preordered] and r.id not in subquery(vetoed),
         order_by: r.release_date,
         select: %{
@@ -62,11 +63,13 @@ defmodule Dockd.Planner do
   end
 
   @doc """
-  Lists launched or undated desires with a dated price verdict, judged on
-  `Purchasing.current_price/3`: the eShop price, or the user's last observation.
+  Lists launched or undated desires, one per game, with a dated price verdict judged on
+  `Purchasing.current_game_price/3`: the lowest price among the game's released
+  versions and editions, from the eShop or the user's last observation. `release` is
+  the one that price is of, or the first one out.
   """
-  def purchase_opportunities(%User{id: user_id}, today \\ Date.utc_today()) do
-    releases =
+  def purchase_opportunities(%User{id: user_id} = user, today \\ Date.utc_today()) do
+    rows =
       Repo.all(
         from r in Release,
           join: g in Game,
@@ -80,12 +83,21 @@ defmodule Dockd.Planner do
           select: %{release: r, game: g, entry: e}
       )
 
-    releases
-    |> Enum.map(fn item ->
-      observation = Purchasing.current_price(%User{id: user_id}, item.release.id)
-      verdict = purchase_verdict(item.entry, observation)
+    releases_by_game = Enum.group_by(rows, & &1.game.id, & &1.release)
 
-      item
+    rows
+    |> Enum.uniq_by(& &1.game.id)
+    |> Enum.map(fn first ->
+      releases = releases_by_game[first.game.id]
+      observation = Purchasing.current_game_price(user, releases)
+      verdict = purchase_verdict(first.entry, observation)
+
+      release =
+        (observation && Enum.find(releases, &(&1.id == observation.release_id))) ||
+          first.release
+
+      first
+      |> Map.put(:release, release)
       |> Map.put(:observation, observation)
       |> Map.put(:verdict, verdict.verdict)
       |> Map.put(:verdict_label, verdict.label)

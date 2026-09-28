@@ -59,11 +59,14 @@ defmodule DockdWeb.GameEvents do
   def buying(_buying, _game_id), do: nil
 
   @doc """
-  What Comprei can buy for a game: one choice per release and media it is sold in. The
-  label names only what differs between the choices.
+  What Comprei can buy for a game: one choice per platform's standard release and media
+  it is sold in; store editions wait for their own control (design/maquetes). The label
+  names only what differs between the choices.
   """
   def purchase_choices(%{releases: releases}) do
-    pairs = for r <- Enum.sort_by(releases, & &1.platform), m <- Release.media(r), do: {r, m}
+    pairs =
+      for r <- standard_releases(releases), m <- Release.media(r), do: {r, m}
+
     many_releases? = pairs |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> length() > 1
     many_media? = pairs |> Enum.map(&elem(&1, 1)) |> Enum.uniq() |> length() > 1
 
@@ -165,7 +168,7 @@ defmodule DockdWeb.GameEvents do
 
     releases =
       case params["release_id"] do
-        nil -> Enum.sort_by(game.releases, & &1.platform)
+        nil -> standard_releases(game.releases)
         release_id -> Enum.filter(game.releases, &(&1.id == release_id))
       end
 
@@ -262,11 +265,15 @@ defmodule DockdWeb.GameEvents do
 
   defp resolve_game(_params), do: :error
 
+  defp standard_releases(releases),
+    do: releases |> Enum.filter(&Release.standard?/1) |> Enum.sort_by(& &1.platform)
+
+  # Platform and media only: the exact edition comes with a purchase.
   defp ask_ownership(socket, game) do
     game = Catalog.get_game!(game.id)
 
     choices =
-      for release <- Enum.sort_by(game.releases, & &1.platform),
+      for release <- standard_releases(game.releases),
           media <- [:physical, :digital],
           do: %{
             release_id: release.id,

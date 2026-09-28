@@ -635,9 +635,26 @@ defmodule DockdWeb.DockdComponents do
 
   @doc "A release by platform, and its edition when it is not the standard one."
   def release_label(release) do
-    if release.edition in [nil, "", "Edição padrão"],
+    if Dockd.Catalog.Release.standard?(release),
       do: enum_label(release.platform),
       else: "#{enum_label(release.platform)} · #{release.edition}"
+  end
+
+  @doc """
+  An edition's short name, without the word edition: "Digital Deluxe" for "Edição
+  Digital Deluxe"; nil for the standard edition.
+  """
+  def edition_label(release) do
+    if Dockd.Catalog.Release.standard?(release) do
+      nil
+    else
+      case Regex.replace(~r/\b(?:edição|edicao|edition)\b/iu, release.edition, "")
+           |> String.replace(~r/\s+/u, " ")
+           |> String.trim() do
+        "" -> release.edition
+        short -> short
+      end
+    end
   end
 
   @doc """

@@ -7,6 +7,7 @@ defmodule DockdWeb.GameLive do
   use DockdWeb, :live_view
 
   alias Dockd.{Activity, Catalog, Library, Purchasing}
+  alias Dockd.Catalog.Release
   alias Dockd.Library.Shelf
   alias DockdWeb.{GameEvents, UserAuth}
 
@@ -25,15 +26,18 @@ defmodule DockdWeb.GameLive do
      |> load()}
   end
 
-  defp load(%{assigns: %{user: nil, game: game}} = socket),
-    do:
-      assign(socket,
-        item: Shelf.item(nil, game),
-        prices: %{},
-        purchases: %{},
-        history: [],
-        since: nil
-      )
+  defp load(%{assigns: %{user: nil, game: game}} = socket) do
+    item = Shelf.item(nil, game)
+
+    assign(socket,
+      item: item,
+      versions: versions(item),
+      prices: %{},
+      purchases: %{},
+      history: [],
+      since: nil
+    )
+  end
 
   defp load(socket) do
     %{user: user, game: game} = socket.assigns
@@ -42,6 +46,7 @@ defmodule DockdWeb.GameLive do
 
     assign(socket,
       item: item,
+      versions: versions(item),
       prices: Map.new(item.releases, &{&1.id, Purchasing.current_price(user, &1.id)}),
       purchases: Map.new(purchases, &{&1.id, &1}),
       history: history(user, item, purchases),
@@ -59,13 +64,18 @@ defmodule DockdWeb.GameLive do
   # ---------------------------------------------------------------------------
   # Read model for the page
 
+  # Until Versões shows editions under their platform (design/maquetes), a store
+  # edition appears only when it is the one owned.
+  defp versions(item),
+    do: Enum.filter(item.releases, &(Release.standard?(&1) or ownership_for(item, &1.id)))
+
   defp since(%Shelf{entry: nil}), do: nil
   defp since(%Shelf{entry: entry}), do: entry.updated_at
 
   # An ownership that came with a purchase is told by the purchase, which carries the
   # price and defined the Backlog.
   defp history(user, %Shelf{game: game, ownerships: ownerships, releases: releases}, purchases) do
-    release_names = Map.new(releases, &{&1.id, enum_label(&1.platform)})
+    release_names = Map.new(releases, &{&1.id, release_label(&1)})
     purchases = Map.new(purchases, &{&1.id, &1})
 
     events =
@@ -232,8 +242,8 @@ defmodule DockdWeb.GameLive do
         </div>
       </section>
 
-      <.section_head title="Versões" count={length(@item.releases)} />
-      <div :for={release <- @item.releases} id={"release-#{release.id}"}>
+      <.section_head title="Versões" count={length(@versions)} />
+      <div :for={release <- @versions} id={"release-#{release.id}"}>
         <div class="dk-row dk-row--wide">
           <.date_block date={release.release_date} precision={release.release_date_precision} />
           <div>

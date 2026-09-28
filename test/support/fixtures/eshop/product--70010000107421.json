@@ -1,0 +1,111 @@
+{
+  "props": {
+    "pageProps": {
+      "analytics": {
+        "product": {
+          "sku": "7100107421",
+          "nsuid": "70010000107421",
+          "name": "Pokémon™ Pokopia"
+        }
+      },
+      "initialApolloState": {
+        "Product:{\"sku\":\"121593\"}": {
+          "__typename": "Product",
+          "name": "Pokémon Pokopia",
+          "nsuid": null,
+          "sku": "121593",
+          "platform": {
+            "__typename": "Platform",
+            "label": "Nintendo Switch 2",
+            "code": "NINTENDO_SWITCH_2"
+          },
+          "isUpgrade": false,
+          "urlKey": "pokemon-pokopia-121593"
+        },
+        "Product:{\"sku\":\"7100107421\"}": {
+          "__typename": "Product",
+          "name": "Pokémon™ Pokopia",
+          "nsuid": "70010000107421",
+          "sku": "7100107421",
+          "platform": {
+            "__typename": "Platform",
+            "label": "Nintendo Switch 2",
+            "code": "NINTENDO_SWITCH_2"
+          },
+          "dlcType": null,
+          "isUpgrade": false,
+          "urlKey": "pokemon-pokopia-switch-2",
+          "edition": "Standard Edition",
+          "variations": [
+            {
+              "__typename": "ProductVariation",
+              "label": "Standard Edition",
+              "value": "Standard Edition",
+              "type": "edition",
+              "attributes": [
+                {
+                  "__typename": "ProductVariationAttribute",
+                  "label": "Standard Edition",
+                  "type": "edition",
+                  "value": "Standard Edition"
+                }
+              ],
+              "product": {
+                "__ref": "Product:{\"sku\":\"7100107421\"}"
+              }
+            },
+            {
+              "__typename": "ProductVariation",
+              "label": "ROM Bundle",
+              "value": "ROM Bundle",
+              "type": "edition",
+              "attributes": [
+                {
+                  "__typename": "ProductVariationAttribute",
+                  "label": "ROM Bundle",
+                  "type": "edition",
+                  "value": "ROM Bundle"
+                }
+              ],
+              "product": {
+                "__ref": "Product:{\"sku\":\"7700037147\"}"
+              }
+            },
+            {
+              "__typename": "ProductVariation",
+              "label": "Physical Edition - US",
+              "value": "Physical Edition - US",
+              "type": "edition",
+              "attributes": [
+                {
+                  "__typename": "ProductVariationAttribute",
+                  "label": "Physical Edition - US",
+                  "type": "edition",
+                  "value": "Physical Edition - US"
+                }
+              ],
+              "product": {
+                "__ref": "Product:{\"sku\":\"121593\"}"
+              }
+            }
+          ],
+          "softwareContents": [],
+          "baseSoftware": []
+        },
+        "Product:{\"sku\":\"7700037147\"}": {
+          "__typename": "Product",
+          "name": "Pokémon™ Pokopia Bundle (Game + Expansion Pass)",
+          "nsuid": "70070000037147",
+          "sku": "7700037147",
+          "platform": {
+            "__typename": "Platform",
+            "label": "Nintendo Switch 2",
+            "code": "NINTENDO_SWITCH_2"
+          },
+          "isUpgrade": false,
+          "urlKey": "pokemon-pokopia-bundle-game-plus-expansion-pass-switch-2"
+        }
+      }
+    }
+  }
+}

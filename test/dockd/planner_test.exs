@@ -125,6 +125,33 @@ defmodule Dockd.PlannerTest do
     refute item.observation_stale?
   end
 
+  test "a game with editions is one opportunity, judged on its cheapest price", %{user: user} do
+    game = game_fixture(%{title: "Editions"})
+    release = release_fixture(game, %{release_date: ~D[2026-01-01]})
+
+    deluxe =
+      release_fixture(game, %{edition: "Edição Deluxe", release_date: ~D[2026-01-01]})
+
+    {:ok, _} =
+      Library.create_entry(user, %{
+        game_id: game.id,
+        purchase_intent: :want,
+        target_price_cents: 20_000
+      })
+
+    store_price_fixture(release, %{regular_cents: 24_990})
+    store_price_fixture(deluxe, %{regular_cents: 29_990, discount_cents: 14_990})
+
+    assert [%{verdict: :buy, release: %{id: id}, observation: %{price_cents: 14_990}}] =
+             Planner.purchase_opportunities(user, ~D[2026-02-01])
+
+    assert id == deluxe.id
+
+    assert Planner.upcoming_releases(user, ~D[2025-12-01]) |> Enum.map(& &1.release.id) == [
+             release.id
+           ]
+  end
+
   test "calendar empty reason explains undated releases", %{user: user} do
     game = game_fixture(%{title: "Undated desire"})
     {:ok, _release} = Catalog.create_release(game.id, %{platform: :switch})

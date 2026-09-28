@@ -2,6 +2,7 @@ defmodule Dockd.PricingTest do
   use Dockd.DataCase, async: false
   import ExUnit.CaptureLog
   import Dockd.DomainFixtures
+  alias Dockd.Catalog.Release
   alias Dockd.{EshopStub, IGDB, Pricing, Purchasing}
   alias Dockd.Pricing.{CurrentPrice, StoreListing, StorePrice}
   alias Dockd.Purchasing.PriceObservation
@@ -37,6 +38,14 @@ defmodule Dockd.PricingTest do
     |> StoreListing.changeset(%{store: :eshop_br, match: :auto, external_id: nsuid})
     |> Repo.insert!()
     |> Map.put(:release, release)
+  end
+
+  defp flush_requests do
+    receive do
+      {:eshop_request, _, _, _} -> flush_requests()
+    after
+      0 -> :ok
+    end
   end
 
   defp searches do
@@ -346,7 +355,11 @@ defmodule Dockd.PricingTest do
     end
 
     test "logs an error when Nintendo fails or no price comes back" do
-      listing_for("70010000063714")
+      # Its family is known, so only prices are asked.
+      "70010000063714"
+      |> listing_for()
+      |> Ecto.Changeset.change(family_read_at: @during_sale)
+      |> Repo.update!()
 
       Req.Test.stub(EshopStub.name(), fn conn ->
         conn |> Plug.Conn.put_status(404) |> Req.Test.json(%{"error" => "gone"})
@@ -421,6 +434,104 @@ defmodule Dockd.PricingTest do
       assert %{igdb_id: 88, releases: [release]} = Dockd.Catalog.get_game!(game.id)
       assert %{match: :auto, external_id: "70010000063714"} = listing(release)
       assert Pricing.store_price(release.id) == nil
+    end
+  end
+
+  describe "match_families/1" do
+    setup do
+      {:ok, user} = user_fixture()
+      %{user: user}
+    end
+
+    test "a bundle holding only the game becomes an edition, listed and priced", %{user: user} do
+      {game, %{switch: switch, switch_2: switch_2}} =
+        game_with("Tony Hawk's Pro Skater 3 + 4", [:switch, :switch_2])
+
+      assert {:ok, %{auto: 2}} = Pricing.match_eshop()
+      assert {:ok, %{read: 2, editions: 4, releases: 0}} = Pricing.match_families(@during_sale)
+
+      editions =
+        Repo.all(
+          from r in Release,
+            join: l in StoreListing,
+            on: l.release_id == r.id,
+            where: r.game_id == ^game.id and r.edition != "Edição padrão",
+            select: {r.platform, r.edition, l.external_id, l.match}
+        )
+
+      assert Enum.sort(editions) == [
+               {:switch, "Com conteúdo extra", "70070000027243", :auto},
+               {:switch, "Edição Digital Deluxe", "70070000025386", :auto},
+               {:switch_2, "Com conteúdo extra", "70070000028038", :auto},
+               {:switch_2, "Edição Digital Deluxe", "70070000028043", :auto}
+             ]
+
+      edition =
+        Repo.get_by!(Release, game_id: game.id, platform: :switch, edition: "Com conteúdo extra")
+
+      assert edition.release_date == switch.release_date
+      assert %CurrentPrice{price_cents: 26_990} = Pricing.store_price(edition.id, @during_sale)
+
+      # The base game is no longer sold on its own: the game costs its cheapest edition.
+      {:ok, _} = Pricing.sync_eshop_prices(@during_sale)
+      assert Pricing.store_price(switch_2.id) == nil
+      releases = Dockd.Catalog.list_releases(game.id)
+
+      assert %CurrentPrice{price_cents: 26_990, release_id: cheapest} =
+               Purchasing.current_game_price(user, releases)
+
+      assert Repo.get!(Release, cheapest).edition == "Com conteúdo extra"
+
+      # Read once: the next run asks Nintendo nothing.
+      flush_requests()
+      assert {:ok, %{read: 0}} = Pricing.match_families(@during_sale)
+      refute_received {:eshop_request, :product, _, _}
+    end
+
+    test "the Switch 2 Edition in the family lists the game's Switch 2 release" do
+      {game, %{switch: _}} = game_with("The Legend of Zelda: Tears of the Kingdom", [:switch])
+
+      assert {:ok, %{auto: 1}} = Pricing.match_eshop()
+      assert {:ok, %{read: 1, editions: 0, releases: 1}} = Pricing.match_families(@during_sale)
+
+      switch_2 = Repo.get_by!(Release, game_id: game.id, platform: :switch_2)
+      assert switch_2.edition == "Edição padrão"
+      assert %{match: :auto, external_id: "70010000096821"} = listing(switch_2)
+
+      # Its page is read in turn and adds nothing more.
+      assert {:ok, %{read: 1, editions: 0, releases: 0}} = Pricing.match_families(@during_sale)
+      refute Repo.exists?(from l in StoreListing, where: like(l.external_id, "7005%"))
+    end
+
+    test "a game missing from the Brazilian pages is read from the American one" do
+      {game, %{switch_2: _}} = game_with("Pokémon Pokopia", [:switch_2])
+      {:ok, %{auto: 1}} = Pricing.match_eshop()
+
+      assert {:ok, %{read: 1, editions: 1}} = Pricing.match_families(@during_sale)
+
+      # The edition takes the store's name, without the game's title.
+      edition =
+        Repo.get_by!(Release,
+          game_id: game.id,
+          platform: :switch_2,
+          edition: "Bundle (Game + Expansion Pass)"
+        )
+
+      assert %CurrentPrice{price_cents: 58_490} = Pricing.store_price(edition.id)
+      assert_received {:eshop_request, :product, {"us", "70010000107421"}, _}
+    end
+
+    test "a page in another shape leaves the release to try again" do
+      {_, %{switch: release}} = game_with("Rayman Legends", [:switch])
+      {:ok, _} = Pricing.match_eshop()
+
+      Req.Test.stub(EshopStub.name(), &Req.Test.text(&1, "<html>maintenance</html>"))
+
+      assert capture_log(fn ->
+               assert {:ok, %{read: 0}} = Pricing.match_families(@during_sale)
+             end) =~ "não lida"
+
+      assert %{family_read_at: nil} = listing(release)
     end
   end
 

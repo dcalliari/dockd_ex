@@ -150,6 +150,66 @@ defmodule Dockd.Pricing.EshopMatch do
     MapSet.size(shared) * 2 > MapSet.size(wanted)
   end
 
+  @with_extra "Com conteúdo extra"
+  @standard_names ["edicao padrao", "standard edition", "edicao standard", "padrao", "standard"]
+
+  @doc """
+  The edition a store bundle is sold as, without the game's title: "Edição Digital
+  Deluxe" for "Hogwarts Legacy: Edição Digital Deluxe". A bundle named after the game
+  alone, or as its standard edition, is the game with extra content ("Com conteúdo
+  extra"); one that does not start with the game's title keeps its own name.
+  """
+  def edition_name(bundle_title, game_titles) do
+    title = bundle_title |> String.replace(["™", "®", "©"], "") |> String.trim()
+
+    names =
+      game_titles
+      |> Enum.map(&normalize/1)
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.uniq()
+      |> Enum.sort_by(&String.length/1, :desc)
+
+    case without_titles(title, names) do
+      ^title ->
+        if Enum.any?(names, &String.contains?(" #{normalize(title)} ", " #{&1} ")),
+          do: @with_extra,
+          else: title
+
+      rest ->
+        if normalize(rest) in ["" | @standard_names], do: @with_extra, else: rest
+    end
+  end
+
+  # Drops the game's title from the start, again when the bundle repeats it before its
+  # content ("Game + Game Expansion Pass"), with the separators and joining words.
+  defp without_titles(title, names) do
+    case Enum.find_value(names, &after_prefix(title, &1)) do
+      nil ->
+        title
+
+      rest ->
+        rest
+        |> String.replace(~r/^(?:[^\p{L}\p{N}(]+|(?:and|e|with|com)\s+)+/iu, "")
+        |> String.trim()
+        |> without_titles(names)
+    end
+  end
+
+  # What follows the game's title at the start of a store title.
+  defp after_prefix(title, name) do
+    graphemes = String.graphemes(title)
+
+    Enum.find_value(1..length(graphemes)//1, fn n ->
+      {head, tail} = Enum.split(graphemes, n)
+
+      if normalize(Enum.join(head)) == name and not word_char?(List.first(tail)),
+        do: Enum.join(tail)
+    end)
+  end
+
+  defp word_char?(nil), do: false
+  defp word_char?(grapheme), do: Regex.match?(~r/^[\p{L}\p{N}]$/u, grapheme)
+
   @doc "Drops an edition suffix from a normalized title."
   def edition_base(title) do
     Enum.find_value(@edition_suffixes, title, fn suffix ->

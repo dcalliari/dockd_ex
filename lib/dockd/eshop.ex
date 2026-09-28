@@ -3,12 +3,18 @@ defmodule Dockd.Eshop do
   Small client for the Nintendo eShop Brasil: the nintendo.com title search (Algolia)
   and the public price API.
 
-  Neither endpoint is an official, documented API. Both are public and keyless apart
+  It also reads a product's page on nintendo.com/pt-br for what the search does not
+  say: which products are the same game (`product/1`).
+
+  None of these is an official, documented API. Both are public and keyless apart
   from the search-only key that nintendo.com hands to every browser, read here from
   configuration because Nintendo may rotate it. Requests go one per second, with a
   User-Agent naming Dockd, and never disguise themselves.
   """
   @price_url "https://api.ec.nintendo.com/v1/price"
+  @product_url "https://www.nintendo.com/%{locale}/store/products/"
+  # Games missing from the Brazilian store pages (Pokopia, Rayman) have an American one.
+  @product_locales ["pt-br", "us"]
   @default_app_id "U3B6GR4UA3"
   @indexes %{pt_br: "store_game_pt_br", en_us: "store_game_en_us"}
   @price_batch 50
@@ -70,6 +76,70 @@ defmodule Dockd.Eshop do
     |> request(@price_url, params: [country: "BR", lang: "pt", ids: Enum.join(nsuids, ",")])
     |> body_field("prices")
   end
+
+  @platforms %{"NINTENDO_SWITCH" => :switch, "NINTENDO_SWITCH_2" => :switch_2}
+
+  @doc """
+  A product as its nintendo.com page describes it (the Brazilian one, else the
+  American one), read from the data the page
+  embeds for its own script (`__NEXT_DATA__`). Returns `{:ok, product}` with `nsuid`,
+  `title`, `platform`, `bundle?` (a game sold with content), `upgrade?` and the
+  related products, each `%{nsuid:, title:, platform:}`: `variations`, the products
+  Nintendo groups as the same game (editions and, for a Switch 2 Edition, the Switch
+  version and the upgrade pack); `contents`, what a bundle holds; `base`, what an
+  upgrade pack upgrades. A page in another shape is `{:error, :unexpected_response}`.
+  """
+  def product(nsuid) when is_binary(nsuid), do: product(nsuid, @product_locales)
+
+  defp product(nsuid, [locale | rest]) do
+    url = String.replace(@product_url, "%{locale}", locale) <> nsuid <> "/"
+
+    case request(:get, url, decode_body: false) do
+      {:ok, %{body: html}} when is_binary(html) -> parse_product(html)
+      {:ok, _} -> {:error, :unexpected_response}
+      {:error, {:http_error, 404}} when rest != [] -> product(nsuid, rest)
+      error -> error
+    end
+  end
+
+  defp parse_product(html) do
+    with [_, json] <-
+           Regex.run(~r{<script id="__NEXT_DATA__" type="application/json">(.*?)</script>}s, html),
+         {:ok, %{"props" => %{"pageProps" => page}}} <- Jason.decode(json),
+         %{"analytics" => %{"product" => %{"sku" => sku}}, "initialApolloState" => state} <- page,
+         %{"nsuid" => nsuid} = main <- state[product_key(sku)] do
+      related = fn field -> main |> Map.get(field, []) |> List.wrap() |> refs(state) end
+
+      {:ok,
+       Map.merge(summary(main), %{
+         nsuid: nsuid,
+         bundle?: get_in(main, ["dlcType", "code"]) == "ROM_BUNDLE",
+         upgrade?: main["isUpgrade"] == true,
+         variations: related.("variations"),
+         contents: related.("softwareContents"),
+         base: related.("baseSoftware")
+       })}
+    else
+      _ -> {:error, :unexpected_response}
+    end
+  end
+
+  defp product_key(sku), do: ~s(Product:{"sku":"#{sku}"})
+
+  # A variation wraps its product; contents and base are the reference itself.
+  defp refs(items, state) do
+    for item <- items,
+        ref = get_in(item, ["product", "__ref"]) || item["__ref"],
+        %{"nsuid" => nsuid} = product when is_binary(nsuid) <- [state[ref]],
+        do: summary(product)
+  end
+
+  defp summary(product),
+    do: %{
+      nsuid: product["nsuid"],
+      title: product["name"],
+      platform: @platforms[get_in(product, ["platform", "code"])]
+    }
 
   # A changed endpoint answers 200 with another shape: an error, not a crash.
   defp body_field({:ok, %{body: %{} = body}}, key) when is_map_key(body, key),

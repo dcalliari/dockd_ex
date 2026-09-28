@@ -113,4 +113,56 @@ defmodule Dockd.Pricing.EshopMatchTest do
 
     assert EshopMatch.decide([]) == :none
   end
+
+  test "an edition is named as the store sells it, without the game's title" do
+    titles = ["Tony Hawk's Pro Skater 3 + 4", "Tony Hawk's™ Pro Skater™ 3 + 4"]
+
+    assert EshopMatch.edition_name(
+             "Tony Hawk's™ Pro Skater™ 3 + 4 - Edição Digital Deluxe",
+             titles
+           ) ==
+             "Edição Digital Deluxe"
+
+    assert EshopMatch.edition_name("Hogwarts Legacy: Edição Digital Deluxe", ["Hogwarts Legacy"]) ==
+             "Edição Digital Deluxe"
+
+    assert EshopMatch.edition_name(
+             "Teenage Mutant Ninja Turtles: Splintered Fate Pacote DLC com todos os personagens",
+             ["Teenage Mutant Ninja Turtles: Splintered Fate"]
+           ) == "Pacote DLC com todos os personagens"
+  end
+
+  test "a bundle named after the game alone is the game with extra content" do
+    titles = ["Tony Hawk's Pro Skater 3 + 4"]
+
+    assert EshopMatch.edition_name("Tony Hawk's™ Pro Skater™ 3 + 4 - Edição Padrão", titles) ==
+             "Com conteúdo extra"
+
+    assert EshopMatch.edition_name("It Takes Two", ["It Takes Two"]) == "Com conteúdo extra"
+
+    assert EshopMatch.edition_name(
+             "Pacote Animal Crossing™: New Horizons (Jogo + conteúdo extra)",
+             ["Animal Crossing: New Horizons"]
+           ) == "Com conteúdo extra"
+
+    # A bundle that repeats the game's title before its content keeps only the content.
+    assert EshopMatch.edition_name(
+             "The Legend of Zelda™: Breath of the Wild and The Legend of Zelda™: Breath of the Wild Expansion Pass Bundle  ",
+             ["The Legend of Zelda: Breath of the Wild"]
+           ) == "Expansion Pass Bundle"
+
+    assert EshopMatch.edition_name(
+             "Cadence of Hyrule: Crypt of the NecroDancer featuring The Legend of Zelda + Cadence of Hyrule Season Pass",
+             [
+               "Cadence of Hyrule",
+               "Cadence of Hyrule: Crypt of the NecroDancer Featuring The Legend of Zelda"
+             ]
+           ) == "Season Pass"
+
+    assert EshopMatch.edition_name("Denshattack! Digital Deluxe Edition", ["Denshattack!"]) ==
+             "Digital Deluxe Edition"
+
+    # A word that only starts the same is not the game's title.
+    assert EshopMatch.edition_name("Cupheads Deluxe", ["Cuphead"]) == "Cupheads Deluxe"
+  end
 end

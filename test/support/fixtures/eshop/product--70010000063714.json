@@ -1,0 +1,111 @@
+{
+  "props": {
+    "pageProps": {
+      "analytics": {
+        "product": {
+          "sku": "7100063714",
+          "nsuid": "70010000063714",
+          "name": "The Legend of Zelda™: Tears of the Kingdom"
+        }
+      },
+      "initialApolloState": {
+        "Product:{\"sku\":\"7100063714\"}": {
+          "__typename": "Product",
+          "name": "The Legend of Zelda™: Tears of the Kingdom",
+          "nsuid": "70010000063714",
+          "sku": "7100063714",
+          "platform": {
+            "__typename": "Platform",
+            "label": "Nintendo Switch",
+            "code": "NINTENDO_SWITCH"
+          },
+          "dlcType": null,
+          "isUpgrade": false,
+          "urlKey": "the-legend-of-zelda-tears-of-the-kingdom-switch",
+          "edition": "Standard Edition",
+          "variations": [
+            {
+              "__typename": "ProductVariation",
+              "label": "Standard Edition",
+              "value": "Standard Edition",
+              "type": "edition",
+              "attributes": [
+                {
+                  "__typename": "ProductVariationAttribute",
+                  "label": "Standard Edition",
+                  "type": "edition",
+                  "value": "Standard Edition"
+                }
+              ],
+              "product": {
+                "__ref": "Product:{\"sku\":\"7100063714\"}"
+              }
+            },
+            {
+              "__typename": "ProductVariation",
+              "label": "Standard Edition",
+              "value": "Standard Edition",
+              "type": "edition",
+              "attributes": [
+                {
+                  "__typename": "ProductVariationAttribute",
+                  "label": "Standard Edition",
+                  "type": "edition",
+                  "value": "Standard Edition"
+                }
+              ],
+              "product": {
+                "__ref": "Product:{\"sku\":\"7100096821\"}"
+              }
+            },
+            {
+              "__typename": "ProductVariation",
+              "label": "Standard Edition",
+              "value": "Standard Edition",
+              "type": "edition",
+              "attributes": [
+                {
+                  "__typename": "ProductVariationAttribute",
+                  "label": "Standard Edition",
+                  "type": "edition",
+                  "value": "Standard Edition"
+                }
+              ],
+              "product": {
+                "__ref": "Product:{\"sku\":\"7500056960\"}"
+              }
+            }
+          ],
+          "softwareContents": [],
+          "baseSoftware": []
+        },
+        "Product:{\"sku\":\"7100096821\"}": {
+          "__typename": "Product",
+          "name": "The Legend of Zelda™: Tears of the Kingdom – Nintendo Switch™ 2 Edition",
+          "nsuid": "70010000096821",
+          "sku": "7100096821",
+          "platform": {
+            "__typename": "Platform",
+            "label": "Nintendo Switch 2",
+            "code": "NINTENDO_SWITCH_2"
+          },
+          "isUpgrade": false,
+          "urlKey": "the-legend-of-zelda-tears-of-the-kingdom-nintendo-switch-2-edition-switch-2"
+        },
+        "Product:{\"sku\":\"7500056960\"}": {
+          "__typename": "Product",
+          "name": "Pacote de melhoria The Legend of Zelda™: Tears of the Kingdom – Nintendo Switch™ 2 Edition",
+          "nsuid": "70050000056960",
+          "sku": "7500056960",
+          "platform": {
+            "__typename": "Platform",
+            "label": "Nintendo Switch 2",
+            "code": "NINTENDO_SWITCH_2"
+          },
+          "isUpgrade": true,
+          "urlKey": "the-legend-of-zelda-tears-of-the-kingdom-nintendo-switch-2-edition-upgrade-pack-switch-2"
+        }
+      }
+    }
+  }
+}

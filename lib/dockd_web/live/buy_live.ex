@@ -84,6 +84,16 @@ defmodule DockdWeb.BuyLive do
 
   defp month_name(%Date{month: month}), do: Enum.at(@months, month - 1)
 
+  # The lowest price can be an edition's: its short name keeps the number from surprising.
+  defp price_edition(%{release_id: release_id}, releases) when is_binary(release_id) do
+    case Enum.find(releases, &(&1.id == release_id)) do
+      nil -> nil
+      release -> edition_label(release)
+    end
+  end
+
+  defp price_edition(_price, _releases), do: nil
+
   defp price_open?(%{kind: :price, key: key}, game_id), do: key == game_id
   defp price_open?(_form, _game_id), do: false
 
@@ -117,7 +127,11 @@ defmodule DockdWeb.BuyLive do
         <div>
           <.link navigate={~p"/jogos/#{@item.game.id}"} class="dk-row__title">{@item.game.title}</.link>
           <div class="dk-row__meta">
-            {meta([platform_label(@item.releases), enum_label(@item.game.availability)])}
+            {meta([
+              platform_label(@item.releases),
+              enum_label(@item.game.availability),
+              price_edition(@price, @item.releases)
+            ])}
           </div>
         </div>
         <div class="dk-row__end">

@@ -78,6 +78,31 @@ defmodule Dockd.PurchasingTest do
     assert Purchasing.current_game_price(user, [release_fixture(game_fixture())]) == nil
   end
 
+  test "a game costs its cheapest release not vetoed, the standard edition on a tie",
+       %{user: user, game: game, release: release} do
+    switch_2 = release_fixture(game, %{platform: :switch_2})
+    deluxe = release_fixture(game, %{platform: :switch, edition: "Edição Deluxe"})
+
+    store_price_fixture(release, %{regular_cents: 29_990})
+    store_price_fixture(switch_2, %{regular_cents: 34_990})
+    store_price_fixture(deluxe, %{regular_cents: 29_990})
+    releases = [deluxe, switch_2, release]
+
+    assert %{price_cents: 29_990, release_id: id} = Purchasing.current_game_price(user, releases)
+    assert id == release.id
+
+    {:ok, _} = Library.create_veto(user, %{release_id: release.id})
+    assert %{release_id: id} = Purchasing.current_game_price(user, releases)
+    assert id == deluxe.id
+
+    {:ok, _} = Library.create_veto(user, %{release_id: deluxe.id})
+    assert %{price_cents: 34_990} = Purchasing.current_game_price(user, releases)
+
+    # The physical copy is judged on its own media.
+    observe(user, switch_2, :physical, 25_000, -60)
+    assert %{price_cents: 25_000} = Purchasing.current_game_price(user, releases, :physical)
+  end
+
   defp observe(user, release, format, cents, seconds) do
     {:ok, _} =
       Purchasing.create_price_observation(user, %{

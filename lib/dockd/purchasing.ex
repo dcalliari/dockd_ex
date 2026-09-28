@@ -8,6 +8,7 @@ defmodule Dockd.Purchasing do
   alias Dockd.Library
   alias Dockd.Library.Entry
   alias Dockd.Library.Ownership
+  alias Dockd.Library.ReleaseVeto
   alias Dockd.Pricing
   alias Dockd.Purchasing.PriceObservation
   alias Dockd.Purchasing.Purchase
@@ -151,13 +152,39 @@ defmodule Dockd.Purchasing do
           limit: 1
       )
 
-  @doc "The most recent `current_price/3` among a game's releases, optionally of one media."
+  @doc """
+  What it costs to have a game now: the lowest `current_price/3` among its releases,
+  platforms and editions, that the user has not vetoed, optionally of one media. On a
+  tie the standard edition wins. The price's `release_id` says which release it is, so
+  a screen can name an edition that is not the standard one.
+  """
   def current_game_price(%User{} = user, releases, format \\ nil) do
+    vetoed = vetoed_release_ids(user, Enum.map(releases, & &1.id))
+
     releases
-    |> Enum.map(&current_price(user, &1.id, format))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.max_by(& &1.observed_at, DateTime, fn -> nil end)
+    |> Enum.reject(&(&1.id in vetoed))
+    |> Enum.flat_map(fn release ->
+      case current_price(user, release.id, format) do
+        nil -> []
+        price -> [{price, release}]
+      end
+    end)
+    |> Enum.min_by(
+      fn {price, release} ->
+        {price.price_cents, if(Release.standard?(release), do: 0, else: 1)}
+      end,
+      fn -> {nil, nil} end
+    )
+    |> elem(0)
   end
+
+  defp vetoed_release_ids(%User{id: id}, release_ids),
+    do:
+      Repo.all(
+        from v in ReleaseVeto,
+          where: v.user_id == ^id and v.release_id in ^release_ids,
+          select: v.release_id
+      )
 
   @doc "Gets a purchase scoped to a user."
   def get_purchase!(%User{id: id}, purchase_id),

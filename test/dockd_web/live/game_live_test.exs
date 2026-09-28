@@ -35,6 +35,22 @@ defmodule DockdWeb.GameLiveTest do
     refute html =~ "Edição padrão"
   end
 
+  test "a store edition waits for its own control: only an owned one shows",
+       %{conn: conn} = ctx do
+    deluxe = release_fixture(ctx.game, %{platform: :switch, edition: "Edição Deluxe"})
+    {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+
+    refute has_element?(view, "#release-#{deluxe.id}")
+
+    assert DockdWeb.GameEvents.purchase_choices(Dockd.Catalog.get_game!(ctx.game.id)) |> length() ==
+             2
+
+    {:ok, _} = purchase_fixture(ctx.user, deluxe)
+    {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+
+    assert has_element?(view, "#release-#{deluxe.id}", "Switch · Edição Deluxe")
+  end
+
   test "links to the game's IGDB page without repeating the credit", %{conn: conn} = ctx do
     {:ok, game} = Dockd.Catalog.update_game(ctx.game, %{igdb_id: 4242, slug: "metroid-prime-4"})
     {:ok, view, _html} = live(conn, ~p"/jogos/#{game.id}")
