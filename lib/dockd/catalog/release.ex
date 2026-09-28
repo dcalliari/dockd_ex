@@ -69,8 +69,11 @@ defmodule Dockd.Catalog.Release do
     end
   end
 
+  # Only when no precision was given: IGDB repeating the one stored is not a change, and
+  # must not turn a year into a day.
   defp put_default_date_precision(changeset) do
-    if get_change(changeset, :release_date_precision) == nil do
+    if changeset.params["release_date_precision"] in [nil, ""] and
+         Map.has_key?(changeset.changes, :release_date) do
       precision = if get_field(changeset, :release_date), do: :day, else: :tbd
       put_change(changeset, :release_date_precision, precision)
     else

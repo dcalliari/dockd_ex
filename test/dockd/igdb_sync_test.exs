@@ -83,6 +83,29 @@ defmodule Dockd.IGDBSyncTest do
     assert switch_2.digital_available
   end
 
+  test "a year-only date stays a year on every sync" do
+    stub_igdb(%{
+      "id" => 338_104,
+      "name" => "The Duskbloods",
+      "platforms" => [%{"id" => 508}],
+      "release_dates" => [%{"platform" => 508, "date" => 1_798_675_200, "date_format" => 2}]
+    })
+
+    {:ok, game} =
+      Catalog.create_game(%{
+        title: "The Duskbloods",
+        availability: :switch2_exclusive,
+        igdb_id: 338_104
+      })
+
+    for _sync <- 1..2 do
+      assert {:ok, _} = Catalog.sync_igdb()
+
+      assert [%{release_date: ~D[2026-01-01], release_date_precision: :year}] =
+               Catalog.list_releases(game.id)
+    end
+  end
+
   test "suggests Nintendo exclusivity for both Nintendo platforms only" do
     assert Catalog.suggested_availability(%{"platforms" => [%{"id" => 130}, %{"id" => 508}]}) ==
              :nintendo_exclusive
