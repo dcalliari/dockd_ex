@@ -12,6 +12,7 @@ defmodule DockdWeb.CatalogReviewLive do
   use DockdWeb, :live_view
 
   on_mount {DockdWeb.UserAuth, :require_authenticated}
+  on_mount {DockdWeb.UserAuth, :require_admin}
 
   alias Dockd.{Catalog, Pricing}
   alias Dockd.Library.Shelf

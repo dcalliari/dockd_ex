@@ -82,6 +82,23 @@ defmodule Dockd.AccountsTest do
     end
   end
 
+  describe "set_admin/2" do
+    test "promotes and demotes an account by email" do
+      user = user_fixture()
+      refute user.admin
+
+      assert {:ok, promoted} = Accounts.set_admin(user.email, true)
+      assert promoted.admin
+
+      assert {:ok, demoted} = Accounts.set_admin(user.email, false)
+      refute demoted.admin
+    end
+
+    test "fails for an email with no account" do
+      assert {:error, :not_found} = Accounts.set_admin("ninguem@example.com", true)
+    end
+  end
+
   describe "session tokens" do
     test "a session token finds its user until it is deleted" do
       user = user_fixture()

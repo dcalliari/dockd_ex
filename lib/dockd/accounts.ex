@@ -10,6 +10,14 @@ defmodule Dockd.Accounts do
   @doc "Gets a user by email."
   def get_user_by_email(email) when is_binary(email), do: Repo.get_by(User, email: email)
 
+  @doc "Promotes or demotes an account by email."
+  def set_admin(email, admin) when is_binary(email) and is_boolean(admin) do
+    case get_user_by_email(email) do
+      nil -> {:error, :not_found}
+      user -> user |> Ecto.Changeset.change(admin: admin) |> Repo.update()
+    end
+  end
+
   @doc "Gets a user by email and password, or nil."
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do

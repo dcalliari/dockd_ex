@@ -254,7 +254,7 @@ defmodule DockdWeb.DockdComponents do
       <summary>{@user.name} <.icon name="hero-chevron-down" /></summary>
       <ul class="dk-filter__menu">
         <li class="dk-account__who">{@user.email}</li>
-        <li :if={@catalog_review > 0}>
+        <li :if={@user.admin and @catalog_review > 0}>
           <.link id="account-catalog-review" navigate={~p"/conferir"}>
             Conferir catálogo <small>{@catalog_review}</small>
           </.link>

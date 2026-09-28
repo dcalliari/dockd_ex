@@ -11,6 +11,7 @@ Ecto.Adapters.SQL.query!(
 )
 
 {:ok, owner} = Accounts.register_user(%{email: "e2e@dockd.local", password: "senha-da-jornada-e2e"})
+owner = Repo.update!(Ecto.Changeset.change(owner, admin: true))
 today = Date.utc_today()
 cover_url = "/images/e2e-cover.svg"
 

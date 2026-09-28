@@ -32,6 +32,14 @@ defmodule Dockd.Release do
   end
 
   @doc ~S"""
+  Promotes or demotes an account:
+  `bin/dockd eval 'Dockd.Release.set_admin("email", true)'`.
+  """
+  def set_admin(email, admin) when is_boolean(admin) do
+    with_repo(fn -> Dockd.Accounts.set_admin(email, admin) end)
+  end
+
+  @doc ~S"""
   Prints what joining the catalog's IGDB families does (an edition's game moved to its
   parent, the Switch 2 Edition as a release, duplicates merged, doubtful ones queued),
   without changing anything: `bin/dockd eval 'Dockd.Release.families()'`. The daily

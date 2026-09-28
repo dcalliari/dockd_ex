@@ -153,6 +153,16 @@ defmodule DockdWeb.UserAuth do
     end
   end
 
+  def on_mount(:require_admin, _params, session, socket) do
+    socket = mount_current_scope(socket, session)
+
+    if admin_scope?(socket.assigns.current_scope) do
+      {:cont, socket}
+    else
+      {:halt, socket}
+    end
+  end
+
   @doc """
   Public screens show a visitor everything but save nothing: every event outside
   `allowed` is dropped before the LiveView sees it.
@@ -187,6 +197,18 @@ defmodule DockdWeb.UserAuth do
       |> halt()
     end
   end
+
+  @doc "Plug that hides the catalog review queue from non-admin accounts."
+  def require_admin_user(%{assigns: %{current_scope: scope}} = conn, _opts) do
+    if admin_scope?(scope) do
+      conn
+    else
+      conn |> send_resp(:not_found, "Not Found") |> halt()
+    end
+  end
+
+  defp admin_scope?(%Scope{user: %{admin: true}}), do: true
+  defp admin_scope?(_), do: false
 
   defp maybe_store_return_to(%{method: "GET"} = conn),
     do: put_session(conn, :user_return_to, current_path(conn))

@@ -22,6 +22,10 @@ defmodule DockdWeb.Router do
     plug :require_api_user
   end
 
+  pipeline :admin do
+    plug :require_admin_user
+  end
+
   # The catalog is public: a visitor explores it and each game, while personal data and
   # every write need an account (see `DockdWeb.UserAuth.halt_visitor_events/2`).
   scope "/", DockdWeb do
@@ -42,6 +46,18 @@ defmodule DockdWeb.Router do
 
         live "/biblioteca", LibraryLive, :index
         live "/comprar", BuyLive, :index
+      end
+    end
+
+    scope "/" do
+      pipe_through [:require_authenticated_user, :admin]
+
+      live_session :admin,
+        on_mount: [
+          {DockdWeb.UserAuth, :mount_current_scope},
+          DockdWeb.AccountMenu,
+          {DockdWeb.UserAuth, :require_admin}
+        ] do
         live "/conferir", CatalogReviewLive, :index
         live "/eshop", CatalogReviewLive, :index
       end

@@ -38,7 +38,8 @@ defmodule DockdWeb.CatalogReviewLiveTest do
     }
   ]
 
-  setup do
+  setup %{user: user} do
+    Repo.update!(Ecto.Changeset.change(user, admin: true))
     game = game_fixture(%{title: "The Swords of Ditto"})
     release = release_fixture(game, %{platform: :switch})
 
@@ -146,6 +147,17 @@ defmodule DockdWeb.CatalogReviewLiveTest do
 
   test "a visitor is sent to Entrar" do
     assert {:error, {:redirect, %{to: "/entrar" <> _}}} = live(build_conn(), ~p"/conferir")
+  end
+
+  test "a signed-in non-admin gets 404 on the queue and never sees the menu item", _ctx do
+    other = Dockd.AccountsFixtures.user_fixture()
+    conn = log_in_user(build_conn(), other)
+
+    assert get(conn, ~p"/conferir").status == 404
+    assert get(conn, ~p"/eshop").status == 404
+
+    {:ok, view, _html} = live(conn, ~p"/")
+    refute has_element?(view, "#account-catalog-review")
   end
 
   describe "Mesmo jogo?" do
