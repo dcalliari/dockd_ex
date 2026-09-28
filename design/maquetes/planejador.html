@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Planejador de compras</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
+<style>
+:root, [data-theme="light"]{--surface:#ffffff;--surface-raised:#f4f2f1;--surface-sunken:#ebe8e6;--line:#dedad8;--line-strong:#8f8886;--ink:#161414;--ink-muted:#6a6462;--on-ink:#ffffff;--red:#e60012;--red-hover:#cc0010;--on-red:#ffffff;--red-ink:#d4000f;--warn:#9a5b00;--poster-edge:#0000001f;--focus-ring:var(--red-ink);}
+[data-theme="dark"]{--surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink);}
+:root{--gold:#f2c200;--on-gold:#ffffff;--scrim:#000000a6;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--radius-sm:3px;--radius-md:6px;--radius-full:999px;--container-max:1120px;--nav-height:56px;--control-height:36px;--thumb-height:44px;--cover-ratio:3 / 4;--cover-min:140px;--font-sans:"Archivo", "Helvetica Neue", Arial, sans-serif;}
+.t-wordmark{font-family:var(--font-sans);font-size:22px;line-height:24px;font-weight:900;letter-spacing:-0.02em;}
+.t-display{font-family:var(--font-sans);font-size:32px;line-height:36px;font-weight:800;letter-spacing:-0.02em;}
+.t-heading{font-family:var(--font-sans);font-size:14px;line-height:18px;font-weight:700;}
+.t-control{font-family:var(--font-sans);font-size:14px;line-height:20px;font-weight:600;}
+.t-body{font-family:var(--font-sans);font-size:15px;line-height:22px;font-weight:400;}
+.t-meta{font-family:var(--font-sans);font-size:12px;line-height:16px;font-weight:400;}
+.t-label{font-family:var(--font-sans);font-size:11px;line-height:16px;font-weight:700;letter-spacing:0.08em;}
+.t-num{font-family:var(--font-sans);font-size:15px;line-height:20px;font-weight:600;}
+.t-num-lg{font-family:var(--font-sans);font-size:20px;line-height:24px;font-weight:800;letter-spacing:-0.02em;}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink); } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+body { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+img { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* type: width axes and numerals the token classes cannot carry */
+.t-wordmark { font-stretch: 125%; }
+.t-display { font-stretch: 110%; }
+.t-label, .t-num-lg { font-stretch: 90%; }
+.t-label { text-transform: uppercase; }
+.t-num, .t-num-lg { font-variant-numeric: tabular-nums; }
+
+.dk-preview { padding: var(--space-4); }
+.dk-stack { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+
+/* Poster */
+.dk-poster { position: relative; display: block; aspect-ratio: 3 / 4; width: 100%; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-sunken); }
+.dk-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dk-poster::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--poster-edge); pointer-events: none; transition: box-shadow 120ms; }
+a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 0 0 0 2px var(--red); }
+.dk-poster--empty { display: flex; align-items: flex-end; padding: var(--space-2); color: var(--ink-muted); font-size: 12px; line-height: 16px; font-weight: 600; }
+.dk-poster__status { position: absolute; left: var(--space-2); top: var(--space-2); z-index: 1; }
+.dk-poster--sm { width: 33px; height: var(--thumb-height); border-radius: var(--radius-sm); }
+.dk-poster-caption { display: flex; justify-content: space-between; gap: var(--space-2); margin: var(--space-2) 0 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.dk-poster-caption__mark { color: var(--red-ink); }
+
+.dk-poster__veil { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--scrim); opacity: 0; transition: opacity 160ms; }
+.dk-poster:hover .dk-poster__veil, .dk-poster:focus-within .dk-poster__veil { opacity: 1; }
+.dk-tip { position: absolute; left: 50%; top: -32px; translate: -50% 0; z-index: 2; padding: 4px 8px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 12px; line-height: 16px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 120ms; }
+.dk-tip::after { content: ""; position: absolute; left: 50%; top: 100%; translate: -50% -4px; width: 8px; height: 8px; rotate: 45deg; background: var(--ink); }
+.dk-card--poster { position: relative; }
+.dk-card--poster .dk-poster:hover ~ .dk-tip, .dk-card--poster .dk-poster:focus-within ~ .dk-tip { opacity: 1; }
+.dk-card__action--touch { display: none; }
+@media (hover: none) { .dk-poster__veil, .dk-tip { display: none; } .dk-card__action--touch { display: inline-flex; align-self: flex-start; } }
+
+/* StatusChip */
+.dk-status { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
+.dk-status--sm { height: 18px; padding: 0 6px; font-size: 10px; letter-spacing: .06em; }
+.dk-status--quero { background: var(--gold); color: var(--on-gold); }
+.dk-status--backlog { background: var(--ink); color: var(--on-ink); }
+.dk-status--jogando { background: var(--red); color: var(--on-red); }
+.dk-status--zerado { background: var(--surface-sunken); color: var(--ink); opacity: .75; }
+.dk-status--larguei { background: var(--line-strong); color: var(--surface); opacity: .75; }
+.dk-poster--faded img { opacity: .55; }
+
+/* StatusControl: the current chip is the control; the other four appear beside it on hover, tap or focus */
+.dk-status-control { position: relative; display: flex; align-items: center; gap: var(--space-2); min-height: 22px; }
+.dk-status-control .dk-status { cursor: pointer; }
+.dk-status-control__since { font-size: 12px; line-height: 16px; color: var(--ink-muted); transition: opacity 120ms; }
+.dk-status-control__options { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: var(--space-2); padding-left: var(--dk-tray-offset, 88px); opacity: 0; pointer-events: none; transition: opacity 120ms; }
+.dk-status-control__options .dk-status { opacity: .55; transition: opacity 120ms; }
+.dk-status-control__options .dk-status:hover, .dk-status-control__options .dk-status:focus-visible { opacity: 1; }
+.dk-status-control:hover .dk-status-control__options, .dk-status-control:focus-within .dk-status-control__options, .dk-status-control.is-open .dk-status-control__options { opacity: 1; pointer-events: auto; }
+.dk-status-control:hover .dk-status-control__since, .dk-status-control:focus-within .dk-status-control__since, .dk-status-control.is-open .dk-status-control__since { opacity: 0; }
+@media (hover: none) { .dk-status-control:hover:not(.is-open) .dk-status-control__options { opacity: 0; pointer-events: none; } .dk-status-control:hover:not(.is-open) .dk-status-control__since { opacity: 1; } }
+
+/* MediaTag */
+.dk-media { display: inline-flex; align-items: center; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); white-space: nowrap; }
+
+/* Button */
+.dk-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; transition: background-color 120ms, border-color 120ms, color 120ms; }
+.dk-btn--primary { background: var(--red); border-color: var(--red); color: var(--on-red); }
+.dk-btn--primary:hover { background: var(--red-hover); border-color: var(--red-hover); }
+.dk-btn--secondary { border-color: var(--line-strong); color: var(--ink); background: var(--surface); }
+.dk-btn--secondary:hover { background: var(--surface-raised); }
+.dk-btn--sm { height: 28px; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; }
+.dk-btn[disabled] { opacity: .45; cursor: default; }
+.dk-link { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--red-ink); }
+.dk-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Tabs */
+.dk-tabs { display: flex; gap: var(--space-5); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.dk-tab { position: relative; display: inline-flex; align-items: baseline; gap: 6px; padding: var(--space-2) 0 10px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; transition: color 120ms; }
+.dk-tab:hover { color: var(--ink); }
+.dk-tab[aria-selected="true"] { color: var(--ink); }
+.dk-tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--red); }
+.dk-tab__count { font-size: 12px; line-height: 16px; font-weight: 400; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+
+/* NavBar (top) and BottomNav (phone) */
+.dk-nav { height: var(--nav-height); display: flex; align-items: center; gap: var(--space-5); padding: 0 var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
+.dk-wordmark { font-size: 22px; line-height: 24px; font-weight: 900; font-stretch: 125%; letter-spacing: -0.02em; color: var(--ink); }
+.dk-wordmark i { font-style: normal; color: var(--red); }
+.dk-nav__links { display: flex; gap: var(--space-4); }
+.dk-nav__link { padding: 4px 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-bottom: 2px solid transparent; transition: color 120ms; }
+.dk-nav__link:hover { color: var(--ink); }
+.dk-nav__link[aria-current="page"] { color: var(--ink); border-bottom-color: var(--red); }
+.dk-nav__search { margin-left: auto; width: 240px; }
+.dk-nav__icon { margin-left: auto; display: inline-flex; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--ink); }
+.dk-nav__icon svg { width: 20px; height: 20px; }
+.dk-bottomnav { height: var(--nav-height); display: flex; align-items: stretch; background: var(--surface); border-top: 1px solid var(--line); }
+.dk-bottomnav a { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-top: 2px solid transparent; margin-top: -1px; }
+.dk-bottomnav a[aria-current="page"] { color: var(--ink); border-top-color: var(--red); }
+
+/* SearchField */
+.dk-search { position: relative; }
+.dk-search input { width: 100%; height: var(--control-height); padding: 0 var(--space-3) 0 36px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; }
+.dk-search input::placeholder { color: var(--ink-muted); }
+.dk-search svg { position: absolute; left: 12px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--ink-muted); pointer-events: none; }
+
+/* GameCard + grid */
+.dk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--space-4) var(--space-3); }
+@media (min-width: 768px) { .dk-grid { grid-template-columns: repeat(auto-fill, minmax(var(--cover-min), 1fr)); } }
+.dk-card { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.dk-card__title { font-size: 14px; line-height: 18px; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.dk-card__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-card__text { display: flex; flex-direction: column; gap: 2px; }
+
+/* GameRow */
+.dk-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }
+.dk-row > :first-child { justify-self: start; }
+.dk-row__title { font-size: 14px; line-height: 18px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-row__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-row__end { display: flex; align-items: center; gap: var(--space-3); justify-self: end; }
+
+/* DateBlock */
+.dk-date { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: var(--thumb-height); height: var(--thumb-height); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--ink); font-stretch: 90%; }
+.dk-date b { font-size: 20px; line-height: 24px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.dk-date small { font-size: 10px; line-height: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
+.dk-date--month b { font-size: 13px; line-height: 16px; letter-spacing: .06em; text-transform: uppercase; }
+.dk-date--year b { font-size: 15px; line-height: 20px; }
+.dk-date--soon { background: var(--red); color: var(--on-red); }
+.dk-date--soon small { color: var(--on-red); }
+
+/* Price */
+.dk-price { display: inline-flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.dk-price b { font-size: 15px; line-height: 20px; font-weight: 600; }
+.dk-price small { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-price--stale small { color: var(--warn); }
+.dk-price--none b { font-weight: 400; color: var(--ink-muted); }
+
+/* EmptyState */
+.dk-empty { margin: 0; padding: var(--space-6) 0; font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+.dk-empty a { color: var(--red-ink); font-weight: 600; }
+
+/* SectionHead */
+.dk-section { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); margin-bottom: var(--space-3); }
+.dk-section h2 { margin: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.dk-section h2 span { margin-left: 6px; font-weight: 400; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.dk-section a { font-size: 14px; line-height: 16px; font-weight: 600; color: var(--red-ink); }
+
+/* AccountMenu: o nome na barra abre o menu no padrão dos filtros */
+.dk-account { position: relative; }
+.dk-account > summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 0; cursor: pointer; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; transition: color 120ms; }
+.dk-account > summary::-webkit-details-marker { display: none; }
+.dk-account > summary:hover, .dk-account[open] > summary { color: var(--ink); }
+.dk-account > summary svg { width: 12px; height: 12px; }
+.dk-filter__menu { position: absolute; top: calc(100% + var(--space-2)); z-index: 4; min-width: 200px; margin: 0; padding: var(--space-1) 0; list-style: none; background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.dk-account .dk-filter__menu { left: auto; right: 0; }
+.dk-filter__menu a { display: flex; padding: 6px var(--space-3); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink); white-space: nowrap; }
+.dk-filter__menu a:hover { background: var(--surface-sunken); }
+.dk-account__who { padding: 6px var(--space-3) var(--space-2); margin-bottom: var(--space-1); border-bottom: 1px solid var(--line); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+
+.dk-filter__menu button { display: flex; width: 100%; padding: 6px var(--space-3); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink); white-space: nowrap; text-align: left; }
+.dk-filter__menu button:hover { background: var(--surface-sunken); }
+.dk-filter__menu a span { margin-left: auto; padding-left: var(--space-4); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+/* MatchRow: uma versão do catálogo e os produtos da eShop que podem ser ela.
+   A linha da versão é um GameRow; cada candidato é uma linha sem capa, alinhada
+   ao título, com o preço visto e "É este". Escolher e desfazer acontecem no lugar.
+   "Não está na eShop" grava, então é Button; "Desfazer" segue o Cancelar das
+   formas em linha. */
+.dk-match { border-bottom: 1px solid var(--line); }
+.dk-match > .dk-row { border-bottom: 0; }
+.dk-match__options { margin: 0; padding: 0 0 var(--space-2); list-style: none; }
+.dk-match__option { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-1) var(--space-3); align-items: center; padding: var(--space-2) 0; border-top: 1px solid var(--line); }
+.dk-match__option > :first-child { grid-column: 2; }
+.dk-match__option .dk-row__title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.dk-match__option a.dk-row__title:hover { color: var(--red-ink); }
+.dk-match__none { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-2) 0 0; border-top: 1px solid var(--line); }
+.dk-match__none > :first-child { grid-column: 2; justify-self: start; }
+.dk-match[data-state="chosen"] .dk-match__options, .dk-match[data-state="none"] .dk-match__options { display: none; }
+.dk-match .dk-row__end .dk-price { min-width: 80px; }
+/* No celular o candidato ocupa duas linhas: o título inteiro, depois preço e botão. */
+@media (max-width: 560px) {
+  .dk-match__option, .dk-match[data-state="chosen"] > .dk-row { grid-template-columns: 44px minmax(0, 1fr); }
+  .dk-match__option > .dk-row__end, .dk-match[data-state="chosen"] > .dk-row > .dk-row__end { grid-column: 2; justify-self: stretch; justify-content: space-between; }
+  .dk-match__option .dk-price, .dk-match[data-state="chosen"] .dk-price { align-items: flex-start; }
+  .dk-match[data-state="chosen"] > .dk-row > :first-child { grid-row: span 2; align-self: start; }
+}
+.frame--phone .dk-match__option, .frame--phone .dk-match[data-state="chosen"] > .dk-row { grid-template-columns: 44px minmax(0, 1fr); }
+.frame--phone .dk-match__option > .dk-row__end, .frame--phone .dk-match[data-state="chosen"] > .dk-row > .dk-row__end { grid-column: 2; justify-self: stretch; justify-content: space-between; }
+.frame--phone .dk-match__option .dk-price, .frame--phone .dk-match[data-state="chosen"] .dk-price { align-items: flex-start; }
+.frame--phone .dk-match[data-state="chosen"] > .dk-row > :first-child { grid-row: span 2; align-self: start; }
+
+/* Página de comparação */
+body { background: var(--surface); }
+.page { width: min(100%, 1600px); margin: 0 auto; padding: var(--space-5) var(--space-4) var(--space-7); }
+.opt { margin-bottom: var(--space-7); }
+.opt > p.lead, .opt > ul.lead { margin: 0 0 var(--space-4); max-width: 80ch; font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+.opt > p.lead b, .opt > ul.lead b { color: var(--ink); }
+.opt > ul.lead { padding-left: 20px; }
+.row { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-bottom: var(--space-5); }
+.shot { margin: 0; min-width: 0; }
+.shot figcaption { margin-top: var(--space-2); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.frame { position: relative; overflow: auto; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
+.row--desk .shot { flex: 1 1 560px; }
+.frame--desk { height: 760px; }
+.frame--short { height: 560px; }
+.frame--phone { width: 375px; height: 760px; }
+.frame__page { padding: var(--space-5) var(--space-5) var(--space-7); }
+.frame--phone .frame__page { padding: var(--space-4) var(--space-4) calc(var(--nav-height) + var(--space-5)); }
+.frame .dk-nav { position: sticky; top: 0; z-index: 3; }
+.frame .dk-nav__search { margin-left: 0; }
+.frame .dk-account { margin-left: auto; }
+.frame--phone .dk-nav__links, .frame--phone .dk-nav__search { display: none; }
+.frame--phone .dk-nav__icon { margin-left: 0; display: inline-flex; }
+.frame--desk .dk-nav__icon { display: none; }
+.frame .dk-bottomnav { display: none; }
+.frame--phone .dk-bottomnav { display: flex; position: sticky; bottom: 0; }
+.frame .dk-account[open] .dk-filter__menu { display: block; }
+.cases { width: 100%; max-width: 1100px; border-collapse: collapse; font-size: 13px; line-height: 18px; }
+.cases th, .cases td { text-align: left; vertical-align: top; padding: var(--space-2) var(--space-3) var(--space-2) 0; border-bottom: 1px solid var(--line); }
+.cases th { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.cases td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.game-hero { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--space-4); align-items: end; margin-bottom: var(--space-5); }
+.game-hero h1 { margin: 0; }
+@media (max-width: 420px) { .frame--phone { width: calc(100vw - 2 * var(--space-4)); } .row--desk .shot { flex-basis: 100%; } }
+
+/* Página do jogo, como em assets/css/app.css */
+.dk-back { margin: 0 0 var(--space-5); }
+.dk-hero { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: var(--space-5); align-items: start; margin-bottom: var(--space-6); }
+.frame--phone .dk-hero { grid-template-columns: 120px minmax(0, 1fr); gap: var(--space-4); }
+.dk-hero__text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.dk-hero__text h1 { margin: 0; text-wrap: balance; }
+.frame--phone .dk-hero__text h1 { font-size: 24px; line-height: 28px; }
+.dk-hero__text p { margin: 0; }
+.dk-hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.dk-hero .dk-status { align-self: flex-start; }
+.dk-price--paid b::after { content: " pago"; font-weight: 400; color: var(--ink-muted); }
+
+/* Choice e Totals, como em bundle.css e app.css */
+.dk-choice { display: inline-flex; height: 28px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden; }
+.dk-choice > button, .dk-choice > label > span { display: inline-flex; align-items: center; height: 100%; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-muted); background: var(--surface); white-space: nowrap; cursor: pointer; transition: background-color 120ms, color 120ms; }
+.dk-choice > * + * { border-left: 1px solid var(--line-strong); }
+.dk-choice > label { position: relative; display: flex; }
+.dk-choice > label > input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.dk-choice > button:hover, .dk-choice > label > span:hover { color: var(--ink); background: var(--surface-raised); }
+.dk-choice > label > input:checked + span { background: var(--ink); color: var(--on-ink); }
+.dk-choice > label > input:focus-visible + span { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.dk-totals { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: baseline; gap: var(--space-2) var(--space-4); margin: var(--space-4) 0 var(--space-5); font-size: 12px; line-height: 16px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.dk-totals span { white-space: nowrap; }
+.dk-totals b { color: var(--ink); font-size: 15px; font-weight: 600; margin-left: 6px; }
+.dk-totals small { margin-left: 6px; font-size: 12px; }
+
+/* Linha larga no celular, como em assets/css/app.css */
+.frame--phone .dk-row--wide { grid-template-columns: 44px minmax(0, 1fr); }
+.frame--phone .dk-row--wide .dk-row__end { grid-column: 2; justify-self: stretch; justify-content: space-between; }
+.dk-row__title { display: block; }
+.note { margin: 0 0 var(--space-4); max-width: 80ch; font-size: 13px; line-height: 18px; color: var(--ink-muted); }
+.tag-rec { display: inline-block; margin-left: var(--space-2); padding: 0 6px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 10px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px; }
+
+/* ExclusiveMark, como em assets/css/app.css */
+:root { --gamecard: #1c1a1a; --gamecard-edge: #00000000; }
+[data-theme="dark"] { --gamecard-edge: #8f8886; }
+.dk-exclusive { display: inline-block; height: 11px; width: auto; aspect-ratio: 16 / 22; margin-left: 5px; vertical-align: -1px; overflow: visible; }
+.dk-exclusive path { stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.dk-exclusive--nintendo path { fill: var(--gamecard); stroke: var(--gamecard-edge); }
+.dk-exclusive--switch2 path { fill: var(--red); stroke: transparent; }
+
+/* Formulário em linha e dinheiro, como em assets/css/app.css */
+.dk-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); padding: var(--space-2) 0 var(--space-4) 56px; border-bottom: 1px solid var(--line); }
+.dk-form__field { display: flex; flex-direction: column; gap: var(--space-1); }
+.dk-form__field > span:first-child { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.dk-form__field input { height: 28px; width: 132px; padding: 0 var(--space-2); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font-size: 13px; }
+.dk-form__actions { display: flex; align-items: center; gap: var(--space-3); height: 28px; }
+.dk-money { position: relative; display: block; }
+.dk-money::before { content: "R$"; position: absolute; left: var(--space-2); top: 50%; translate: 0 -50%; font-size: 13px; color: var(--ink-muted); pointer-events: none; }
+.dk-money input { width: 104px; padding-left: 30px; font-variant-numeric: tabular-nums; }
+.dk-year-mark { margin: var(--space-3) 0 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.dk-status--sm { height: 18px; }
+
+/* Proposta · o saldo na linha de totais é o controle, como o preço é o controle do registro */
+.dk-totals { color: var(--ink-muted); }
+.dk-totals__control { display: inline-flex; align-items: baseline; padding: 2px var(--space-1); margin: -2px 0 -2px 2px; border-radius: var(--radius-sm); transition: background-color 120ms; font-variant-numeric: tabular-nums; }
+.dk-totals__control:hover, .dk-totals__control[aria-expanded="true"] { background: var(--surface-raised); }
+.dk-totals__control b { margin-left: 4px; }
+.dk-totals__control--none b { font-weight: 400; color: var(--ink-muted); }
+.dk-totals .is-short b { color: var(--red-ink); }
+.dk-form--balance { justify-content: flex-end; padding-left: 0; margin-top: calc(-1 * var(--space-3)); margin-bottom: var(--space-4); }
+.frame--phone .dk-form--balance { justify-content: flex-start; }
+
+/* Proposta · caminho B do saldo: o campo fica sempre na linha */
+.dk-totals--field { align-items: center; }
+.dk-totals--field .dk-form__field { flex-direction: row; align-items: center; gap: var(--space-2); }
+.dk-totals--field .dk-money input { width: 112px; }
+
+/* Proposta · a MediaTag é o controle da preferência: um toque troca Digital e Físico */
+button.dk-media { padding: 1px 4px; margin: -1px -4px; border-radius: var(--radius-sm); color: var(--ink); transition: background-color 120ms; vertical-align: baseline; }
+button.dk-media:hover { background: var(--surface-sunken); }
+.dk-row__meta .dk-media { vertical-align: 0; }
+.dk-short { color: var(--red-ink); }
+
+/* Proposta · Agora: botão pequeno que fica marcado, com o preenchimento ink do Choice */
+.dk-row__acts { display: flex; align-items: center; gap: var(--space-2); }
+.dk-btn[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+.dk-btn[aria-pressed="true"]:hover { background: var(--ink); }
+.dk-row--bought .dk-row__acts { gap: var(--space-3); }
+
+/* Proposta · caminho B da mídia: Choice de duas opções na linha */
+.dk-choice--media > button { display: inline-flex; align-items: center; height: 100%; padding: 0 var(--space-2); font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+.dk-choice--media > button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
+
+/* Proposta · caminho B da resposta: saldo corrente, como num extrato */
+.dk-run { display: inline-flex; flex-direction: column; align-items: flex-end; min-width: 88px; padding: 2px var(--space-1); margin: -2px 0; border-radius: var(--radius-sm); font-variant-numeric: tabular-nums; transition: background-color 120ms; }
+.dk-run:hover { background: var(--surface-raised); }
+.dk-run b { font-size: 15px; line-height: 20px; font-weight: 600; }
+.dk-run small { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-run--short b, .dk-run--short small { color: var(--red-ink); }
+.dk-run--out b { font-weight: 400; color: var(--ink-muted); }
+.dk-run--none { visibility: hidden; }
+.frame--phone .dk-run { align-items: flex-start; }
+
+.frame--phone .dk-row .dk-price { align-items: flex-start; }
+.frame--phone .dk-row .dk-row__end .dk-price small { display: none; }
+.dk-choice--media { flex: none; }
+.frame__page .dk-section { margin-top: var(--space-6); }
+.frame__page .dk-totals + .dk-section, .frame__page .dk-form--balance + .dk-section { margin-top: 0; }
+</style>
+</head>
+<body>
+<main class="page">
+
+<section class="opt" id="resumo">
+  <div class="dk-section"><h2>Planejador de compras · 28/09/2026</h2></div>
+  <p class="lead">Sua pergunta, com os dados da sua conta no lab: <b>R$ 540,00</b> na eShop, <b>Blue Prince</b> (R$ 53,39, 40% off até 05/10), <b>Hades II</b> (R$ 76,93, 30% off até 09/10) e <b>Outer Wilds</b> (R$ 59,99, 40% off até 12/10) somam <b>R$ 190,31</b>, e sobram <b>R$ 349,69</b>. <b>The Duskbloods</b> já está casado com a eShop, mas a loja ainda não tem data nem preço, e o IGDB diz só 2026: o preço entra sozinho quando a pré-venda abrir. <b>Sports Resort</b> (22/10) já está como físico na sua conta, então sai do saldo. Os outros lançamentos digitais da fila entram na mesma conta: <b>Kingdom Hearts Collection</b> em 08/10 por R$ 427,50 e <b>Steins;Gate Reboot</b> em 29/10 por R$ 249,99.</p>
+  <p class="lead">Hoje a linha do topo de Comprar diz <b>Digital R$ 7.000,57 em 29 de 35</b>: soma o preço digital de todos os 35 jogos em Quero, inclusive os 12 que você vai comprar em mídia física. A proposta tem três peças, cada uma com dois caminhos: <b>marcar a mídia</b>, <b>informar o saldo</b> e <b>ver quanto sobra</b>. Todas as telas abaixo respondem ao toque.</p>
+</section>
+
+<section class="opt" id="midia">
+  <div class="dk-section"><h2>1 · Físico ou digital, um toque por jogo</h2></div>
+  <p class="lead">O padrão já vem pronto: os <b>12 jogos</b> que a sua conta marcou como físico na importação continuam físicos (Mario Kart World, Zelda, Metroid, Kirby, Pokémon Ventos, Sports Resort...), e o resto é digital, porque a eShop vende todos. O IGDB não diz com segurança o que sai em cartucho (Sports Resort aparece sem físico), então ele não decide nada sozinho. Um jogo físico sai do saldo, perde o <b>Agora</b> e mostra o preço físico que você registrou, ou <b>Sem preço</b>.</p>
+  <div class="row">
+    <figure class="shot"><div class="frame frame--phone" data-theme="light" data-screen="mediaTag"></div><figcaption>Caminho A · a etiqueta é o controle · 375 · claro</figcaption></figure>
+    <figure class="shot"><div class="frame frame--phone" data-theme="dark" data-screen="mediaChoice"></div><figcaption>Caminho B · Choice na linha · 375 · escuro</figcaption></figure>
+  </div>
+  <p class="lead"><b>Caminho A, recomendado:</b> a etiqueta <b>Digital</b> ou <b>Físico</b> na meta da linha troca com um toque, no lugar, como o chip de status e o preço já são controles. Não ocupa espaço novo. <b>Caminho B:</b> o Choice Digital e Físico em toda linha. Fica explícito, mas repete dois rótulos em 35 linhas e empurra o preço no celular.</p>
+</section>
+
+<section class="opt" id="saldo">
+  <div class="dk-section"><h2>2 · O saldo, um valor com data</h2></div>
+  <p class="lead">O saldo mora na linha do topo de Comprar, com a data em que mudou. <b>Comprei</b> numa versão digital desconta sozinho o valor pago, então você só volta a digitar quando põe dinheiro na conta (cartão presente, recarga). Sem saldo informado, a linha diz <b>Sem saldo</b>, que é o mesmo controle. Passados 30 dias sem mudança, a data fica em âmbar com <b>desatualizado</b>, como o preço.</p>
+  <div class="row">
+    <figure class="shot"><div class="frame frame--phone" data-theme="light" data-screen="balanceOpen"></div><figcaption>Caminho A · tocar no saldo abre o campo · 375 · claro</figcaption></figure>
+    <figure class="shot"><div class="frame frame--phone frame--short" data-theme="dark" data-screen="balanceEmpty"></div><figcaption>Caminho A · sem saldo · 375 · escuro</figcaption></figure>
+    <figure class="shot"><div class="frame frame--phone" data-theme="light" data-screen="balanceField"></div><figcaption>Caminho B · campo sempre aberto · 375 · claro</figcaption></figure>
+  </div>
+  <div class="row row--desk">
+    <figure class="shot"><div class="frame frame--desk frame--short" data-theme="dark" data-screen="balanceBought"></div><figcaption>Depois de Comprei no Blue Prince: o saldo desceu sozinho · escuro</figcaption></figure>
+  </div>
+  <p class="lead"><b>Caminho A, recomendado:</b> o saldo é um botão na linha, como o preço; o toque abre um campo só, já preenchido, com <b>Atualizar saldo</b>. <b>Caminho B:</b> o campo fica sempre aberto no topo e a conta muda enquanto você digita. Economiza um toque, mas põe um formulário permanente numa tela de lista, para um valor que muda poucas vezes por mês.</p>
+</section>
+
+<section class="opt" id="resposta">
+  <div class="dk-section"><h2>3 · Quanto sobra, numa olhada</h2></div>
+  <p class="lead"><b>Caminho A, recomendado · marcar Agora.</b> Comprar ganha a seção <b>Promoções</b> no topo, só com os digitais em oferta, pela data em que a oferta acaba; eles já chegam marcados <b>Agora</b>. A linha passa a dizer <b>Saldo · Agora · Sobra</b>. Em Próximos lançamentos, o digital que não cabe no que sobra diz quanto falta. Sem tocar em nada, a tela responde: sobram R$ 349,69; Kingdom Hearts Collection não cabe (falta R$ 77,81); Steins;Gate cabe; The Duskbloods ainda sem preço. Desmarcar um jogo ou marcar outro refaz a conta no lugar.</p>
+  <div class="row row--desk">
+    <figure class="shot"><div class="frame frame--desk" data-theme="light" data-screen="planSelect"></div><figcaption>Caminho A · Comprar · desktop · claro</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure class="shot"><div class="frame frame--phone" data-theme="dark" data-screen="planSelect"></div><figcaption>Caminho A · 375 · escuro</figcaption></figure>
+    <figure class="shot"><div class="frame frame--phone" data-theme="light" data-screen="planChain"></div><figcaption>Caminho B · 375 · claro</figcaption></figure>
+  </div>
+  <p class="lead"><b>Caminho B · ordem sugerida com saldo corrente.</b> Comprar se divide em <b>Digital</b> e <b>Físico</b>. O Digital vira uma fila por prazo: promoções pela data em que acabam, depois lançamentos pela data. Cada linha diz o saldo depois dela, como um extrato; o que não cabe diz quanto falta e não gasta nada. Tocar no saldo da linha tira o jogo da conta. Não exige nenhum toque, mas a fila decide por você: Steins;Gate (29/10) vem antes do Duskbloods e come o saldo dele, que fica em R$ 99,70 até você tirar Steins;Gate. E cada linha passa a ter dois valores.</p>
+  <div class="row row--desk">
+    <figure class="shot"><div class="frame frame--desk" data-theme="dark" data-screen="planChain"></div><figcaption>Caminho B · Comprar · desktop · escuro</figcaption></figure>
+  </div>
+</section>
+
+<section class="opt" id="onde">
+  <div class="dk-section"><h2>Onde mora e o que muda</h2></div>
+  <table class="cases">
+    <thead><tr><th>Peça</th><th>Hoje</th><th>Com a proposta</th></tr></thead>
+    <tbody>
+      <tr><td>Lugar</td><td>Comprar é a fila de Quero, por data</td><td><b>Comprar</b>, sem página nova nem destino novo: o plano é como a fila é comprada. Página própria seria um quinto destino que repete a fila; Início continua com a faixa Em promoção, que leva a Comprar</td></tr>
+      <tr><td>Linha do topo</td><td>Digital R$ 7.000,57 em 29 de 35 · Físico quando há preço · Gasto em setembro</td><td>Sai o <b>total Digital</b>. Entram <b>Saldo eShop</b>, <b>Agora</b> e <b>Sobra</b> (ou Falta, em vermelho). <b>Físico</b> fica, somando só os jogos marcados físicos e só com preço físico (hoje nenhum tem, então não aparece). Gasto do mês fica</td></tr>
+      <tr><td>Seções</td><td>Próximos lançamentos · Disponíveis · Sem data</td><td><b>Promoções</b> entra no topo; os outros continuam, e Disponíveis perde os jogos que foram para Promoções</td></tr>
+      <tr><td>Linha do jogo</td><td>Preço · Comprei</td><td>Etiqueta Digital ou Físico na meta · Preço da mídia escolhida · <b>Agora</b> nos digitais com preço · Comprei</td></tr>
+      <tr><td>Dado guardado</td><td>Preferência de mídia já existe no domínio (5 valores, sem tela)</td><td>A etiqueta grava só físico ou digital. Agora é a intenção <b>planned</b>, que o domínio já tem e continua sendo Quero. O saldo é um valor novo na conta, com a data: a única migração</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="opt" id="recomendacao">
+  <div class="dk-section"><h2>Recomendação</h2></div>
+  <ul class="lead">
+    <li><b>Mídia:</b> caminho A, a etiqueta na meta da linha, com o padrão que a conta já tem.</li>
+    <li><b>Saldo:</b> caminho A, o valor na linha como controle, descontado sozinho a cada Comprei digital.</li>
+    <li><b>Resposta:</b> caminho A, Promoções no topo já marcadas Agora, e Saldo · Agora · Sobra na linha. Responde a sua pergunta sem nenhum toque e deixa você escolher o resto; o caminho B escolhe a ordem por você.</li>
+    <li><b>Lugar:</b> Comprar. Não precisa de página nova.</li>
+  </ul>
+  <p class="note">Preços e prazos da eShop Brasil sincronizados em 28/09/2026. O saldo de R$ 540,00 é o que você informou. Nenhum jogo em Quero tem preço físico registrado; o único preço físico da conta é o do Donkey Kong Bananza, que já é seu.</p>
+</section>
+
+</main>
+<template id="nav">
+  <header class="dk-nav">
+    <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+    <nav class="dk-nav__links" aria-label="Principal"><a class="dk-nav__link" href="#" data-dest="inicio">Início</a><a class="dk-nav__link" href="#" data-dest="biblioteca">Biblioteca</a><a class="dk-nav__link" href="#" data-dest="comprar">Comprar</a><a class="dk-nav__link" href="#" data-dest="descobrir">Descobrir</a></nav>
+    <form class="dk-search dk-nav__search" role="search" onsubmit="return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" placeholder="Buscar no catálogo" aria-label="Buscar no catálogo"></form>
+    <details class="dk-account"><summary>Dono <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></summary>
+      <ul class="dk-filter__menu"><li class="dk-account__who">admin@dpe.dev</li><li><button type="button">Copiar token da API</button></li><li><a href="#">Sair</a></li></ul>
+    </details>
+    <button class="dk-nav__icon" type="button" aria-label="Buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></button>
+  </header>
+</template>
+<template id="bottomnav">
+  <nav class="dk-bottomnav" aria-label="Principal"><a href="#" data-dest="inicio">Início</a><a href="#" data-dest="biblioteca">Biblioteca</a><a href="#" data-dest="comprar">Comprar</a><a href="#" data-dest="descobrir">Descobrir</a></nav>
+</template>
+<script>
+var COVER = 'https://images.igdb.com/igdb/image/upload/t_cover_big/';
+var SEEN = 'visto em 28/09/2026 · eShop';
+var CARD = '<path d="M4.5 .5H14A1.5 1.5 0 0 1 15.5 2V20A1.5 1.5 0 0 1 14 21.5H2A1.5 1.5 0 0 1 .5 20V4.5Z"/>';
+
+// Fila Quero do dono no lab em 28/09/2026 (banco lido só com SELECT). Preço em centavos: o menor
+// vigente da eShop entre versões e edições não vetadas, já com a promoção; physical é a
+// preferência que a conta já tem. Nenhum destes tem preço físico registrado.
+var GAMES = [
+  { id: 'blue', title: 'Blue Prince', cover: 'co9mzd', plats: 'Switch 2', price: 5339, promo: { pct: 40, ends: '05/10', day: '05' }, year: 2026 },
+  { id: 'hades', title: 'Hades II', cover: 'coaknx', plats: 'Switch · Switch 2', price: 7693, promo: { pct: 30, ends: '09/10', day: '09' }, year: 2025 },
+  { id: 'outer', title: 'Outer Wilds', cover: 'co65ac', plats: 'Switch', price: 5999, promo: { pct: 40, ends: '12/10', day: '12' }, year: 2023 },
+
+  { id: 'khc', title: 'Kingdom Hearts Collection', cover: 'cocb28', plats: 'Switch 2', price: 42750, launch: { day: '08', mon: 'out', year: 2026, soon: true } },
+  { id: 'resort', title: 'Sports Resort', cover: 'coc7mb', excl: 'switch2', plats: 'Switch 2', price: 27990, physical: true, launch: { day: '22', mon: 'out', year: 2026, soon: true } },
+  { id: 'steins', title: 'Steins;Gate Reboot', cover: 'co90no', plats: 'Switch · Switch 2', price: 24999, launch: { day: '29', mon: 'out', year: 2026 } },
+  { id: 'dusk', title: 'The Duskbloods', cover: 'cocqn8', excl: 'switch2', plats: 'Switch 2', price: null, launch: { year: 2026, prec: 'year' } },
+  { id: 'words', title: 'Out of Words', cover: 'co9xhn', plats: 'Switch 2', price: null, launch: { mon: 'jan', year: 2027, prec: 'month' } },
+  { id: 'ravenous', title: 'Metroid Ravenous', cover: 'cocvge', excl: 'nintendo', plats: 'Switch 2', price: 32990, physical: true, launch: { day: '28', mon: 'jan', year: 2027 } },
+  { id: 'tomb', title: 'Tomb Raider: Legacy of Atlantis', cover: 'cob1kg', plats: 'Switch 2', price: 25900, launch: { day: '12', mon: 'fev', year: 2027 } },
+  { id: 'kirby', title: 'Kirby and the World Beyond', cover: 'cocvba', excl: 'nintendo', plats: 'Switch 2', price: null, physical: true, launch: { mon: 'abr', year: 2027, prec: 'month' } },
+  { id: 'kh4', title: 'Kingdom Hearts IV', cover: 'cocp35', plats: 'Switch 2', price: null, physical: true, launch: { mon: 'out', year: 2027, prec: 'month' } },
+  { id: 'cairn', title: 'Cairn', cover: 'cobdqk', plats: 'Switch 2', price: null, launch: { year: 2027, prec: 'year' } },
+  { id: 'ventos', title: 'Pokémon Ventos', cover: 'cobo9k', excl: 'switch2', plats: 'Switch 2', price: null, physical: true, launch: { year: 2027, prec: 'year' } },
+
+  { id: 'orbitals', title: 'Orbitals', cover: 'coc9r6', plats: 'Switch 2', price: 16900 },
+  { id: 'duskfade', title: 'Duskfade', cover: 'cocda0', plats: 'Switch 2', price: 8495 },
+  { id: 'densha', title: 'Denshattack!', cover: 'coaawz', plats: 'Switch 2', price: 5999 },
+  { id: 'mouse', title: 'Mouse: P.I. for Hire', cover: 'coaacx', plats: 'Switch 2', price: 8899 },
+  { id: 'darwin', title: "Darwin's Paradox!", cover: 'co9e1h', plats: 'Switch 2', price: 14250 },
+  { id: 'tennis', title: 'Mario Tennis Fever', cover: 'coag5n', excl: 'switch2', plats: 'Switch 2', price: 38990, physical: true },
+  { id: 'mp4', title: 'Metroid Prime 4: Beyond', cover: 'cob9xh', excl: 'nintendo', plats: 'Switch · Switch 2', price: 32990, physical: true },
+  { id: 'persona', title: 'Persona 3 Reload', cover: 'coc4jz', plats: 'Switch 2', price: 29990 },
+  { id: 'silksong', title: 'Hollow Knight: Silksong', cover: 'cobebu', plats: 'Switch · Switch 2', price: 5999 },
+  { id: 'yakuza', title: 'Yakuza 0', cover: 'cocbuz', plats: 'Switch 2', price: 24990 },
+  { id: 'mkw', title: 'Mario Kart World', cover: 'cob9s9', excl: 'switch2', plats: 'Switch 2', price: 43990, physical: true },
+  { id: 'echoes', title: 'The Legend of Zelda: Echoes of Wisdom', cover: 'co8d9b', excl: 'nintendo', plats: 'Switch · Switch 2', price: 32990 },
+  { id: 'mgs', title: 'Metal Gear Solid: Master Collection Vol. 1', cover: 'cocdmb', plats: 'Switch · Switch 2', price: 29990 },
+  { id: 'totk', title: 'The Legend of Zelda: Tears of the Kingdom', cover: 'co5vmg', excl: 'nintendo', plats: 'Switch · Switch 2', price: 38990, physical: true },
+  { id: 'mpr', title: 'Metroid Prime Remastered', cover: 'cobbn9', excl: 'nintendo', plats: 'Switch', price: 21990 },
+  { id: 'dread', title: 'Metroid Dread', cover: 'coba9g', excl: 'nintendo', plats: 'Switch', price: 32990, physical: true },
+  { id: 'skyward', title: 'The Legend of Zelda: Skyward Sword HD', cover: 'cob8lb', excl: 'nintendo', plats: 'Switch', price: 32990 },
+  { id: 'bioshock', title: 'BioShock: The Collection', cover: 'co1uv1', plats: 'Switch', price: 24995 },
+  { id: 'crossing', title: 'Animal Crossing: New Horizons', cover: 'co3wls', excl: 'nintendo', plats: 'Switch · Switch 2', price: 32990, physical: true },
+  { id: 'cadence', title: 'Cadence of Hyrule', cover: 'cob88s', excl: 'nintendo', plats: 'Switch', price: 13990 },
+  { id: 'botw', title: 'The Legend of Zelda: Breath of the Wild', cover: 'co3p2d', excl: 'nintendo', plats: 'Switch · Switch 2', price: 32990, physical: true }
+];
+var BY = {};
+GAMES.forEach(function (g) { BY[g.id] = g; });
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+function money(c) {
+  var s = (Math.abs(c) / 100).toFixed(2).split('.');
+  return 'R$ ' + s[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + s[1];
+}
+function parseMoney(v) {
+  var n = parseFloat(String(v).replace(/[^\d,.]/g, '').replace(/\./g, '').replace(',', '.'));
+  return isNaN(n) ? null : Math.round(n * 100);
+}
+function mark(excl) {
+  if (!excl) return '';
+  var label = excl === 'switch2' ? 'Exclusivo Switch 2' : 'Exclusivo Nintendo';
+  return '<svg class="dk-exclusive dk-exclusive--' + excl + '" viewBox="0 0 16 22" role="img" aria-label="' + label + '"><title>' + label + '</title>' + CARD + '</svg>';
+}
+function poster(g) { return '<a class="dk-poster dk-poster--sm" href="#"><img src="' + COVER + g.cover + '.jpg" alt=""></a>'; }
+function dateBlock(l, soon) {
+  if (l.prec === 'year') return '<span class="dk-date dk-date--year"><b>' + l.year + '</b></span>';
+  if (l.prec === 'month') return '<span class="dk-date dk-date--month"><b>' + l.mon + '</b><small>' + l.year + '</small></span>';
+  return '<span class="dk-date' + (soon ? ' dk-date--soon' : '') + '"><b>' + l.day + '</b><small>' + l.mon + '</small></span>';
+}
+function section(title, count, extra) { return '<div class="dk-section"><h2>' + title + (count === undefined ? '' : '<span>' + count + '</span>') + '</h2>' + (extra || '') + '</div>'; }
+
+// ---------------------------------------------------------------------------
+// Estado de cada moldura: mídia por jogo, Agora, saldo, compras e o que saiu do saldo corrente.
+
+function initialState(cfg) {
+  var st = { physical: {}, agora: {}, bought: {}, skip: {}, form: !!cfg.formOpen,
+    balance: cfg.balance === 'empty' ? null : { cents: 54000, date: '28/09' } };
+  GAMES.forEach(function (g) {
+    st.physical[g.id] = !!g.physical;
+    if (g.promo && cfg.plan === 'select') st.agora[g.id] = true;
+  });
+  (cfg.bought || []).forEach(function (id) { st.bought[id] = true; delete st.agora[id]; });
+  return st;
+}
+
+function priceOf(g, st) { return st.physical[g.id] ? null : g.price; }
+function spent(st) {
+  return Object.keys(st.bought).reduce(function (sum, id) { return sum + BY[id].price; }, 0);
+}
+function balanceNow(st) { return st.balance ? st.balance.cents - spent(st) : null; }
+function agoraTotal(st) {
+  return GAMES.reduce(function (sum, g) { return sum + (st.agora[g.id] && !st.bought[g.id] && priceOf(g, st) ? g.price : 0); }, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Linha do topo
+
+function balanceControl(st) {
+  if (!st.balance) return '<span>Saldo eShop<button type="button" class="dk-totals__control dk-totals__control--none" data-balance aria-expanded="' + st.form + '"><b>Sem saldo</b></button></span>';
+  return '<span>Saldo eShop<button type="button" class="dk-totals__control" data-balance aria-expanded="' + st.form + '"><b>' + money(balanceNow(st)) + '</b><small>em ' + st.balance.date + '</small></button></span>';
+}
+
+function balanceField(st) {
+  var value = st.balance ? money(balanceNow(st)).replace('R$ ', '') : '';
+  return '<span class="dk-form__field"><span>Saldo eShop</span><span class="dk-money"><input data-balance-input inputmode="decimal" placeholder="540,00" value="' + value + '" aria-label="Saldo na eShop"></span></span>' +
+    (st.balance ? '<small>em ' + st.balance.date + '</small>' : '');
+}
+
+function totalsHtml(cfg, st) {
+  var parts = [cfg.balance === 'field' ? balanceField(st) : balanceControl(st)];
+  if (cfg.plan === 'select') {
+    var agora = agoraTotal(st);
+    if (agora > 0) parts.push('<span>Agora<b>' + money(agora) + '</b></span>');
+    if (st.balance) {
+      var left = balanceNow(st) - agora;
+      parts.push(left >= 0 ? '<span>Sobra<b>' + money(left) + '</b></span>' : '<span class="is-short">Falta<b>' + money(-left) + '</b></span>');
+    }
+  }
+  if (Object.keys(st.bought).length) parts.push('<span>Gasto em setembro<b>' + money(spent(st)) + '</b></span>');
+  var html = '<div class="dk-totals' + (cfg.balance === 'field' ? ' dk-totals--field' : '') + '">' + parts.join('') + '</div>';
+  if (st.form) {
+    var value = st.balance ? money(balanceNow(st)).replace('R$ ', '') : '';
+    html += '<form class="dk-form dk-form--balance" data-balance-form><label class="dk-form__field"><span>Saldo na eShop</span><span class="dk-money"><input name="balance" inputmode="decimal" placeholder="540,00" value="' + value + '" aria-label="Saldo na eShop"></span></label>' +
+      '<div class="dk-form__actions"><button type="submit" class="dk-btn dk-btn--primary dk-btn--sm">Atualizar saldo</button><button type="button" class="dk-link" data-cancel>Cancelar</button></div></form>';
+  }
+  return html;
+}
+
+// ---------------------------------------------------------------------------
+// Linha de um jogo
+
+function mediaControl(g, st, cfg) {
+  if (cfg.media !== 'tag') return '';
+  return ' · <button type="button" class="dk-media" data-media="' + g.id + '" aria-label="Mídia preferida">' + (st.physical[g.id] ? 'Físico' : 'Digital') + '</button>';
+}
+
+function priceHtml(g, st) {
+  var value = priceOf(g, st);
+  if (!value) return '<button type="button" class="dk-price dk-price--none"><b>Sem preço</b></button>';
+  return '<button type="button" class="dk-price"><b>' + money(value) + '</b><small>' + SEEN + '</small></button>';
+}
+
+function rowHtml(g, st, cfg, opts) {
+  var bought = st.bought[g.id];
+  var digital = !st.physical[g.id];
+  var meta = g.plats + mark(g.excl);
+  if (bought) {
+    meta += ' · Digital';
+  } else {
+    meta += mediaControl(g, st, cfg);
+    if (g.promo && digital) meta += cfg.plan === 'chain' ? ' · −' + g.promo.pct + '%' : ' · −' + g.promo.pct + '% até ' + g.promo.ends;
+    if (opts.short) meta += ' · <span class="dk-short">falta ' + money(opts.short) + '</span>';
+  }
+
+  var end = '';
+  if (cfg.media === 'choice' && !bought) {
+    end += '<div class="dk-choice dk-choice--media" role="group" aria-label="Mídia preferida"><button type="button" data-choice="' + g.id + '" data-physical="0" aria-pressed="' + digital + '">Digital</button><button type="button" data-choice="' + g.id + '" data-physical="1" aria-pressed="' + !digital + '">Físico</button></div>';
+  }
+  if (bought) {
+    end += '<div class="dk-row__acts"><span class="dk-status dk-status--backlog dk-status--sm">Backlog</span><button type="button" class="dk-price dk-price--paid"><b>' + money(g.price) + '</b></button><button type="button" class="dk-link" data-undo="' + g.id + '">Desfazer</button></div>';
+  } else {
+    end += priceHtml(g, st);
+    if (opts.run !== undefined) end += opts.run;
+    var acts = '';
+    if (cfg.plan === 'select' && digital && g.price) acts += '<button type="button" class="dk-btn dk-btn--secondary dk-btn--sm" data-agora="' + g.id + '" aria-pressed="' + !!st.agora[g.id] + '">Agora</button>';
+    if (!g.launch) acts += '<button type="button" class="dk-btn dk-btn--secondary dk-btn--sm" data-buy="' + g.id + '">Comprei</button>';
+    if (acts) end += '<div class="dk-row__acts">' + acts + '</div>';
+  }
+  var thumb = opts.thumb || (g.launch ? dateBlock(g.launch, g.launch.soon) : poster(g));
+  return '<div class="dk-row dk-row--wide' + (bought ? ' dk-row--bought' : '') + '">' + thumb +
+    '<div><a class="dk-row__title" href="#">' + esc(g.title) + '</a><div class="dk-row__meta">' + meta + '</div></div>' +
+    '<div class="dk-row__end">' + end + '</div></div>';
+}
+
+// ---------------------------------------------------------------------------
+// Caminho A: Promoções, Próximos lançamentos e Disponíveis; o digital que não cabe no que sobra diz quanto falta.
+
+function planSelect(cfg, st) {
+  var promos = GAMES.filter(function (g) { return g.promo; });
+  var upcoming = GAMES.filter(function (g) { return g.launch; });
+  var available = GAMES.filter(function (g) { return !g.launch && !g.promo; });
+  var left = st.balance ? balanceNow(st) - agoraTotal(st) : null;
+
+  function short(g) {
+    var p = priceOf(g, st);
+    if (left === null || !p || st.agora[g.id] || st.bought[g.id]) return 0;
+    return p > Math.max(left, 0) ? p - Math.max(left, 0) : 0;
+  }
+
+  var html = totalsHtml(cfg, st) + section('Promoções', promos.length) +
+    promos.map(function (g) { return rowHtml(g, st, cfg, {}); }).join('');
+
+  html += section('Próximos lançamentos', upcoming.length);
+  var year = null;
+  upcoming.forEach(function (g) {
+    if (year !== null && g.launch.year !== year) html += '<p class="dk-year-mark">' + g.launch.year + '</p>';
+    year = g.launch.year;
+    html += rowHtml(g, st, cfg, { short: short(g) });
+  });
+
+  if (!cfg.short) {
+    html += section('Disponíveis', available.length) + available.map(function (g) { return rowHtml(g, st, cfg, {}); }).join('');
+  }
+  return html;
+}
+
+// ---------------------------------------------------------------------------
+// Caminho B: Digital como fila por prazo com o saldo corrente, depois Físico.
+
+function planChain(cfg, st) {
+  var digital = GAMES.filter(function (g) { return !g.physical; });
+  var chain = digital.filter(function (g) { return g.promo; })
+    .concat(digital.filter(function (g) { return g.launch; }));
+  var rest = digital.filter(function (g) { return !g.promo && !g.launch; });
+  var physical = GAMES.filter(function (g) { return g.physical; });
+
+  var bal = st.balance ? balanceNow(st) : null;
+  var html = totalsHtml(cfg, st) + section('Digital', digital.length);
+
+  chain.forEach(function (g) {
+    var p = priceOf(g, st);
+    var run;
+    if (bal === null || st.bought[g.id]) {
+      run = '';
+    } else if (st.skip[g.id]) {
+      run = '<button type="button" class="dk-run dk-run--out" data-run="' + g.id + '"><b>fora</b><small>da conta</small></button>';
+    } else if (!p) {
+      run = '<button type="button" class="dk-run" data-run="' + g.id + '"><b>' + money(bal) + '</b><small>sobra</small></button>';
+    } else if (p <= bal) {
+      bal -= p;
+      run = '<button type="button" class="dk-run" data-run="' + g.id + '"><b>' + money(bal) + '</b><small>sobra</small></button>';
+    } else {
+      run = '<button type="button" class="dk-run dk-run--short" data-run="' + g.id + '"><b>' + money(p - bal) + '</b><small>falta</small></button>';
+    }
+    var thumb = g.promo ? dateBlock({ day: g.promo.day, mon: 'out' }, true) : undefined;
+    html += rowHtml(g, st, cfg, { run: run, thumb: thumb });
+  });
+
+  if (!cfg.short) {
+    html += '<p class="dk-year-mark">Sem prazo</p>' + rest.map(function (g) { return rowHtml(g, st, cfg, {}); }).join('');
+    html += section('Físico', physical.length) + physical.map(function (g) { return rowHtml(g, st, cfg, {}); }).join('');
+  }
+  return html;
+}
+
+// ---------------------------------------------------------------------------
+
+var SCREENS = {
+  mediaTag: { media: 'tag', balance: 'line', plan: 'select', short: true },
+  mediaChoice: { media: 'choice', balance: 'line', plan: 'select', short: true },
+  balanceOpen: { media: 'tag', balance: 'line', plan: 'select', formOpen: true, short: true },
+  balanceEmpty: { media: 'tag', balance: 'empty', plan: 'select', short: true },
+  balanceField: { media: 'tag', balance: 'field', plan: 'select', short: true },
+  balanceBought: { media: 'tag', balance: 'line', plan: 'select', bought: ['blue'], short: true },
+  planSelect: { media: 'tag', balance: 'line', plan: 'select' },
+  planChain: { media: 'tag', balance: 'line', plan: 'chain' }
+};
+
+function render(cfg, st) { return cfg.plan === 'chain' ? planChain(cfg, st) : planSelect(cfg, st); }
+
+document.querySelectorAll('.frame').forEach(function (frame) {
+  var cfg = SCREENS[frame.dataset.screen];
+  var st = initialState(cfg);
+  frame.appendChild(document.getElementById('nav').content.cloneNode(true));
+  var page = document.createElement('div');
+  page.className = 'frame__page';
+  frame.appendChild(page);
+  frame.appendChild(document.getElementById('bottomnav').content.cloneNode(true));
+  frame.querySelectorAll('[data-dest="comprar"]').forEach(function (a) { a.setAttribute('aria-current', 'page'); });
+
+  function draw() { page.innerHTML = render(cfg, st); }
+  draw();
+
+  // Tudo muda no lugar, sem diálogo nem aviso.
+  page.addEventListener('click', function (e) {
+    var t;
+    if ((t = e.target.closest('[data-media]'))) { st.physical[t.dataset.media] = !st.physical[t.dataset.media]; }
+    else if ((t = e.target.closest('[data-choice]'))) { st.physical[t.dataset.choice] = t.dataset.physical === '1'; }
+    else if ((t = e.target.closest('[data-agora]'))) { st.agora[t.dataset.agora] = !st.agora[t.dataset.agora]; }
+    else if ((t = e.target.closest('[data-balance]'))) { st.form = !st.form; }
+    else if ((t = e.target.closest('[data-cancel]'))) { st.form = false; }
+    else if ((t = e.target.closest('[data-buy]'))) { st.bought[t.dataset.buy] = true; delete st.agora[t.dataset.buy]; }
+    else if ((t = e.target.closest('[data-undo]'))) { delete st.bought[t.dataset.undo]; if (BY[t.dataset.undo].promo && cfg.plan === 'select') st.agora[t.dataset.undo] = true; }
+    else if ((t = e.target.closest('[data-run]'))) { st.skip[t.dataset.run] = !st.skip[t.dataset.run]; }
+    else return;
+    e.preventDefault();
+    draw();
+    if (st.form) { var input = page.querySelector('[data-balance-form] input'); if (input) input.focus(); }
+  });
+  page.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var cents = parseMoney(e.target.querySelector('input').value);
+    if (cents !== null) { st.balance = { cents: cents + spent(st), date: '28/09' }; st.form = false; draw(); }
+  });
+  page.addEventListener('change', function (e) {
+    if (!e.target.matches('[data-balance-input]')) return;
+    var cents = parseMoney(e.target.value);
+    st.balance = cents === null ? null : { cents: cents + spent(st), date: '28/09' };
+    draw();
+  });
+});
+</script>
+</body>
+</html>
