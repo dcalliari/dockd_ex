@@ -1235,9 +1235,11 @@ defmodule DockdWeb.DockdComponents do
 
   def price(assigns) do
     now = assigns.now || DateTime.utc_now()
+    highlighted? = assigns.observation && highlighted_price?(assigns.observation)
 
     stale =
-      assigns.observation && Dockd.Purchasing.stale?(assigns.observation, now, 30)
+      assigns.observation && !highlighted? &&
+        Dockd.Purchasing.stale?(assigns.observation, now, 30)
 
     assigns = assign(assigns, :stale, stale)
 
@@ -1264,20 +1266,45 @@ defmodule DockdWeb.DockdComponents do
     """
   end
 
+  # eShop prices carry a promotion and a lowest-ever mark; a manual observation never does.
+  defp highlighted_price?(observation),
+    do: !!(Map.get(observation, :discount_ends_at) || Map.get(observation, :lowest_since))
+
   attr :observation, :map, default: nil
   attr :stale, :boolean, default: false
 
   defp price_text(%{observation: nil} = assigns), do: ~H"<b>Sem preço</b>"
 
   defp price_text(assigns) do
+    assigns =
+      assign(assigns,
+        regular_cents: Map.get(assigns.observation, :regular_cents),
+        discount_ends_at: Map.get(assigns.observation, :discount_ends_at),
+        lowest_since: Map.get(assigns.observation, :lowest_since)
+      )
+
     ~H"""
-    <b>{money(@observation.price_cents, @observation.currency)}</b>
+    <span class="dk-price__value">
+      <s :if={@discount_ends_at}>{money(@regular_cents, @observation.currency)}</s>
+      <b>{money(@observation.price_cents, @observation.currency)}</b>
+    </span>
     <small>
-      visto em {date_pt_br(@observation.observed_at)}{if @observation.source,
-        do: " · #{@observation.source}"}{if @stale, do: " · desatualizado"}
+      <%= cond do %>
+        <% @discount_ends_at && @lowest_since -> %>
+          até {date_short_pt_br(@discount_ends_at)} · menor preço
+        <% @discount_ends_at -> %>
+          até {date_short_pt_br(@discount_ends_at)}
+        <% @lowest_since -> %>
+          menor preço desde {date_short_pt_br(@lowest_since)}
+        <% true -> %>
+          visto em {date_pt_br(@observation.observed_at)}{if @observation.source,
+            do: " · #{@observation.source}"}{if @stale, do: " · desatualizado"}
+      <% end %>
     </small>
     """
   end
+
+  defp date_short_pt_br(%DateTime{} = at), do: Calendar.strftime(at, "%d/%m")
 
   attr :id, :string, default: nil
   slot :inner_block, required: true

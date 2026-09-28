@@ -129,13 +129,32 @@ defmodule DockdWeb.BuyLiveTest do
     {:ok, view, _html} = live(conn, "/comprar")
 
     assert has_element?(view, "#price-#{ctx.available.id}", "R$ 279,90")
-    assert has_element?(view, "#price-#{ctx.available.id}", "eShop")
+    assert has_element?(view, "#price-#{ctx.available.id}", "menor preço desde")
     assert has_element?(view, "#estimate-digital", "R$ 279,90")
 
     view |> element("#buy-#{ctx.available.id}-button") |> render_click()
 
     assert [%{price_cents: 27_990, format: :digital, retailer: "eShop"}] =
              Purchasing.list_purchases(ctx.user, ctx.available_release.id)
+  end
+
+  test "a promotion that is also the lowest price ever seen shows both marks together",
+       %{conn: conn} = ctx do
+    now = DateTime.utc_now()
+
+    store_price_fixture(ctx.available_release, %{
+      regular_cents: 15_990,
+      discount_cents: 3_997,
+      discount_starts_at: DateTime.add(now, -1, :day),
+      discount_ends_at: DateTime.add(now, 5, :day)
+    })
+
+    {:ok, view, _html} = live(conn, "/comprar")
+    ends_at = DateTime.add(now, 5, :day) |> Calendar.strftime("%d/%m")
+
+    assert has_element?(view, "#price-#{ctx.available.id} s", "R$ 159,90")
+    assert has_element?(view, "#price-#{ctx.available.id} b", "R$ 39,97")
+    assert has_element?(view, "#price-#{ctx.available.id}", "até #{ends_at} · menor preço")
   end
 
   test "an edition cheaper than the game names itself next to the price", %{conn: conn} = ctx do

@@ -3,6 +3,8 @@ defmodule DockdWeb.DockdComponentsTest do
 
   import Phoenix.LiveViewTest
   import DockdWeb.DockdComponents
+  alias Dockd.Pricing.CurrentPrice
+  alias Dockd.Purchasing.PriceObservation
 
   test "money formats cents in Brazilian reais" do
     assert money(19_990) == "R$ 199,90"
@@ -64,5 +66,92 @@ defmodule DockdWeb.DockdComponentsTest do
       render_component(&date_block/1, %{date: ~D[2027-04-01], precision: :quarter, today: today})
 
     assert quarter =~ "<b>abr</b><small>2027</small>"
+  end
+
+  describe "price/1" do
+    @now ~U[2026-09-28 12:00:00Z]
+
+    test "strikes the full price and shows the promotion's end date" do
+      observation = %CurrentPrice{
+        price_cents: 3_997,
+        regular_cents: 15_990,
+        discount_ends_at: ~U[2026-10-17 06:59:59Z],
+        currency: "BRL",
+        observed_at: @now
+      }
+
+      html = render_component(&price/1, %{observation: observation, now: @now})
+
+      assert html =~ "<s>R$ 159,90</s>"
+      assert html =~ "<b>R$ 39,97</b>"
+      assert html =~ "até 17/10"
+      refute html =~ "menor preço"
+    end
+
+    test "shows the lowest price since Dockd started watching it, alone" do
+      observation = %CurrentPrice{
+        price_cents: 27_990,
+        currency: "BRL",
+        observed_at: @now,
+        lowest_since: ~U[2026-09-27 00:00:00Z]
+      }
+
+      html = render_component(&price/1, %{observation: observation, now: @now})
+
+      assert html =~ "menor preço desde 27/09"
+      refute html =~ "até"
+      refute html =~ "<s>"
+    end
+
+    test "combines the promotion and the lowest mark when both hold" do
+      observation = %CurrentPrice{
+        price_cents: 3_997,
+        regular_cents: 15_990,
+        discount_ends_at: ~U[2026-10-17 06:59:59Z],
+        lowest_since: ~U[2026-09-27 00:00:00Z],
+        currency: "BRL",
+        observed_at: @now
+      }
+
+      html = render_component(&price/1, %{observation: observation, now: @now})
+
+      assert html =~ "até 17/10 · menor preço"
+    end
+
+    test "falls back to the observed date and source without promotion or lowest mark" do
+      observation = %CurrentPrice{price_cents: 15_990, currency: "BRL", observed_at: @now}
+
+      html = render_component(&price/1, %{observation: observation, now: @now})
+
+      assert html =~ "visto em #{date_pt_br(@now)} · eShop"
+      refute html =~ "menor preço"
+      refute html =~ "até"
+    end
+
+    test "a manual observation never shows promotion or lowest text" do
+      observation = %PriceObservation{
+        price_cents: 35_000,
+        currency: "BRL",
+        observed_at: @now,
+        source: "OLX",
+        format: :physical
+      }
+
+      html = render_component(&price/1, %{observation: observation, now: @now})
+
+      assert html =~ "visto em #{date_pt_br(@now)} · OLX"
+      refute html =~ "menor preço"
+      refute html =~ "até"
+    end
+
+    test "the stale mark only applies to the baseline caption" do
+      old = DateTime.add(@now, -40, :day)
+      observation = %CurrentPrice{price_cents: 15_990, currency: "BRL", observed_at: old}
+
+      html = render_component(&price/1, %{observation: observation, now: @now})
+
+      assert html =~ "dk-price--stale"
+      assert html =~ "desatualizado"
+    end
   end
 end

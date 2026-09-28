@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { signIn } from "./sign-in";
 
-// Store Quest has an eShop price in priv/repo/e2e_seeds.exs, on sale, and no price of the
-// user's: the version shows the store's price without anyone typing it.
+// Store Quest has an eShop price in priv/repo/e2e_seeds.exs, on sale and the only price
+// Dockd has ever seen for it, so it is also the lowest ever: the version shows the store's
+// price without anyone typing it, struck through, with the promotion and the lowest mark.
 test("the eShop price shows on the game page without typing it", async ({ page }) => {
   await signIn(page);
   await page.goto("/descobrir?q=Store+Quest");
@@ -12,6 +13,7 @@ test("the eShop price shows on the game page without typing it", async ({ page }
   await expect(page.getByRole("heading", { name: "Store Quest" })).toBeVisible();
 
   const price = page.locator("[id^=release-] .dk-price");
+  await expect(price).toContainText("R$ 199,90");
   await expect(price).toContainText("R$ 99,90");
-  await expect(price).toContainText("eShop");
+  await expect(price).toContainText("menor preço");
 });

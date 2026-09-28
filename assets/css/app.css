@@ -423,7 +423,9 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 
 /* Price */
 .dk-price { display: inline-flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.dk-price__value { display: flex; align-items: baseline; gap: 6px; }
 .dk-price b { font-size: 15px; line-height: 20px; font-weight: 600; }
+.dk-price s { font-size: 13px; font-weight: 400; color: var(--ink-muted); }
 .dk-price small { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
 .dk-price--stale small { color: var(--warn); }
 .dk-price--none b { font-weight: 400; color: var(--ink-muted); }

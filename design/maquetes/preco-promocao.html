@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Price · promoção e menor preço, dois caminhos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
+<style>
+:root, [data-theme="light"]{--surface:#ffffff;--surface-raised:#f4f2f1;--surface-sunken:#ebe8e6;--line:#dedad8;--line-strong:#8f8886;--ink:#161414;--ink-muted:#6a6462;--on-ink:#ffffff;--red:#e60012;--red-ink:#d4000f;--warn:#9a5b00;--focus-ring:var(--red-ink);}
+[data-theme="dark"]{--surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red-ink:#ff5a5a;--warn:#f0b350;--focus-ring:var(--red-ink);}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red-ink:#ff5a5a;--warn:#f0b350;--focus-ring:var(--red-ink); } }
+:root{--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--radius-sm:3px;--radius-md:6px;--font-sans:"Archivo","Helvetica Neue",Arial,sans-serif;}
+*,*::before,*::after{box-sizing:border-box;}
+html{color-scheme:light;} html[data-theme="dark"]{color-scheme:dark;}
+body{margin:0;background:var(--surface);color:var(--ink);font-family:var(--font-sans);font-size:15px;line-height:22px;-webkit-font-smoothing:antialiased;}
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
+.page{width:min(100%,960px);margin:0 auto;padding:var(--space-5) var(--space-4) var(--space-7);}
+.page > header{padding-bottom:var(--space-3);margin-bottom:var(--space-5);border-bottom:1px solid var(--line);}
+.page > header h1{margin:0;font-size:11px;line-height:16px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-stretch:90%;color:var(--ink-muted);}
+.page > header p{margin:var(--space-2) 0 0;font-size:14px;line-height:20px;color:var(--ink-muted);}
+.page > header p b{color:var(--ink);}
+.dk-section{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);margin:0 0 var(--space-3);padding-bottom:var(--space-2);border-bottom:1px solid var(--line);}
+.opt{margin-top:var(--space-6);}
+.opt > p.lead{margin:0 0 var(--space-4);font-size:14px;line-height:20px;color:var(--ink-muted);}
+.opt > p.lead b{color:var(--ink);}
+
+/* Row, como aparece em Comprar e na página do jogo */
+.dk-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;column-gap:var(--space-3);align-items:center;padding:var(--space-2) 0;border-bottom:1px solid var(--line);}
+.dk-row__thumb{width:44px;height:44px;border-radius:var(--radius-sm);background:var(--surface-sunken);}
+.dk-row__title{font-size:14px;line-height:18px;font-weight:700;}
+.dk-row__meta{margin-top:2px;font-size:12px;line-height:16px;color:var(--ink-muted);}
+
+/* Price, igual a components/bundle.css, com o valor podendo levar o preço cheio riscado */
+.dk-price{display:inline-flex;flex-direction:column;align-items:flex-end;font-variant-numeric:tabular-nums;}
+.dk-price__value{display:flex;align-items:baseline;gap:6px;}
+.dk-price b{font-size:15px;line-height:20px;font-weight:600;}
+.dk-price s{font-size:13px;font-weight:400;color:var(--ink-muted);}
+.dk-price small{font-size:12px;line-height:16px;color:var(--ink-muted);}
+.dk-price--stale small{color:var(--warn);}
+</style>
+</head>
+<body>
+<main class="page">
+
+<header>
+  <h1>Promoção e menor preço já visto</h1>
+  <p>Três jogos reais dos fixtures da eShop (<code>test/support/fixtures/eshop/price_br.json</code>), como apareceriam na fila de Comprar e na página do jogo. O histórico do Dockd começou em 27/09/2026, então quase todo preço vigente hoje também é o menor já visto &mdash; é por isso que o rótulo diz <b>desde dd/mm</b>, nunca "recorde". A dúvida real é só uma: <b>quando um jogo está em promoção e essa promoção também é o menor preço já visto, o que a legenda mostra?</b> Os dois jogos em promoção abaixo caem nesse caso; Swords of Ditto mostra o menor preço sem promoção, e Blasphemous depois do fim da promoção mostra a linha de base, iguais nos dois caminhos.</p>
+</header>
+
+<section class="opt">
+  <div class="dk-section"><h2 style="margin:0;font-size:14px;">Caminho A &middot; a promoção manda</h2></div>
+  <p class="lead"><b>Em promoção, a legenda é só "até dd/mm".</b> O fato de também ser o menor preço já visto fica implícito no valor riscado; a legenda não acumula duas informações.</p>
+
+  <div class="dk-row">
+    <div class="dk-row__thumb"></div>
+    <div><div class="dk-row__title">Blasphemous</div><div class="dk-row__meta">Switch</div></div>
+    <div class="dk-price">
+      <span class="dk-price__value"><s>R$ 159,90</s><b>R$ 39,97</b></span>
+      <small>até 17/10</small>
+    </div>
+  </div>
+
+  <div class="dk-row">
+    <div class="dk-row__thumb"></div>
+    <div><div class="dk-row__title">Final Fantasy XV</div><div class="dk-row__meta">Switch</div></div>
+    <div class="dk-price">
+      <span class="dk-price__value"><s>R$ 124,90</s><b>R$ 49,96</b></span>
+      <small>até 01/10</small>
+    </div>
+  </div>
+</section>
+
+<section class="opt">
+  <div class="dk-section"><h2 style="margin:0;font-size:14px;">Caminho B &middot; as duas legendas somam</h2><b style="font-size:12px;color:var(--red-ink);font-weight:600;">Escolhido em 28/09/2026</b></div>
+  <p class="lead"><b>Quando as duas condições valem, a legenda junta as duas, como o metadado de plataforma faz</b> (<code>Switch 2 &middot; 2026</code>): "até dd/mm &middot; menor preço".</p>
+
+  <div class="dk-row">
+    <div class="dk-row__thumb"></div>
+    <div><div class="dk-row__title">Blasphemous</div><div class="dk-row__meta">Switch</div></div>
+    <div class="dk-price">
+      <span class="dk-price__value"><s>R$ 159,90</s><b>R$ 39,97</b></span>
+      <small>até 17/10 &middot; menor preço</small>
+    </div>
+  </div>
+
+  <div class="dk-row">
+    <div class="dk-row__thumb"></div>
+    <div><div class="dk-row__title">Final Fantasy XV</div><div class="dk-row__meta">Switch</div></div>
+    <div class="dk-price">
+      <span class="dk-price__value"><s>R$ 124,90</s><b>R$ 49,96</b></span>
+      <small>até 01/10 &middot; menor preço</small>
+    </div>
+  </div>
+</section>
+
+<section class="opt">
+  <div class="dk-section"><h2 style="margin:0;font-size:14px;">Sem ambiguidade &middot; iguais nos dois caminhos</h2></div>
+  <p class="lead">Sem promoção vigente, o menor preço já visto aparece sozinho; e quando o preço vigente não é mais o menor (a promoção acabou e o valor voltou ao cheio), a legenda volta a ser "visto em dd/mm".</p>
+
+  <div class="dk-row">
+    <div class="dk-row__thumb"></div>
+    <div><div class="dk-row__title">The Swords of Ditto</div><div class="dk-row__meta">Switch</div></div>
+    <div class="dk-price">
+      <span class="dk-price__value"><b>R$ 27,99</b></span>
+      <small>menor preço desde 27/09</small>
+    </div>
+  </div>
+
+  <div class="dk-row">
+    <div class="dk-row__thumb"></div>
+    <div><div class="dk-row__title">Blasphemous, depois da promoção</div><div class="dk-row__meta">Switch</div></div>
+    <div class="dk-price">
+      <span class="dk-price__value"><b>R$ 159,90</b></span>
+      <small>visto em 20/10</small>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

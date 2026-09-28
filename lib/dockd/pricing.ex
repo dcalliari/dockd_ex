@@ -30,13 +30,15 @@ defmodule Dockd.Pricing do
       from l in StoreListing,
         join: p in subquery(latest_prices()),
         on: p.listing_id == l.id,
+        join: h in subquery(price_history()),
+        on: h.listing_id == l.id,
         where:
           l.release_id == ^release_id and l.match in ^@priced and not is_nil(p.regular_cents),
-        select: p
+        select: {p, h}
     )
     |> case do
       nil -> nil
-      price -> %{store_current_price(price, now) | release_id: release_id}
+      {price, history} -> %{store_current_price(price, history, now) | release_id: release_id}
     end
   end
 
@@ -78,15 +80,33 @@ defmodule Dockd.Pricing do
         order_by: [asc: p.listing_id, desc: p.first_seen_at]
       )
 
-  defp store_current_price(%StorePrice{} = price, now) do
+  # The lowest price a listing has ever gone for, and since when Dockd has been
+  # watching it: the sync keeps a row only per price change, so this reads the whole
+  # kept history, not a snapshot.
+  defp price_history,
+    do:
+      from(p in StorePrice,
+        group_by: p.listing_id,
+        select: %{
+          listing_id: p.listing_id,
+          observed_since: min(p.first_seen_at),
+          lowest_cents: min(fragment("coalesce(?, ?)", p.discount_cents, p.regular_cents))
+        }
+      )
+
+  defp store_current_price(%StorePrice{} = price, history \\ nil, now) do
     discounted? =
       price.discount_cents != nil and before?(price.discount_starts_at, now) and
         before?(now, price.discount_ends_at)
 
+    price_cents = if(discounted?, do: price.discount_cents, else: price.regular_cents)
+    lowest_ever? = history != nil and price_cents <= history.lowest_cents
+
     %CurrentPrice{
-      price_cents: if(discounted?, do: price.discount_cents, else: price.regular_cents),
+      price_cents: price_cents,
       regular_cents: price.regular_cents,
       discount_ends_at: if(discounted?, do: price.discount_ends_at),
+      lowest_since: if(lowest_ever?, do: history.observed_since),
       currency: price.currency,
       observed_at: price.last_seen_at,
       sales_status: price.sales_status

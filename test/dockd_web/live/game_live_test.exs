@@ -236,8 +236,27 @@ defmodule DockdWeb.GameLiveTest do
     {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
 
     assert has_element?(view, "#price-#{ctx.release_2.id}", "R$ 439,90")
-    assert has_element?(view, "#price-#{ctx.release_2.id}", "eShop")
-    refute has_element?(view, "#price-#{ctx.release.id}", "eShop")
+    assert has_element?(view, "#price-#{ctx.release_2.id}", "menor preço desde")
+    refute has_element?(view, "#price-#{ctx.release.id}", "menor preço desde")
+  end
+
+  test "a promotion that is also the lowest price ever seen shows both marks together",
+       %{conn: conn} = ctx do
+    now = DateTime.utc_now()
+
+    store_price_fixture(ctx.release_2, %{
+      regular_cents: 15_990,
+      discount_cents: 3_997,
+      discount_starts_at: DateTime.add(now, -1, :day),
+      discount_ends_at: DateTime.add(now, 5, :day)
+    })
+
+    {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+    ends_at = DateTime.add(now, 5, :day) |> Calendar.strftime("%d/%m")
+
+    assert has_element?(view, "#price-#{ctx.release_2.id} s", "R$ 159,90")
+    assert has_element?(view, "#price-#{ctx.release_2.id} b", "R$ 39,97")
+    assert has_element?(view, "#price-#{ctx.release_2.id}", "até #{ends_at} · menor preço")
   end
 
   test "the price opens the manual record in place", %{conn: conn} = ctx do

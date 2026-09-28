@@ -564,6 +564,17 @@ defmodule Dockd.PricingTest do
                Pricing.store_price(blasphemous.release.id, @after_sale)
     end
 
+    test "marks the discounted price as the lowest since Dockd started watching it, only while it holds" do
+      blasphemous = listing_for("70010000062593")
+      {:ok, _} = Pricing.sync_eshop_prices(@during_sale)
+
+      assert %CurrentPrice{lowest_since: @during_sale} =
+               Pricing.store_price(blasphemous.release.id, @during_sale)
+
+      assert %CurrentPrice{price_cents: 15_990, lowest_since: nil} =
+               Pricing.store_price(blasphemous.release.id, @after_sale)
+    end
+
     test "a store price stays fresh while the sync runs and goes stale when it stops" do
       zelda = listing_for("70010000063714")
       {:ok, _} = Pricing.sync_eshop_prices(@during_sale)
