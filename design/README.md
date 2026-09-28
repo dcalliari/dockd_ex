@@ -27,7 +27,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 ## Cor
 
 - A página é `surface`; o texto é `ink`; o metadado é `ink-muted`. Não existe um terceiro nível de cinza: se algo não merece `ink-muted`, não merece estar na tela.
-- `red` é preenchimento em quatro lugares e só neles: o botão primário da tela, o chip Jogando, o indicador da aba e do destino ativos, o ponto do wordmark. Como texto e contorno, use `red-ink`, que escurece no claro e clareia no escuro para manter contraste.
+- `red` é preenchimento em cinco lugares e só neles: o botão primário da tela, o chip Jogando, o indicador da aba e do destino ativos, o ponto do wordmark e o cartão de jogo de Switch 2 do ExclusiveMark. Como texto e contorno, use `red-ink`, que escurece no claro e clareia no escuro para manter contraste.
 - Texto sobre `red` é `on-red`; sobre `ink` é `on-ink`. Nunca `#fff` literal.
 - Os cinco status são preenchimentos: amarelo Quero, preto Backlog, vermelho Jogando, cinza claro Zerado, cinza escuro Larguei. Zerado e Larguei ficam a 75% e apagam a capa a 55%, como o Letterboxd faz com o que já foi visto. Ver StatusChip.
 - `warn` tem um único uso: preço desatualizado. Não há verde de sucesso nem azul de informação. Uma ação bem-sucedida se mostra no próprio controle mudando de estado, não em um aviso.
@@ -83,7 +83,11 @@ A mídia é um segundo eixo, por versão: Físico, Digital ou Key card, sempre c
 
 O status só se troca pelo StatusMenu, o mesmo sobre a capa (Biblioteca, Descobrir) e na página do jogo: o chip atual é o controle, apontar para ele abre os outros estados embaixo, e clicar nele desmarca. No toque, o primeiro toque abre e o segundo desmarca. Desmarcar é a única forma de tirar um jogo da biblioteca: não há lixeira, link de remoção, confirmação nem aviso, e compra, preço visto e histórico ficam. Ver StatusMenu.
 
-Na página do jogo, plataforma e exclusividade da obra não vão no texto do herói: ficam na legenda da capa, `SWITCH 2` à esquerda e `EXCLUSIVO` em `red-ink` à direita, e só quando a obra é exclusiva.
+Na página do jogo, a plataforma não vai no texto do herói: fica na legenda da capa (`SWITCH · SWITCH 2`). A exclusividade é o ExclusiveMark sobre a capa, como na grade.
+
+## Exclusivo
+
+Decidido em 28/09/2026 (`maquetes/exclusivos.html`, desenho D, Silhueta). A exclusividade da obra nunca é texto: é o cartão de jogo do próprio console, a silhueta em retrato com o canto superior esquerdo chanfrado, em `gamecard` (preto) para exclusivo Nintendo e em `red` para exclusivo Switch 2. Multiplataforma não tem marca e não aparece escrito: a ausência já diz. Na linha, o cartão vem logo depois da plataforma, centrado nas letras do metadado; na capa da grade e da página do jogo, fica no canto inferior direito, longe do status. A miniatura da linha não recebe marca. Ver ExclusiveMark.
 
 ## Rodapé
 
@@ -121,6 +125,8 @@ O log de eventos vira um trilho vertical, do mais recente ao mais antigo, uma li
 ## Ícones
 
 Heroicons outline em 24px, os mesmos que o projeto já carrega, em `currentColor`, inseridos inline pelo componente `<.icon>` do Phoenix. Um ícone entra só quando substitui a palavra que caberia ali, e são cinco casos: lupa na busca, seta para voltar, x para fechar, chevron nos menus da barra de filtros e da conta, mais para adicionar. Nenhum ícone em chip, tag, botão com rótulo ou destino de navegação. Sem emoji.
+
+A única figura fora dos Heroicons é o cartão de jogo do ExclusiveMark, que substitui `Exclusivo Nintendo` e `Exclusivo Switch 2` e tem as cores do objeto, não `currentColor`.
 
 ## Movimento
 

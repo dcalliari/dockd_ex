@@ -1,7 +1,9 @@
 /** Dockd e um sistema de classes CSS; estes tipos documentam o que cada function component Phoenix recebe. */
 export type Status = "quero" | "backlog" | "jogando" | "zerado" | "larguei";
 export type Media = "fisico" | "digital" | "key-card";
-export interface Poster { title: string; coverUrl?: string; status?: Status; href?: string; size?: "grid" | "sm"; caption?: { platforms: string; exclusive: boolean } }
+export type Availability = "nintendo_exclusive" | "switch2_exclusive" | "multiplatform";
+export interface Poster { title: string; coverUrl?: string; status?: Status; href?: string; size?: "grid" | "sm"; availability?: Availability; caption?: { platforms: string } }
+export interface ExclusiveMark { availability: Availability }
 export interface StatusChip { status: Status; size?: "md" | "sm" }
 export interface MediaTag { media: Media }
 export interface Button { variant: "primary" | "secondary"; size?: "md" | "sm"; disabled?: boolean; label: string }

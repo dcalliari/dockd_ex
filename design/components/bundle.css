@@ -30,7 +30,21 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-poster__status { position: absolute; left: var(--space-2); top: var(--space-2); z-index: 1; }
 .dk-poster--sm { width: 33px; height: var(--thumb-height); border-radius: var(--radius-sm); }
 .dk-poster-caption { display: flex; justify-content: space-between; gap: var(--space-2); margin: var(--space-2) 0 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
-.dk-poster-caption__mark { color: var(--red-ink); }
+
+/* ExclusiveMark: o cartão de jogo do console marca a obra exclusiva, preto para Nintendo e vermelho
+   para Switch 2. As cores são do objeto e não mudam com o tema; gamecard-edge segura o preto no escuro.
+   No texto, fica centrado nas letras do t-meta (maiúscula de 9px): 11px descidos 1px. */
+.dk-exclusive { display: inline-block; height: 11px; width: auto; aspect-ratio: 16 / 22; margin-left: 5px; vertical-align: -1px; overflow: visible; }
+.dk-exclusive path { stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.dk-exclusive--nintendo path { fill: var(--gamecard); stroke: var(--gamecard-edge); }
+.dk-exclusive--switch2 path { fill: var(--red); stroke: transparent; }
+/* Na capa, embaixo à direita, longe da etiqueta de status, com aro branco sobre qualquer arte. */
+.dk-poster > .dk-exclusive { position: absolute; right: 6px; bottom: 6px; z-index: 1; height: 16px; margin: 0; filter: drop-shadow(0 1px 2px var(--scrim)); }
+.dk-poster > .dk-exclusive path { stroke: var(--on-red); }
+/* Capa sem imagem: o título quebra antes de chegar à marca. */
+.dk-poster--empty:has(> .dk-exclusive) { padding-right: calc(var(--space-2) + 16px); }
+.dk-hero .dk-poster > .dk-exclusive { right: var(--space-2); bottom: var(--space-2); height: 20px; }
+@media (max-width: 767px) { .dk-hero .dk-poster > .dk-exclusive { height: 18px; } }
 
 /* O véu é irmão da capa dentro do cartão, nunca filho do link: o botão não pode navegar. */
 .dk-poster__veil { position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 3 / 4; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: var(--scrim); opacity: 0; transition: opacity 160ms; }
