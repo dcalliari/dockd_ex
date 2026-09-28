@@ -35,6 +35,7 @@ defmodule DockdWeb.Showcase do
           <.poster
             title={result.title}
             cover_url={result.cover_url}
+            availability={result.game.availability}
             navigate={~p"/jogos/#{result.game.id}"}
           />
           <.status_link back={DiscoverLive.list_path(lista, %{abrir: DiscoverLive.result_id(result)})} />

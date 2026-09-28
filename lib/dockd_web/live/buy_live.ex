@@ -109,20 +109,20 @@ defmodule DockdWeb.BuyLive do
   defp price_edition(_price, _releases), do: nil
 
   # Once bought here, the row says which version and edition it was.
-  defp row_meta(item, _price, %{release_id: release_id}) do
+  defp row_meta(item, %{release_id: release_id}) do
     case Enum.find(item.releases, &(&1.id == release_id)) do
       nil -> platform_label(item.releases)
       release -> release_label(release)
     end
   end
 
-  defp row_meta(item, price, _purchase),
-    do:
-      meta([
-        platform_label(item.releases),
-        enum_label(item.game.availability),
-        price_edition(price, item.releases)
-      ])
+  # The exclusivity mark sits right after the platforms, so the edition comes after it.
+  defp edition_suffix(price, releases) do
+    case price_edition(price, releases) do
+      nil -> nil
+      edition -> " · #{edition}"
+    end
+  end
 
   defp price_open?(%{kind: :price, key: key}, game_id), do: key == game_id
   defp price_open?(_form, _game_id), do: false
@@ -156,8 +156,14 @@ defmodule DockdWeb.BuyLive do
         />
         <div>
           <.link navigate={~p"/jogos/#{@item.game.id}"} class="dk-row__title">{@item.game.title}</.link>
-          <div class="dk-row__meta">
-            {row_meta(@item, @price, @bought[@item.game.id])}
+          <div :if={@bought[@item.game.id]} class="dk-row__meta">
+            {row_meta(@item, @bought[@item.game.id])}
+          </div>
+          <div :if={!@bought[@item.game.id]} class="dk-row__meta">
+            {platform_label(@item.releases)}<.exclusive_mark availability={@item.game.availability} />{edition_suffix(
+              @price,
+              @item.releases
+            )}
           </div>
         </div>
         <div class="dk-row__end">

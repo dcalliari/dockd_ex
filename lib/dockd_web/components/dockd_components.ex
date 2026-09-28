@@ -460,6 +460,7 @@ defmodule DockdWeb.DockdComponents do
   attr :navigate, :string, default: nil
   attr :size, :string, default: "grid", values: ~w(grid sm)
   attr :faded, :boolean, default: false
+  attr :availability, :atom, default: nil
   attr :rest, :global
   slot :inner_block
 
@@ -474,11 +475,23 @@ defmodule DockdWeb.DockdComponents do
 
     ~H"""
     <.link :if={@navigate} navigate={@navigate} class={@class} aria-label={@title} {@rest}>
-      <.poster_body title={@title} cover_url={@cover_url} status={@status} size={@size} />
+      <.poster_body
+        title={@title}
+        cover_url={@cover_url}
+        status={@status}
+        size={@size}
+        availability={@availability}
+      />
       {render_slot(@inner_block)}
     </.link>
     <span :if={!@navigate} class={@class} {@rest}>
-      <.poster_body title={@title} cover_url={@cover_url} status={@status} size={@size} />
+      <.poster_body
+        title={@title}
+        cover_url={@cover_url}
+        status={@status}
+        size={@size}
+        availability={@availability}
+      />
       {render_slot(@inner_block)}
     </span>
     """
@@ -494,20 +507,43 @@ defmodule DockdWeb.DockdComponents do
       size="sm"
       class="dk-poster__status"
     />
+    <.exclusive_mark :if={@size == "grid"} availability={@availability} />
     """
   end
 
   attr :platforms, :string, required: true
-  attr :exclusive, :boolean, default: false
 
   def poster_caption(assigns) do
     ~H"""
     <p class="dk-poster-caption">
       <span>{@platforms}</span>
-      <span :if={@exclusive} class="dk-poster-caption__mark">Exclusivo</span>
     </p>
     """
   end
+
+  @doc """
+  The exclusivity mark: the console's own game card, black for a Nintendo
+  exclusive and red for a Switch 2 exclusive. A multiplatform game has none.
+  """
+  attr :availability, :atom, default: nil
+
+  def exclusive_mark(assigns) do
+    ~H"""
+    <svg
+      :if={@availability in [:nintendo_exclusive, :switch2_exclusive]}
+      class={["dk-exclusive", "dk-exclusive--#{exclusive_kind(@availability)}"]}
+      viewBox="0 0 16 22"
+      role="img"
+      aria-label={enum_label(@availability)}
+    >
+      <title>{enum_label(@availability)}</title>
+      <path d="M4.5 .5H14A1.5 1.5 0 0 1 15.5 2V20A1.5 1.5 0 0 1 14 21.5H2A1.5 1.5 0 0 1 .5 20V4.5Z" />
+    </svg>
+    """
+  end
+
+  defp exclusive_kind(:nintendo_exclusive), do: "nintendo"
+  defp exclusive_kind(:switch2_exclusive), do: "switch2"
 
   attr :status, :atom, required: true, values: @statuses
   attr :size, :string, default: "md", values: ~w(md sm)

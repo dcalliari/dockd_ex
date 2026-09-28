@@ -67,6 +67,26 @@ defmodule DockdWeb.BuyLiveTest do
     refute has_element?(view, "button", "Reservar")
   end
 
+  test "exclusivity is the game card after the platforms, never text", %{conn: conn, user: user} do
+    switch2 = game_fixture(%{title: "Switch 2 Only", availability: :switch2_exclusive})
+
+    release_fixture(switch2, %{platform: :switch_2, release_date: Date.add(Date.utc_today(), -30)})
+
+    {:ok, _} = entry_fixture(user, switch2, %{purchase_intent: :want})
+
+    multi = game_fixture(%{title: "Everywhere", availability: :multiplatform})
+    release_fixture(multi, %{platform: :switch, release_date: Date.add(Date.utc_today(), -30)})
+    {:ok, _} = entry_fixture(user, multi, %{purchase_intent: :want})
+
+    {:ok, view, _html} = live(conn, "/comprar")
+
+    assert has_element?(view, "#queue-#{switch2.id} .dk-row__meta .dk-exclusive--switch2")
+    assert has_element?(view, "#queue-#{switch2.id} .dk-row__meta", "Switch 2")
+    refute has_element?(view, "#queue-#{switch2.id} .dk-row__meta", "· Exclusivo")
+    refute has_element?(view, "#queue-#{multi.id} .dk-exclusive")
+    refute has_element?(view, "#queue-#{multi.id} .dk-row__meta", "Multiplataforma")
+  end
+
   test "a game the eShop has not released is never available, whatever its date says",
        %{conn: conn, user: user} do
     game = game_fixture(%{title: "Not Out Yet", availability: :switch2_exclusive})
@@ -133,6 +153,7 @@ defmodule DockdWeb.BuyLiveTest do
 
     assert has_element?(view, "#price-#{ctx.available.id}", "R$ 199,90")
     assert has_element?(view, "#queue-#{ctx.available.id} .dk-row__meta", "Digital Deluxe")
+    assert has_element?(view, "#queue-#{ctx.available.id} .dk-row__meta .dk-exclusive--nintendo")
     assert has_element?(view, "#estimate-digital", "R$ 199,90")
 
     # Vetoing the edition takes it out of the price.

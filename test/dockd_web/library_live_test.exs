@@ -44,6 +44,17 @@ defmodule DockdWeb.LibraryLiveTest do
     %{user: user, wanted: wanted, owned: owned, playing: playing}
   end
 
+  test "an exclusive carries the game card on its cover", %{conn: conn} = ctx do
+    multi = game_fixture(%{title: "Hades II", availability: :multiplatform})
+    release_fixture(multi, %{platform: :switch, release_date: ~D[2025-09-25]})
+    {:ok, _} = entry_fixture(ctx.user, multi, %{purchase_intent: :want})
+
+    {:ok, view, _html} = live(conn, "/")
+
+    assert has_element?(view, "#shelf-#{ctx.wanted.id} .dk-poster .dk-exclusive--nintendo")
+    refute has_element?(view, "#shelf-#{multi.id} .dk-exclusive")
+  end
+
   test "shows one derived status per game and the tab counts", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/biblioteca")
 

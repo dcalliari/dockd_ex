@@ -224,8 +224,6 @@ defmodule DockdWeb.GameLive do
   defp ownership_for(item, release_id),
     do: Enum.find(item.ownerships, &(&1.release_id == release_id))
 
-  defp exclusive?(game), do: game.availability in [:nintendo_exclusive, :switch2_exclusive]
-
   defp price_open?(%{kind: :price, key: key}, release_id), do: key == release_id
   defp price_open?(_form, _release_id), do: false
 
@@ -321,11 +319,8 @@ defmodule DockdWeb.GameLive do
 
       <section id="game-hero" class="dk-hero">
         <div>
-          <.poster title={@game.title} cover_url={@game.cover_url} />
-          <.poster_caption
-            platforms={platform_label(@item.releases)}
-            exclusive={exclusive?(@game)}
-          />
+          <.poster title={@game.title} cover_url={@game.cover_url} availability={@game.availability} />
+          <.poster_caption platforms={platform_label(@item.releases)} />
         </div>
         <div class="dk-hero__text">
           <h1 class="t-display">{@game.title}</h1>

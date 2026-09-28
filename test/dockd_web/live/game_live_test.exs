@@ -29,7 +29,8 @@ defmodule DockdWeb.GameLiveTest do
     assert has_element?(view, "#game-back[href='/biblioteca']")
     assert has_element?(view, "#game-hero h1", "Metroid Prime 4")
     assert has_element?(view, "#game-meta", "Retro Studios · 2027")
-    assert html =~ "Exclusivo"
+    assert has_element?(view, "#game-hero .dk-poster .dk-exclusive--nintendo")
+    refute has_element?(view, "#game-hero .dk-poster-caption", "Exclusivo")
     assert has_element?(view, "#release-#{ctx.release.id} .dk-date b", "01")
     assert has_element?(view, "#release-#{ctx.release_2.id} .dk-date--year b", "2027")
     refute html =~ "Edição padrão"
