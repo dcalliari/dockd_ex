@@ -3,7 +3,7 @@ O único controle de status do sistema: sobre a capa na Biblioteca e em Descobri
 
 Desmarcar é a única forma de tirar um jogo da biblioteca. Não existe lixeira, link "Tirar da biblioteca", confirmação, aviso nem faixa: o estado muda no lugar. Na grade o cartão fica onde estava, com `+ Adicionar`, até a aba ou o filtro mudar, e escolher de novo desfaz. Sai a entrada e a posse; compra, preço visto, saldo e histórico ficam, e o histórico ganha "Saiu da biblioteca".
 
-Sem status, o chip é `+ Adicionar` e abre os cinco. Nunca se oferece o estado atual, e Quero não é oferecido num jogo com posse. Escolher Backlog num jogo sem posse troca os chips, no mesmo painel, pela pergunta "Tem em qual versão?" com uma linha por versão e mídia (`Switch 2 · Físico`) e Cancelar; escolher grava posse e status juntos. Para o visitante o chip é um link para Entrar que volta com o controle aberto.
+Sem status, o chip é `+ Adicionar` e abre os cinco. Nunca se oferece o estado atual, e Quero não é oferecido num jogo com posse. Escolher Backlog num jogo sem posse troca os chips, no mesmo painel, pela pergunta "Tem em qual versão?" com uma linha por plataforma e mídia (`Switch 2 · Físico`) e Cancelar; escolher grava posse e status juntos, na edição padrão da plataforma. A edição exata (Deluxe, pacote) vem de Comprei, quando há compra. Para o visitante o chip é um link para Entrar que volta com o controle aberto.
 
 Tamanhos: `sm` sobre a capa, no canto superior esquerdo, e `md` na página do jogo, com `desde dd/mm/aaaa` em `t-meta` ao lado. Sobre a capa o painel nunca passa da largura do cartão. Fechado, o painel não ocupa espaço, e nada estoura a tela em 375px.
 

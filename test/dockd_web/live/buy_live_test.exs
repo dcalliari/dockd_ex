@@ -127,6 +127,37 @@ defmodule DockdWeb.BuyLiveTest do
     refute has_element?(view, "#queue-#{ctx.available.id} .dk-row__meta", "Deluxe")
   end
 
+  test "with an edition on sale, Comprei opens the choices under the row", %{conn: conn} = ctx do
+    store_price_fixture(ctx.available_release, %{regular_cents: 29_990})
+
+    deluxe =
+      release_fixture(ctx.available, %{platform: :switch, edition: "Digital Deluxe Edition"})
+
+    store_price_fixture(deluxe, %{regular_cents: 34_990})
+    {:ok, view, _html} = live(conn, "/comprar")
+
+    view |> element("#buy-#{ctx.available.id}-button") |> render_click()
+
+    options = "#buy-options-#{ctx.available.id}"
+    refute has_element?(view, "#buy-#{ctx.available.id}-button")
+    assert has_element?(view, "#{options}-#{ctx.available_release.id}-digital", "R$ 299,90")
+
+    view
+    |> element("#{options}-#{deluxe.id}-digital button", "Comprei esta")
+    |> render_click()
+
+    assert [%{price_cents: 34_990}] = Purchasing.list_purchases(ctx.user, deluxe.id)
+    refute has_element?(view, options)
+
+    assert has_element?(
+             view,
+             "#queue-#{ctx.available.id} .dk-row__meta",
+             "Switch · Digital Deluxe Edition"
+           )
+
+    assert has_element?(view, "#buy-#{ctx.available.id}", "R$ 349,90")
+  end
+
   test "Comprei buys in one tap with the price seen, then Desfazer undoes it",
        %{conn: conn} = ctx do
     observe(ctx.user, ctx.available_release, :digital, 9_990)

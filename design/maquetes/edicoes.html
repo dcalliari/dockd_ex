@@ -387,7 +387,8 @@ body { background: var(--surface); }
 </section>
 
 <section class="opt" id="decisao">
-  <div class="dk-section"><h2>Para decidir</h2></div>
+  <div class="dk-section"><h2>Decidido em 28/09/2026</h2></div>
+  <p class="lead">O dono aprovou as quatro recomendações e tirou a contagem da seção Versões, que só diria 1 ou 2. Depois de juntar, a linha diz <b>mesmo jogo</b>, par de <b>jogos diferentes</b>.</p>
   <ul class="lead">
     <li><b>Comprei:</b> caminho B, as opções embaixo da linha com o preço e Comprei esta <span class="tag-rec">recomendado</span>, ou caminho A, o Choice em linha com preço.</li>
     <li><b>Quantas edições à vista:</b> as duas mais baratas por plataforma, e Mais N edições no lugar, em Versões e em Comprei <span class="tag-rec">recomendado</span>; ou todas sempre.</li>
@@ -479,7 +480,7 @@ function heroHtml(game, extra) {
 
 function versionsHtml(key, open) {
   var game = GAMES[key];
-  return heroHtml(game) + section('Versões', game.versions.length) + game.versions.map(function (v) {
+  return heroHtml(game) + section('Versões') + game.versions.map(function (v) {
     return '<div class="dk-version"><div class="dk-row dk-row--wide">' + date(v.date[0], v.date[1]) +
       '<div><span class="dk-row__title">' + v.platform + '</span><div class="dk-row__meta">' + v.meta + '</div></div>' +
       '<div class="dk-row__end">' + price(v.price) + '</div></div>' + editionsHtml(v.editions, open) + '</div>';
@@ -568,9 +569,9 @@ function buyHtml(personaMode, only) {
 
 var SAME = [
   { game: 'Hyrule Warriors: Age of Calamity', cover: 'cob22n', meta: 'Switch · 2020 · Omega Force',
-    other: 'Hyrule Warriors: Age of Calamity – Definitive Edition', otherCover: 'cocw1y', otherMeta: 'Switch · Switch 2 · 2027 · expandido · Quero', joined: 'Switch · Switch 2 · com a Definitive Edition' },
+    other: 'Hyrule Warriors: Age of Calamity – Definitive Edition', otherCover: 'cocw1y', otherMeta: 'Switch · Switch 2 · 2027 · expandido · Quero', joined: 'Switch · Switch 2 · mesmo jogo' },
   { game: 'The Witcher 3: Wild Hunt', cover: 'coaarl', meta: 'Switch · 2019 · CD Projekt RED',
-    other: 'The Witcher 3: Wild Hunt Remastered', otherCover: 'cocrjd', otherMeta: 'Switch 2 · 2026 · remaster', joined: 'Switch · Switch 2 · com o Remastered' }
+    other: 'The Witcher 3: Wild Hunt Remastered', otherCover: 'cocrjd', otherMeta: 'Switch 2 · 2026 · remaster', joined: 'Switch · Switch 2 · mesmo jogo' }
 ];
 
 var ESHOP = [

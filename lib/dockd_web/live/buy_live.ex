@@ -94,6 +94,22 @@ defmodule DockdWeb.BuyLive do
 
   defp price_edition(_price, _releases), do: nil
 
+  # Once bought here, the row says which version and edition it was.
+  defp row_meta(item, _price, %{release_id: release_id}) do
+    case Enum.find(item.releases, &(&1.id == release_id)) do
+      nil -> platform_label(item.releases)
+      release -> release_label(release)
+    end
+  end
+
+  defp row_meta(item, price, _purchase),
+    do:
+      meta([
+        platform_label(item.releases),
+        enum_label(item.game.availability),
+        price_edition(price, item.releases)
+      ])
+
   defp price_open?(%{kind: :price, key: key}, game_id), do: key == game_id
   defp price_open?(_form, _game_id), do: false
 
@@ -127,11 +143,7 @@ defmodule DockdWeb.BuyLive do
         <div>
           <.link navigate={~p"/jogos/#{@item.game.id}"} class="dk-row__title">{@item.game.title}</.link>
           <div class="dk-row__meta">
-            {meta([
-              platform_label(@item.releases),
-              enum_label(@item.game.availability),
-              price_edition(@price, @item.releases)
-            ])}
+            {row_meta(@item, @price, @bought[@item.game.id])}
           </div>
         </div>
         <div class="dk-row__end">
@@ -143,7 +155,7 @@ defmodule DockdWeb.BuyLive do
             open={price_open?(@form, @item.game.id)}
           />
           <.buy_control
-            :if={@buy}
+            :if={@buy and !GameEvents.buy_options(@buying, @item.game.id)}
             id={"buy-#{@item.game.id}"}
             game_id={@item.game.id}
             choices={GameEvents.buying(@buying, @item.game.id)}
@@ -153,6 +165,12 @@ defmodule DockdWeb.BuyLive do
           />
         </div>
       </div>
+      <.buy_options
+        :if={@buy and GameEvents.buy_options(@buying, @item.game.id)}
+        id={"buy-options-#{@item.game.id}"}
+        game_id={@item.game.id}
+        options={GameEvents.buy_options(@buying, @item.game.id)}
+      />
       <.price_form
         :if={price_open?(@form, @item.game.id)}
         id={"price-form-#{@item.game.id}"}
@@ -169,7 +187,7 @@ defmodule DockdWeb.BuyLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      eshop_review={@eshop_review}
+      catalog_review={@catalog_review}
       current="Comprar"
     >
       <p

@@ -17,7 +17,7 @@ defmodule DockdWeb.Layouts do
   attr :search, :string, default: ""
   attr :search_live, :boolean, default: false
   attr :current_scope, :map, default: nil
-  attr :eshop_review, :integer, default: 0, doc: "assigned by `DockdWeb.AccountMenu`"
+  attr :catalog_review, :integer, default: 0, doc: "assigned by `DockdWeb.AccountMenu`"
   attr :footer, :boolean, default: true, doc: "false on Entrar, whose covers fill the screen"
   slot :bleed, doc: "full-width content between the NavBar and the page, like the Entrar covers"
   slot :inner_block, required: true
@@ -27,7 +27,7 @@ defmodule DockdWeb.Layouts do
     <.nav_bar
       current_scope={@current_scope}
       current={@current}
-      eshop_review={@eshop_review}
+      catalog_review={@catalog_review}
       search={@search}
       search_live={@search_live}
     />

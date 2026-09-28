@@ -35,20 +35,100 @@ defmodule DockdWeb.GameLiveTest do
     refute html =~ "Edição padrão"
   end
 
-  test "a store edition waits for its own control: only an owned one shows",
-       %{conn: conn} = ctx do
-    deluxe = release_fixture(ctx.game, %{platform: :switch, edition: "Edição Deluxe"})
-    {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+  describe "Versões with editions" do
+    setup ctx do
+      store_price_fixture(ctx.release, %{regular_cents: 29_990})
 
-    refute has_element?(view, "#release-#{deluxe.id}")
+      editions =
+        for {name, cents} <- [{"Deluxe", 34_990}, {"Premium", 44_450}, {"Ouro", 31_000}],
+            into: %{} do
+          release = release_fixture(ctx.game, %{platform: :switch, edition: name})
+          store_price_fixture(release, %{regular_cents: cents})
+          {name, release}
+        end
 
-    assert DockdWeb.GameEvents.purchase_choices(Dockd.Catalog.get_game!(ctx.game.id)) |> length() ==
-             2
+      unsold = release_fixture(ctx.game, %{platform: :switch, edition: "Colecionador"})
+      %{editions: editions, unsold: unsold}
+    end
 
-    {:ok, _} = purchase_fixture(ctx.user, deluxe)
-    {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+    test "sit under their platform, the two cheapest first, without a count",
+         %{conn: conn} = ctx do
+      {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+      version = "#release-#{ctx.release.id}"
 
-    assert has_element?(view, "#release-#{deluxe.id}", "Switch · Edição Deluxe")
+      refute has_element?(view, ".dk-section h2 span")
+      assert has_element?(view, "#{version} > .dk-row .dk-row__title", "Switch")
+
+      assert has_element?(
+               view,
+               "#{version} .dk-editions #release-#{ctx.editions["Ouro"].id}",
+               "R$ 310,00"
+             )
+
+      assert has_element?(
+               view,
+               "#{version} .dk-editions #release-#{ctx.editions["Deluxe"].id}",
+               "Pacote · Digital"
+             )
+
+      refute has_element?(view, "#release-#{ctx.editions["Premium"].id}")
+      refute has_element?(view, "#release-#{ctx.unsold.id}")
+
+      view |> element("#editions-switch", "Mais 1 edição") |> render_click()
+      assert has_element?(view, "#release-#{ctx.editions["Premium"].id}", "R$ 444,50")
+
+      view |> element("#editions-switch", "Menos edições") |> render_click()
+      refute has_element?(view, "#release-#{ctx.editions["Premium"].id}")
+    end
+
+    test "an owned edition always shows, and says so", %{conn: conn} = ctx do
+      {:ok, _} = purchase_fixture(ctx.user, ctx.unsold)
+      {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+
+      assert has_element?(view, "#release-#{ctx.unsold.id}", "Colecionador")
+      assert has_element?(view, "#release-#{ctx.unsold.id} .dk-row__meta", "Tem")
+    end
+
+    test "a standard edition the store stopped selling says so", %{conn: conn} = ctx do
+      store_price_fixture(ctx.release_2, %{regular_cents: nil, sales_status: "sales_termination"})
+      {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+
+      assert has_element?(view, "#release-#{ctx.release_2.id} .dk-row__meta", "fora de venda")
+      assert has_element?(view, "#price-#{ctx.release_2.id}", "Sem preço")
+    end
+
+    test "Comprei opens the choices under the hero, each with its price", %{conn: conn} = ctx do
+      {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+      view |> element("#buy-button") |> render_click()
+
+      options = "#buy-options"
+      ouro = "#{options}-#{ctx.editions["Ouro"].id}-digital"
+      assert has_element?(view, "#{options}-#{ctx.release.id}-digital", "Edição padrão")
+      assert has_element?(view, "#{options}-#{ctx.release.id}-digital", "R$ 299,90")
+      assert has_element?(view, ouro, "Switch · Digital")
+      refute has_element?(view, "#{options}-#{ctx.editions["Premium"].id}-digital")
+      refute has_element?(view, "#{options}-#{ctx.unsold.id}-digital")
+
+      view |> element("#{options}-more", "Mais 1 edição") |> render_click()
+      assert has_element?(view, "#{options}-#{ctx.editions["Premium"].id}-digital")
+
+      view |> element("#{ouro} button", "Comprei esta") |> render_click()
+
+      refute has_element?(view, options)
+      assert [purchase] = Purchasing.list_purchases_for_game(ctx.user, ctx.game.id)
+      assert purchase.release_id == ctx.editions["Ouro"].id
+      assert purchase.price_cents == 31_000
+      assert Shelf.item(ctx.user, ctx.game).status == :backlog
+    end
+
+    test "Cancelar closes the choices", %{conn: conn} = ctx do
+      {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+      view |> element("#buy-button") |> render_click()
+      view |> element("#buy-options button", "Cancelar") |> render_click()
+
+      refute has_element?(view, "#buy-options")
+      assert Purchasing.list_purchases_for_game(ctx.user, ctx.game.id) == []
+    end
   end
 
   test "links to the game's IGDB page without repeating the credit", %{conn: conn} = ctx do

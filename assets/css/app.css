@@ -467,6 +467,39 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
   .dk-match[data-state="confirmed"] > .dk-row > :first-child { grid-row: span 2; align-self: start; }
 }
 
+/* SameRow: um jogo e a entrada que pode ser ele, em Conferir catálogo */
+.dk-same { border-bottom: 1px solid var(--line); }
+.dk-same > .dk-row { border-bottom: 0; }
+.dk-same__candidate { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-1) var(--space-3); align-items: center; padding: var(--space-2) 0 var(--space-3); border-top: 1px solid var(--line); }
+.dk-same__candidate .dk-row__title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.dk-same__candidate > .dk-row__end { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.dk-same__error { margin: 0 0 var(--space-2) calc(44px + var(--space-3)); font-size: 12px; line-height: 16px; color: var(--red-ink); }
+@media (max-width: 560px) {
+  .dk-same__candidate { grid-template-columns: 44px minmax(0, 1fr); }
+  .dk-same__candidate > .dk-row__end { grid-column: 2; justify-self: start; }
+  .dk-same > .dk-row .dk-row__title { white-space: normal; }
+}
+
+/* Versões: uma linha por plataforma, as edições embaixo dela, recuadas */
+.dk-editions { margin: 0; padding: 0; list-style: none; border-bottom: 1px solid var(--line); }
+.dk-version > .dk-row:has(+ .dk-editions) { border-bottom: 0; }
+.dk-edition, .dk-buy__option { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-1) var(--space-3); align-items: center; padding: var(--space-2) 0; border-top: 1px solid var(--line); }
+.dk-edition > :first-child, .dk-buy__option > :first-child { grid-column: 2; min-width: 0; }
+.dk-edition .dk-row__title, .dk-buy__option .dk-row__title { font-weight: 600; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.dk-editions__more, .dk-buy__foot { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--line); }
+.dk-editions__more > *, .dk-buy__foot > * { grid-column: 2; justify-self: start; }
+.dk-buy__foot > div { display: flex; gap: var(--space-4); }
+
+/* Comprei com edições: as opções abrem embaixo da linha, cada uma com o preço */
+.dk-buy__options { margin: 0; padding: 0 0 var(--space-2); list-style: none; border-bottom: 1px solid var(--line); }
+div:has(> .dk-buy__options) > .dk-row { border-bottom: 0; }
+.dk-hero + .dk-buy__options { margin-top: calc(-1 * var(--space-5)); border-top: 1px solid var(--line); }
+@media (max-width: 560px) {
+  .dk-buy__option { grid-template-columns: 44px minmax(0, 1fr); }
+  .dk-buy__option > .dk-row__end { grid-column: 2; justify-self: stretch; justify-content: space-between; }
+  .dk-edition .dk-price small, .dk-buy__option .dk-price small { display: none; }
+}
+
 /* Flash: uma linha discreta, sem cartão */
 .dk-flash { position: fixed; left: 50%; bottom: calc(var(--nav-height) + var(--space-4)); translate: -50% 0; z-index: 4; max-width: calc(100% - 2 * var(--space-4)); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 13px; line-height: 18px; }
 @media (min-width: 768px) { .dk-flash { bottom: var(--space-5); } }

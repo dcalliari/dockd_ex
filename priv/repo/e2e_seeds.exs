@@ -110,7 +110,66 @@ store_listing =
 })
 |> Repo.insert!()
 
-# A version the sync could not settle, waiting in Escolher na eShop with two candidates.
+# A game sold in three editions besides the standard one, out of the library like Store
+# Quest: Versões shows the two cheapest under Switch and Comprei opens them with prices.
+edition_quest = create_game.("Edition Quest", Date.add(today, -60), %{})
+
+list_price = fn release, external_id, cents ->
+  listing =
+    %StoreListing{release_id: release.id}
+    |> StoreListing.changeset(%{
+      store: :eshop_br,
+      match: :auto,
+      external_id: external_id,
+      sales_status: "onsale",
+      checked_at: now
+    })
+    |> Repo.insert!()
+
+  %StorePrice{listing_id: listing.id}
+  |> StorePrice.changeset(%{
+    regular_cents: cents,
+    sales_status: "onsale",
+    first_seen_at: now,
+    last_seen_at: now
+  })
+  |> Repo.insert!()
+end
+
+list_price.(edition_quest.release, "70010000000010", 19_990)
+
+for {edition, external_id, cents} <- [
+      {"Deluxe Edition", "70070000000011", 24_990},
+      {"Gold Edition", "70070000000012", 29_990},
+      {"Ultimate Edition", "70070000000013", 34_990}
+    ] do
+  {:ok, release} =
+    Catalog.create_release(edition_quest.game.id, %{
+      platform: :switch,
+      release_date: edition_quest.release.release_date,
+      edition: edition,
+      digital_available: true
+    })
+
+  list_price.(release, external_id, cents)
+end
+
+# A game and another IGDB entry, here as its own game, that may be the same one: the
+# first question of Conferir catálogo.
+calamity = create_game.("Calamity Warriors", Date.add(today, -700), %{igdb_id: 900_001})
+
+create_game.("Calamity Warriors: Definitive Edition", Date.add(today, 200), %{
+  igdb_id: 900_002
+})
+
+Repo.insert!(%Dockd.Catalog.GameLink{
+  igdb_id: 900_002,
+  game_id: calamity.game.id,
+  kind: :expanded,
+  match: :review
+})
+
+# A version the sync could not settle, waiting in Conferir catálogo with two candidates.
 %StoreListing{release_id: review_quest.release.id}
 |> StoreListing.changeset(%{
   store: :eshop_br,

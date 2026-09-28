@@ -11,7 +11,7 @@ defmodule DockdWeb.GameEvents do
 
   The screen keeps these assigns, set by `init/2`: `status_open`, a menu the URL asked to
   open (`abrir`); `asking`, the game whose Backlog waits for the version it is owned in;
-  `buying`, the game whose Comprei waits for a version or media; `bought`, the purchases
+  `buying`, the game whose Comprei waits for a version, edition or media; `bought`, the purchases
   made on this screen, which show Desfazer until the screen is left; and `form`, the price
   or paid value being typed, with its `form_error`.
   """
@@ -23,7 +23,7 @@ defmodule DockdWeb.GameEvents do
   alias Dockd.Catalog.Release
   alias Dockd.Library.Shelf
 
-  @events ~w(set_status own close_status buy undo_purchase paid_form save_paid price_form save_price cancel)
+  @events ~w(set_status own close_status buy more_choices undo_purchase paid_form save_paid price_form save_price cancel)
   @media %{"physical" => :physical, "digital" => :digital}
 
   @doc "Event names handled here."
@@ -54,16 +54,67 @@ defmodule DockdWeb.GameEvents do
       do: asking.choices
   end
 
-  @doc "The version and media choices Comprei offers for `game_id`, when it is asking."
-  def buying(%{game_id: game_id, choices: choices}, game_id), do: choices
+  @doc """
+  The version and media choices Comprei offers in place for `game_id`, when it is asking
+  and no edition is on sale.
+  """
+  def buying(%{game_id: game_id, choices: choices, options: false}, game_id), do: choices
   def buying(_buying, _game_id), do: nil
 
   @doc """
-  What Comprei can buy for a game: one choice per platform's standard release and media
-  it is sold in; store editions wait for their own control (design/maquetes). The label
-  names only what differs between the choices.
+  The options Comprei opens under the row for `game_id` when an edition is on sale
+  (`maquetes/edicoes.html`, caminho B): `%{choices:, all:}`, each choice with its price.
   """
-  def purchase_choices(%{releases: releases}) do
+  def buy_options(%{game_id: game_id, options: true} = buying, game_id),
+    do: Map.take(buying, [:choices, :all])
+
+  def buy_options(_buying, _game_id), do: nil
+
+  @doc """
+  What Comprei can buy for a game: one choice per platform's standard release and media
+  it is sold in, then the store editions on sale, cheapest first, each with the price
+  the purchase records. The label names only what differs between the standard choices;
+  `name` and `meta` describe any choice in the options under the row.
+  """
+  def purchase_choices(user, %{releases: releases}) do
+    standard = standard_choices(releases)
+
+    editions =
+      releases
+      |> Enum.reject(&Release.standard?/1)
+      |> Enum.flat_map(fn release ->
+        case Purchasing.current_price(user, release.id, :digital) do
+          %{sales_status: "sales_termination"} ->
+            []
+
+          nil ->
+            []
+
+          price ->
+            [
+              %{
+                release: release,
+                media: :digital,
+                label: release_label(release),
+                edition: true,
+                price: price
+              }
+            ]
+        end
+      end)
+
+    standard =
+      Enum.map(standard, fn choice ->
+        Map.merge(choice, %{
+          edition: false,
+          price: Purchasing.current_price(user, choice.release.id, choice.media)
+        })
+      end)
+
+    standard ++ Enum.sort_by(editions, & &1.price.price_cents)
+  end
+
+  defp standard_choices(releases) do
     pairs =
       for r <- standard_releases(releases), m <- Release.media(r), do: {r, m}
 
@@ -118,22 +169,30 @@ defmodule DockdWeb.GameEvents do
   def handle_event("close_status", _params, socket, _reload), do: {:noreply, init(socket)}
 
   # Comprei in one tap: with a single version and media it buys at once; otherwise the
-  # control asks which one, and the answer is the purchase.
+  # control asks which one, and the answer is the purchase. With an edition on sale the
+  # choices open under the row with their prices, since the price decides.
   def handle_event("buy", %{"game_id" => game_id} = params, socket, reload) do
     game = Catalog.get_game!(game_id)
-    choices = purchase_choices(game)
+    choices = purchase_choices(user(socket), game)
 
     case pick(choices, params) do
       {:ok, choice} ->
         buy(socket, game, choice, reload)
 
       :ask ->
-        choices =
-          Enum.map(choices, &%{release_id: &1.release.id, media: &1.media, label: &1.label})
+        buying = %{
+          game_id: game.id,
+          options: Enum.any?(choices, & &1.edition),
+          all: false,
+          choices: Enum.map(choices, &choice_view/1)
+        }
 
-        {:noreply, socket |> init() |> assign(:buying, %{game_id: game.id, choices: choices})}
+        {:noreply, socket |> init() |> assign(:buying, buying)}
     end
   end
+
+  def handle_event("more_choices", _params, socket, _reload),
+    do: {:noreply, update_buying(socket, &%{&1 | all: true})}
 
   def handle_event("undo_purchase", %{"game_id" => game_id}, socket, reload) do
     with {:ok, purchase} <- Map.fetch(socket.assigns.bought, game_id),
@@ -209,6 +268,21 @@ defmodule DockdWeb.GameEvents do
   def handle_event("cancel", _params, socket, _reload), do: {:noreply, init(socket)}
 
   defp user(socket), do: socket.assigns.current_scope.user
+
+  defp update_buying(%{assigns: %{buying: nil}} = socket, _fun), do: socket
+  defp update_buying(socket, fun), do: assign(socket, :buying, fun.(socket.assigns.buying))
+
+  defp choice_view(choice) do
+    %{
+      release_id: choice.release.id,
+      media: choice.media,
+      label: choice.label,
+      edition: choice.edition,
+      name: if(choice.edition, do: choice.release.edition, else: "Edição padrão"),
+      meta: "#{enum_label(choice.release.platform)} · #{enum_label(choice.media)}",
+      price: choice.price
+    }
+  end
 
   defp pick([only], _params), do: {:ok, only}
 

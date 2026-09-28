@@ -76,7 +76,7 @@ defmodule DockdWeb.LibraryLive do
   @impl true
   def render(%{user: nil} = assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope} eshop_review={@eshop_review}>
+    <Layouts.app flash={@flash} current_scope={@current_scope} catalog_review={@catalog_review}>
       <Showcase.showcase strips={@strips} />
     </Layouts.app>
     """
@@ -87,7 +87,7 @@ defmodule DockdWeb.LibraryLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      eshop_review={@eshop_review}
+      catalog_review={@catalog_review}
       current="Biblioteca"
     >
       <.tabs id="library-tabs">

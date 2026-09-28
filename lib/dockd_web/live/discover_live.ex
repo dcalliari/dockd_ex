@@ -108,7 +108,7 @@ defmodule DockdWeb.DiscoverLive do
     <Layouts.app
       flash={@flash}
       current_scope={@current_scope}
-      eshop_review={@eshop_review}
+      catalog_review={@catalog_review}
       current="Descobrir"
       search={@q}
       search_live

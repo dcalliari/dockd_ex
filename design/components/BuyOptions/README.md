@@ -1,0 +1,4 @@
+# BuyOptions
+As escolhas de Comprei quando uma edição está à venda (`maquetes/edicoes.html`, caminho B), embaixo da linha em Comprar e embaixo do herói na página do jogo. Uma linha por escolha, sem capa e alinhada ao título: `Edição padrão` ou o nome da edição na loja, a plataforma e a mídia (`Switch 2 · Digital`), o Price e o Button secundário pequeno `Comprei esta`, que já é a compra e grava aquele preço. A padrão de cada plataforma e mídia vem primeiro, depois as edições da mais barata para a mais cara; das edições, aparecem as duas mais baratas e o link `Mais N edições` mostra o resto no lugar. `Cancelar` (link) fecha. Sem edição à venda, Comprei continua sendo o botão e o Choice no lugar dele.
+
+Classes: `dk-buy__options`, `dk-buy__option`, `dk-buy__foot`. Abaixo de 560px preço e botão descem para baixo do nome, e o `visto em` some.

@@ -25,14 +25,9 @@ defmodule Dockd.Pricing do
   counts only inside its window. Screens read it through `Dockd.Purchasing.current_price/3`.
   """
   def store_price(release_id, now \\ DateTime.utc_now()) do
-    latest =
-      from p in StorePrice,
-        distinct: p.listing_id,
-        order_by: [asc: p.listing_id, desc: p.first_seen_at]
-
     Repo.one(
       from l in StoreListing,
-        join: p in subquery(latest),
+        join: p in subquery(latest_prices()),
         on: p.listing_id == l.id,
         where:
           l.release_id == ^release_id and l.match in ^@priced and not is_nil(p.regular_cents),
@@ -43,6 +38,28 @@ defmodule Dockd.Pricing do
       price -> %{store_current_price(price, now) | release_id: release_id}
     end
   end
+
+  @doc """
+  Whether the eShop stopped selling a release it sold (`sales_termination`), as with a
+  game now sold only in a bundle. The screen says `fora de venda` instead of no price.
+  """
+  def withdrawn?(release_id) do
+    Repo.exists?(
+      from l in StoreListing,
+        join: p in subquery(latest_prices()),
+        on: p.listing_id == l.id,
+        where:
+          l.release_id == ^release_id and l.match in ^@priced and
+            p.sales_status == "sales_termination"
+    )
+  end
+
+  defp latest_prices,
+    do:
+      from(p in StorePrice,
+        distinct: p.listing_id,
+        order_by: [asc: p.listing_id, desc: p.first_seen_at]
+      )
 
   defp store_current_price(%StorePrice{} = price, now) do
     discounted? =

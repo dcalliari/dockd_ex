@@ -140,7 +140,7 @@ defmodule DockdWeb.DockdComponents do
 
   attr :current_scope, :map, required: true, doc: "nil for a visitor"
   attr :current, :string, default: nil, doc: "a destination, or Entrar or Criar conta"
-  attr :eshop_review, :integer, default: 0, doc: "listings waiting in Escolher na eShop"
+  attr :catalog_review, :integer, default: 0, doc: "questions waiting in Conferir catálogo"
   attr :search, :string, default: ""
 
   attr :search_live, :boolean,
@@ -197,7 +197,7 @@ defmodule DockdWeb.DockdComponents do
         </.link>
       </nav>
       <.nav_search search={@search} search_live={@search_live} />
-      <.account_menu user={@current_scope.user} eshop_review={@eshop_review} />
+      <.account_menu user={@current_scope.user} catalog_review={@catalog_review} />
     </header>
     """
   end
@@ -242,11 +242,11 @@ defmodule DockdWeb.DockdComponents do
 
   @doc """
   The account item of the NavBar: the name opens a menu, like a FilterBar menu, with the
-  email, Escolher na eShop while store matches wait for review, the API token and Sair.
+  email, Conferir catálogo while something waits for a person, the API token and Sair.
   Copying the token swaps its label in place.
   """
   attr :user, :map, required: true
-  attr :eshop_review, :integer, default: 0
+  attr :catalog_review, :integer, default: 0
 
   def account_menu(assigns) do
     ~H"""
@@ -254,9 +254,9 @@ defmodule DockdWeb.DockdComponents do
       <summary>{@user.name} <.icon name="hero-chevron-down" /></summary>
       <ul class="dk-filter__menu">
         <li class="dk-account__who">{@user.email}</li>
-        <li :if={@eshop_review > 0}>
-          <.link id="account-eshop-review" navigate={~p"/eshop"}>
-            Escolher na eShop <small>{@eshop_review}</small>
+        <li :if={@catalog_review > 0}>
+          <.link id="account-catalog-review" navigate={~p"/conferir"}>
+            Conferir catálogo <small>{@catalog_review}</small>
           </.link>
         </li>
         <li>
@@ -766,6 +766,95 @@ defmodule DockdWeb.DockdComponents do
   end
 
   @doc """
+  SameRow (`maquetes/edicoes.html`, Conferir catálogo): a game and another IGDB entry,
+  here as a game of its own, that may be the same one (remaster, expanded game, port).
+  `É o mesmo jogo` joins them into the first; `É outro jogo` keeps both and is not asked
+  again. Both change the row in place, with `Desfazer` while the screen is open. No
+  dialog.
+  """
+  attr :id, :string, required: true
+  attr :review, :map, required: true, doc: "`%{link:, game:, candidate:, state:}` shelf items"
+  attr :undo, :boolean, default: false, doc: "whether Desfazer can still put it back"
+  attr :error, :string, default: nil
+
+  def same_game(assigns) do
+    ~H"""
+    <div id={@id} class="dk-same" data-state={@review.state}>
+      <div class="dk-row">
+        <.poster
+          title={@review.game.game.title}
+          cover_url={@review.game.game.cover_url}
+          size="sm"
+          navigate={~p"/jogos/#{@review.game.game.id}"}
+        />
+        <div>
+          <.link navigate={~p"/jogos/#{@review.game.game.id}"} class="dk-row__title">
+            {@review.game.game.title}
+          </.link>
+          <div class="dk-row__meta">{same_meta(@review)}</div>
+        </div>
+        <div class="dk-row__end">
+          <button
+            :if={@review.state == :other or (@review.state == :same and @undo)}
+            id={"#{@id}-undo"}
+            type="button"
+            class="dk-link"
+            phx-click="undo_same"
+            phx-value-id={@review.link.id}
+          >
+            Desfazer
+          </button>
+        </div>
+      </div>
+      <div :if={@review.state == :review} class="dk-same__candidate">
+        <.poster
+          title={@review.candidate.game.title}
+          cover_url={@review.candidate.game.cover_url}
+          size="sm"
+          navigate={~p"/jogos/#{@review.candidate.game.id}"}
+        />
+        <div>
+          <.link navigate={~p"/jogos/#{@review.candidate.game.id}"} class="dk-row__title">
+            {@review.candidate.game.title}
+          </.link>
+          <div class="dk-row__meta">
+            {meta([
+              platform_label(@review.candidate.releases),
+              @review.candidate.year,
+              kind_label(@review.link.kind),
+              @review.candidate.status && status_label(@review.candidate.status)
+            ])}
+          </div>
+        </div>
+        <div class="dk-row__end">
+          <.btn id={"#{@id}-same"} size="sm" phx-click="same" phx-value-id={@review.link.id}>
+            É o mesmo jogo
+          </.btn>
+          <.btn id={"#{@id}-other"} size="sm" phx-click="other" phx-value-id={@review.link.id}>
+            É outro jogo
+          </.btn>
+        </div>
+      </div>
+      <p :if={@error} class="dk-same__error">{@error}</p>
+    </div>
+    """
+  end
+
+  @same_state %{review: "mesmo jogo?", same: "mesmo jogo", other: "jogos diferentes"}
+  @kinds %{expanded: "expandido", port: "port", remaster: "remaster"}
+
+  defp kind_label(kind), do: @kinds[kind]
+
+  defp same_meta(%{game: game, state: state}) do
+    meta([
+      platform_label(game.releases),
+      state != :same && game.year,
+      state != :same && game.game.developer,
+      @same_state[state]
+    ])
+  end
+
+  @doc """
   Comprei, the same in Comprar and on the game page (Comprei · A, `maquetes/compra.html`).
   Before: the button. With more than one version or media: the choices, each one the
   purchase. After, while the screen is open: what was paid, which opens its own value, and
@@ -847,6 +936,77 @@ defmodule DockdWeb.DockdComponents do
       <% end %>
     </div>
     """
+  end
+
+  @shown_editions 2
+
+  @doc """
+  Comprei with editions (`maquetes/edicoes.html`, caminho B): the choices open under the
+  row, the standard edition of each platform first, then the editions on sale, cheapest
+  first, each with its price and `Comprei esta`, which is the purchase and records that
+  price. Past the two cheapest editions, `Mais N edições` shows the rest in place;
+  `Cancelar` closes. The same under a row of Comprar and under the game page hero.
+  """
+  attr :id, :string, required: true
+  attr :game_id, :string, required: true
+  attr :options, :map, required: true, doc: "from `GameEvents.buy_options/2`"
+
+  def buy_options(assigns) do
+    {shown, hidden} = split_choices(assigns.options)
+    assigns = assign(assigns, shown: shown, hidden: hidden)
+
+    ~H"""
+    <ul id={@id} class="dk-buy__options">
+      <li
+        :for={choice <- @shown}
+        id={"#{@id}-#{choice.release_id}-#{choice.media}"}
+        class="dk-buy__option"
+      >
+        <div>
+          <span class="dk-row__title">{choice.name}</span>
+          <div class="dk-row__meta">{choice.meta}</div>
+        </div>
+        <div class="dk-row__end">
+          <.price observation={choice.price} />
+          <.btn
+            size="sm"
+            phx-click="buy"
+            phx-value-game_id={@game_id}
+            phx-value-release_id={choice.release_id}
+            phx-value-media={choice.media}
+          >
+            Comprei esta
+          </.btn>
+        </div>
+      </li>
+      <li class="dk-buy__foot">
+        <div>
+          <button
+            :if={@hidden > 0}
+            id={"#{@id}-more"}
+            type="button"
+            class="dk-link"
+            phx-click="more_choices"
+          >
+            {more_editions(@hidden)}
+          </button>
+          <button type="button" class="dk-link" phx-click="cancel">Cancelar</button>
+        </div>
+      </li>
+    </ul>
+    """
+  end
+
+  @doc "The link that shows the editions past the cheapest ones."
+  def more_editions(1), do: "Mais 1 edição"
+  def more_editions(count), do: "Mais #{count} edições"
+
+  defp split_choices(%{choices: choices, all: true}), do: {choices, 0}
+
+  defp split_choices(%{choices: choices}) do
+    {standard, editions} = Enum.split_with(choices, &(!&1.edition))
+    {shown, hidden} = Enum.split(editions, @shown_editions)
+    {standard ++ shown, length(hidden)}
   end
 
   attr :purchase, :map, required: true
