@@ -158,6 +158,7 @@ defmodule DockdWeb.HomeLive do
         title={@item.game.title}
         cover_url={@item.game.cover_url}
         faded={@item.status in [:zerado, :larguei]}
+        availability={@item.game.availability}
         navigate={~p"/jogos/#{@item.game.id}"}
       />
       <.status_menu

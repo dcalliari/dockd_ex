@@ -49,7 +49,7 @@ defmodule DockdWeb.LibraryLiveTest do
     release_fixture(multi, %{platform: :switch, release_date: ~D[2025-09-25]})
     {:ok, _} = entry_fixture(ctx.user, multi, %{purchase_intent: :want})
 
-    {:ok, view, _html} = live(conn, "/")
+    {:ok, view, _html} = live(conn, "/biblioteca")
 
     assert has_element?(view, "#shelf-#{ctx.wanted.id} .dk-poster .dk-exclusive--nintendo")
     refute has_element?(view, "#shelf-#{multi.id} .dk-exclusive")
@@ -90,6 +90,12 @@ defmodule DockdWeb.LibraryLiveTest do
     assert has_element?(view, "#home-playing", "Jogando agora")
     assert has_element?(view, "#home-playing-#{ctx.playing.id}[data-status=jogando]")
     assert has_element?(view, "#home-upcoming-#{ctx.wanted.id}[data-status=quero]")
+
+    assert has_element?(
+             view,
+             "#home-upcoming-#{ctx.wanted.id} .dk-poster .dk-exclusive--nintendo"
+           )
+
     assert has_element?(view, ".dk-nav__link[href='/biblioteca']", "Biblioteca")
     refute has_element?(view, "#library-tabs")
   end
