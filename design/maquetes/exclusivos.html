@@ -553,14 +553,15 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 [data-theme="dark"] .gc--switch .gc__body { stroke: #8f8886; }
 .gcs { display: inline-flex; align-items: flex-end; gap: 2px; }
 
-/* Na linha, o cartucho fica onde estava o texto, logo depois da plataforma. */
-.gcs--inline { margin-left: 6px; vertical-align: -2px; --gc-h: 14px; }
+/* Na linha, o cartucho fica onde estava o texto, logo depois da plataforma, apoiado na linha de base
+   e só um pouco mais alto que as maiúsculas do t-meta (12px de corpo, cerca de 8,6px de maiúscula). */
+.gcs--inline { margin-left: 5px; vertical-align: baseline; --gc-h: 10px; }
 
 /* Na capa, embaixo à direita: o alto é da etiqueta de status, que chega a ocupar a largura toda no celular. Aro claro sobre qualquer arte. */
-.gcs--cover { position: absolute; z-index: 1; bottom: 6px; right: 6px; --gc-h: 20px; pointer-events: none; filter: drop-shadow(0 1px 2px #00000080); }
+.gcs--cover { position: absolute; z-index: 1; bottom: 6px; right: 6px; --gc-h: 16px; pointer-events: none; filter: drop-shadow(0 1px 2px #00000080); }
 .gcs--cover .gc__body, [data-theme="dark"] .gcs--cover .gc--switch .gc__body { stroke: #ffffff; }
-.dk-hero .gcs--cover { bottom: 8px; right: 8px; --gc-h: 28px; }
-.frame--phone .dk-hero .gcs--cover { --gc-h: 24px; }
+.dk-hero .gcs--cover { bottom: 8px; right: 8px; --gc-h: 20px; }
+.frame--phone .dk-hero .gcs--cover { --gc-h: 18px; }
 
 /* Folha: cada desenho nos tamanhos de uso, nos dois temas. */
 .sheet { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); margin: 0 0 var(--space-5); }
@@ -576,6 +577,7 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 @media (max-width: 1100px) { .paths > .picker, .paths > .key { grid-column: auto; } }
 .picker .dk-choice { flex-wrap: wrap; }
 .picker .dk-choice > label > span { height: 34px; }
+.picker .gc { --gc-h: 11px; }
 .tag-rec { display: inline-block; margin-left: var(--space-2); padding: 0 6px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 10px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; vertical-align: 1px; }
 .dk-btn { display: inline-flex; align-items: center; height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-sm); font-size: 14px; line-height: 20px; font-weight: 600; }
 .dk-btn--primary { background: var(--red); color: var(--on-red); }
@@ -770,7 +772,7 @@ ORDER.forEach(function (d, i) {
     var f = document.createElement('div');
     f.className = 'frame';
     f.dataset.theme = theme;
-    f.innerHTML = [40, 20, 14, 12].map(function (h) {
+    f.innerHTML = [40, 16, 12, 10].map(function (h) {
       return '<span class="gcs" style="--gc-h:' + h + 'px">' + gameCard(d, 'switch') + gameCard(d, 'switch2') + '</span>';
     }).join('');
     fig.appendChild(f);
