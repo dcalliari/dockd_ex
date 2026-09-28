@@ -162,6 +162,26 @@ defmodule Dockd.Pricing.EshopMatchTest do
     assert EshopMatch.edition_name("Denshattack! Digital Deluxe Edition", ["Denshattack!"]) ==
              "Digital Deluxe Edition"
 
+    # The game's title in the middle: what follows it names the edition.
+    splinter = ["Splintered Fate", "Tartarugas Ninja O Destino de Splinter"]
+
+    assert EshopMatch.edition_name(
+             "Teenage Mutant Ninja Turtles: Splintered Fate Pacote DLC com todos os personagens",
+             splinter
+           ) == "Pacote DLC com todos os personagens"
+
+    assert EshopMatch.edition_name(
+             "Tartarugas Ninja: O Destino de Splinter e Casey Jones",
+             splinter
+           ) ==
+             "Casey Jones"
+
+    assert EshopMatch.edition_name(
+             "Tartarugas Ninja: O Destino de Splinter - Edição Ouro",
+             splinter
+           ) ==
+             "Edição Ouro"
+
     # A word that only starts the same is not the game's title.
     assert EshopMatch.edition_name("Cupheads Deluxe", ["Cuphead"]) == "Cupheads Deluxe"
   end

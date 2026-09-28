@@ -171,14 +171,36 @@ defmodule Dockd.Pricing.EshopMatch do
 
     case without_titles(title, names) do
       ^title ->
-        if Enum.any?(names, &String.contains?(" #{normalize(title)} ", " #{&1} ")),
-          do: @with_extra,
-          else: title
+        case Enum.find_value(names, &after_title(title, &1)) do
+          nil -> title
+          rest -> extra_or(rest)
+        end
 
       rest ->
-        if normalize(rest) in ["" | @standard_names], do: @with_extra, else: rest
+        extra_or(rest)
     end
   end
+
+  # A remainder that only says the bundle has more ("(Jogo + conteúdo extra)") or is
+  # the standard edition names the game with extra content.
+  defp extra_or(rest) do
+    if normalize(rest) in ["" | @standard_names] or String.starts_with?(rest, "("),
+      do: @with_extra,
+      else: rest
+  end
+
+  # What follows the game's title in the middle of a store title ("Pacote Game (...)").
+  defp after_title(title, name) do
+    graphemes = String.graphemes(title)
+
+    Enum.find_value(1..(length(graphemes) - 1)//1, fn start ->
+      if not word_char?(Enum.at(graphemes, start - 1)),
+        do: graphemes |> Enum.drop(start) |> Enum.join() |> after_prefix(name) |> strip_rest()
+    end)
+  end
+
+  defp strip_rest(nil), do: nil
+  defp strip_rest(rest), do: strip_joiners(rest)
 
   # Drops the game's title from the start, again when the bundle repeats it before its
   # content ("Game + Game Expansion Pass"), with the separators and joining words.
@@ -188,12 +210,15 @@ defmodule Dockd.Pricing.EshopMatch do
         title
 
       rest ->
-        rest
-        |> String.replace(~r/^(?:[^\p{L}\p{N}(]+|(?:and|e|with|com)\s+)+/iu, "")
-        |> String.trim()
-        |> without_titles(names)
+        rest |> strip_joiners() |> without_titles(names)
     end
   end
+
+  defp strip_joiners(text),
+    do:
+      text
+      |> String.replace(~r/^(?:[^\p{L}\p{N}(]+|(?:and|e|with|com)\s+)+/iu, "")
+      |> String.trim()
 
   # What follows the game's title at the start of a store title.
   defp after_prefix(title, name) do
