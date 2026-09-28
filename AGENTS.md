@@ -26,7 +26,8 @@ custom classes must fully style the input
 - O status só muda pelo `status_menu/1`, igual em toda tela; clicar na etiqueta atual desmarca e é a única saída da biblioteca (`Library.set_status/4` com `nil`). Ação que aparece em mais de uma tela passa por `DockdWeb.GameEvents`, com o mesmo componente e texto (regra 6 de `design/README.md`).
 - Nunca diálogo nativo do navegador (`confirm`, `alert`, `prompt`, `data-confirm`): confirmação acontece na interface (regra 7 de `design/README.md`, garantida por `DockdWeb.NativeDialogTest`).
 - Componentes vivem em `DockdWeb.DockdComponents`; textos em pt-BR, no máximo seis palavras, sem título repetindo a navegação.
-- Tela lê preço só por `Dockd.Purchasing.current_price/3` e `current_game_price/3`: o preço da eShop quando a loja vende a versão digital, senão a última observação do usuário. Não há saldo de loja nem reserva no produto.
+- Tela lê preço só por `Dockd.Purchasing.current_price/3` e `current_game_price/3`: o preço da eShop quando a loja vende a versão digital, senão a última observação do usuário; o de um jogo é o menor entre as versões e edições não vetadas. Não há saldo de loja nem reserva no produto.
+- Edição (Deluxe, pacote com conteúdo) e Nintendo Switch 2 Edition são versões (`releases.edition`) do mesmo jogo, nunca outro jogo; a versão base de cada plataforma é `Release.standard_edition/0`. As outras entradas IGDB do jogo ficam em `game_links` (`Dockd.Catalog.IgdbFamily` diz quais juntam sozinhas), e juntar dois jogos passa por `Catalog.merge_games/3`.
 
 ### JS and CSS guidelines
 

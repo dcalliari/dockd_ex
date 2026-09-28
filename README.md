@@ -144,6 +144,8 @@ Para usar um proxy reverso, copie `.env.example`, preencha `PHX_HOST`, `DATABASE
 
 Em produção, `DATABASE_URL` e `SECRET_KEY_BASE` são obrigatórios. `PORT`, `PHX_HOST`, `POOL_SIZE` e `ECTO_IPV6` também são lidos em runtime. No compose Traefik, `IGDB_CLIENT_ID` e `IGDB_CLIENT_SECRET` habilitam a integração; `IGDB_SYNC_INTERVAL_MS` e `IGDB_SYNC_INITIAL_DELAY_MS` são opcionais e usam 86400000 ms e 1000 ms, respectivamente. `ESHOP_ALGOLIA_SEARCH_KEY` habilita o casamento com a eShop Brasil, que roda no mesmo ciclo. Migrações de release podem ser executadas com `bin/migrate` dentro da imagem.
 
+Edições e Nintendo Switch 2 Edition contam como um jogo só: a sincronização diária junta as entradas do IGDB que são o mesmo jogo e cria as edições que a eShop vende. Para ver antes o que ela fará num catálogo existente, suba com `IGDB_SYNC_INITIAL_DELAY_MS` alto e rode `bin/dockd eval 'Dockd.Release.families()'`, que só lista.
+
 Contas em produção:
 
 - A biblioteca anterior às contas não tem e-mail nem senha. Depois da migração, dê a ela uma entrada uma única vez: `bin/dockd eval 'Dockd.Release.claim_owner("email", "senha")'`. Até lá, ninguém entra nela; quem criar conta começa com uma biblioteca vazia.

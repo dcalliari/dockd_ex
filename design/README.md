@@ -96,6 +96,7 @@ Decidido em 27/09/2026 (`maquetes/compra.html`, caminho A). O Dockd não guarda 
 - **Choice** substitui o select nativo: poucas opções reais, contorno `line-strong`, a escolhida em `ink`. Uma opção só não é escolha e aparece como texto. Erro aparece embaixo do campo em `red-ink`, nunca em aviso flutuante.
 - **Totals** é a linha no topo de Comprar, no estilo do metadado: o total estimado da fila por mídia, Físico e Digital separados, cada um com a cobertura (`em 2 de 15`), e `Gasto em setembro` quando há compra no mês. Soma sem preço nenhum não aparece.
 - No histórico, `Comprou: R$ 79,90` marca o estado, e a posse que veio da compra não se repete como Registrou a posse.
+- **Um jogo, várias edições.** Decidido em 28/09/2026: edição (Deluxe, pacote com conteúdo) e Nintendo Switch 2 Edition são versões do mesmo jogo, não outro jogo. O preço de um jogo em Comprar e no total estimado é o **menor preço vigente** entre as versões e edições que a conta não vetou; quando ele vem de uma edição que não é a padrão, a meta da linha ganha o nome curto dela (`Digital Deluxe`), e a plataforma já está na meta. Vetar a versão tira a edição da conta.
 
 ## Escolher na eShop
 
