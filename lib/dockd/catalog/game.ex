@@ -18,6 +18,10 @@ defmodule Dockd.Catalog.Game do
     field :estimated_duration_minutes, :integer
     field :pace, Ecto.Enum, values: [:relaxing, :normal, :demanding]
     field :play_mode, Ecto.Enum, values: [:solo, :multi, :both]
+    field :alternative_names, {:array, :string}, default: []
+    field :search_text, :string, default: ""
+    field :rating_count, :integer
+    field :hypes, :integer
     has_many :releases, Dockd.Catalog.Release
     timestamps(type: :utc_datetime_usec)
   end
@@ -36,10 +40,14 @@ defmodule Dockd.Catalog.Game do
       :other_platforms,
       :estimated_duration_minutes,
       :pace,
-      :play_mode
+      :play_mode,
+      :alternative_names,
+      :rating_count,
+      :hypes
     ])
     |> validate_required([:title, :availability])
     |> put_slug()
+    |> put_search_text()
     |> validate_length(:title, min: 1)
     |> validate_number(:estimated_duration_minutes, greater_than: 0)
     |> validate_other_platforms()
@@ -47,20 +55,38 @@ defmodule Dockd.Catalog.Game do
     |> unique_constraint(:igdb_id)
   end
 
+  # A slug given is kept; otherwise the title gives one when it is new or changes, never
+  # on an update that leaves it alone (an IGDB slug such as "trials-of-mana--1" stays).
   defp put_slug(changeset) do
-    case get_change(changeset, :slug) do
-      slug when is_binary(slug) and byte_size(slug) > 0 ->
-        changeset
+    slug = get_field(changeset, :slug)
+    title = get_change(changeset, :title) || (slug in [nil, ""] && get_field(changeset, :title))
 
-      _ ->
-        case get_change(changeset, :title) || get_field(changeset, :title) do
-          title when is_binary(title) -> put_change(changeset, :slug, slugify(title))
-          _ -> changeset
-        end
+    cond do
+      is_binary(get_change(changeset, :slug)) and get_change(changeset, :slug) != "" -> changeset
+      is_binary(title) -> put_change(changeset, :slug, slugify(title))
+      true -> changeset
     end
   end
 
-  defp slugify(title) do
+  # The title and alternative names as the catalog search compares them (`fold/1`),
+  # kept apart so a query never matches across two names.
+  defp put_search_text(changeset) do
+    names = [get_field(changeset, :title) | get_field(changeset, :alternative_names) || []]
+    text = names |> Enum.filter(&is_binary/1) |> Enum.map_join("|", &fold/1)
+    put_change(changeset, :search_text, text)
+  end
+
+  @doc "Folds a text for the catalog search: lower case, only letters and digits."
+  def fold(text) do
+    text
+    |> String.normalize(:nfd)
+    |> String.replace(~r/\p{Mn}/u, "")
+    |> String.downcase()
+    |> String.replace(~r/[^\p{L}\p{N}]+/u, "")
+  end
+
+  @doc "The slug a title gives when none is given."
+  def slugify(title) do
     title
     |> String.downcase()
     |> String.normalize(:nfd)

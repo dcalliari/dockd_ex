@@ -131,8 +131,8 @@ defmodule Dockd.GameFamilyTest do
   end
 
   # Answers IGDB like the API would, from `entries`: by id, by parent, or a search
-  # returning `search` (every entry by default).
-  defp stub_igdb(entries, search \\ nil) do
+  # returning every entry sold on a Nintendo platform.
+  defp stub_igdb(entries) do
     test = self()
 
     Req.Test.stub("igdb-family", fn conn ->
@@ -143,12 +143,12 @@ defmodule Dockd.GameFamilyTest do
         "/v4/games" ->
           {:ok, body, conn} = Plug.Conn.read_body(conn)
           send(test, {:igdb, body})
-          Req.Test.json(conn, answer(body, entries, search))
+          Req.Test.json(conn, answer(body, entries))
       end
     end)
   end
 
-  defp answer(body, entries, search) do
+  defp answer(body, entries) do
     ids = fn pattern ->
       case Regex.run(pattern, body) do
         [_, ids] -> ids |> String.split(",") |> Enum.map(&String.to_integer/1)
@@ -167,7 +167,7 @@ defmodule Dockd.GameFamilyTest do
         Enum.filter(entries, &(&1["id"] in wanted))
 
       true ->
-        search || Enum.filter(entries, &IgdbFamily.nintendo?/1)
+        Enum.filter(entries, &IgdbFamily.nintendo?/1)
     end
   end
 
@@ -468,36 +468,6 @@ defmodule Dockd.GameFamilyTest do
       assert [%{game_id: game_id}] = Repo.all(Entry)
       assert game_id == totk.id
       assert Library.Shelf.item(user, Catalog.get_game!(totk.id)).status == :backlog
-    end
-  end
-
-  describe "search groups the family" do
-    test "one card per game; an edition gives way to its parent" do
-      stub_igdb(@entries, [@totk_collector, @totk, @totk_switch_2, @botw_switch_2, @aoc_remake])
-
-      assert {:ok, results} = Catalog.search_igdb("zelda")
-      by_id = Map.new(results, &{&1.igdb_id, &1})
-
-      assert Map.keys(by_id) |> Enum.sort() == [7346, 119_388, 400_002]
-      assert by_id[119_388].platforms == [:switch, :switch_2]
-      assert by_id[7346].title == "The Legend of Zelda: Breath of the Wild"
-      assert by_id[7346].platforms == [:switch, :switch_2]
-    end
-
-    test "a card of a game here is found by its edition too" do
-      game = game_fixture(%{title: "Zelda TotK", igdb_id: 119_388})
-
-      Repo.insert!(%GameLink{
-        igdb_id: 338_073,
-        game_id: game.id,
-        kind: :switch_2_edition,
-        match: :auto
-      })
-
-      stub_igdb(@entries, [%{@totk_switch_2 | "parent_game" => nil, "game_type" => 0}])
-
-      assert {:ok, [%{igdb_id: 338_073, game: %{id: id}}]} = Catalog.search_igdb("zelda")
-      assert id == game.id
     end
   end
 

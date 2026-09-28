@@ -44,6 +44,58 @@ defmodule Dockd.Release do
     with_repo(fn -> dry_run |> resolve_families() |> print_steps() end)
   end
 
+  @doc ~S"""
+  Loads the catalog by its criterion (`Dockd.Catalog.curate/1`), removes the games
+  outside it that no account refers to, and prints the report: how many entered, how
+  many each rule left out, with the most rated of them. Stops safely at any point; a
+  new run, or the daily sync, goes on from there. The daily sync then joins the
+  families and finds the eShop products:
+  `bin/dockd eval 'Dockd.Release.curate()'`. `curate(prune: false)` only adds.
+  """
+  def curate(opts \\ []) do
+    {:ok, _} = Application.ensure_all_started(:req)
+    prune = Keyword.get(opts, :prune, true)
+
+    with_repo(fn ->
+      case Dockd.Catalog.curate(prune: prune) do
+        {:ok, report} -> print_report(report)
+        error -> error
+      end
+    end)
+  end
+
+  @reasons [
+    status: "cancelado, boato ou fora do ar",
+    no_cover: "sem capa",
+    publisher: "editora excluída",
+    unpopular: "abaixo do critério de popularidade",
+    bundle_without_game: "pacote só de conteúdo extra",
+    edition_of_other: "edição de outro jogo"
+  ]
+
+  defp print_report(report) do
+    IO.puts("Entraram pelo critério: #{report.admitted} (#{report.imported} novos)")
+    IO.puts("Ranking da eShop: #{inspect(report.eshop)}")
+
+    for {reason, label} <- @reasons,
+        %{count: count, sample: sample} <- [report.excluded[reason]] do
+      IO.puts("Fora, #{label}: #{count}\n  " <> Enum.join(sample, "\n  "))
+    end
+
+    for {type, label} <- Dockd.Catalog.Curation.excluded_game_types(),
+        {:ok, count, sample} <- [Dockd.IGDB.catalog_sample(type)] do
+      IO.puts("Fora, #{label} (tipo #{type} no IGDB): #{count}\n  " <> Enum.join(sample, "\n  "))
+    end
+
+    IO.puts(
+      "Fora do critério, mantidos por estarem numa biblioteca: #{Enum.join(report.kept, "; ")}"
+    )
+
+    IO.puts("Removidos do catálogo: #{Enum.join(report.pruned, "; ")}")
+    IO.puts("Falharam: #{inspect(report.failed)}")
+    report
+  end
+
   defp resolve_families(dry_run), do: Dockd.Catalog.resolve_families(dry_run: dry_run)
 
   defp print_steps(steps) when is_list(steps) do

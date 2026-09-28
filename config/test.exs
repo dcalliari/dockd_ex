@@ -49,3 +49,6 @@ config :phoenix_live_view,
 # Sort query params output of verified routes for robust url comparisons
 config :phoenix,
   sort_verified_routes_query_params: true
+
+# The IGDB stub answers at once; production keeps four requests per second.
+config :dockd, :igdb_throttle_ms, 0

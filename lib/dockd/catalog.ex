@@ -11,8 +11,8 @@ defmodule Dockd.Catalog do
   """
   import Ecto.Query
   require Logger
-  alias Dockd.Catalog.{Game, GameLink, IgdbFamily, Merge, Release}
-  alias Dockd.Library.{Ownership, ReleaseVeto}
+  alias Dockd.Catalog.{Curation, Game, GameLink, IgdbFamily, Merge, Release}
+  alias Dockd.Library.{Entry, Ownership, ReleaseVeto}
   alias Dockd.Pricing.StoreListing
   alias Dockd.Purchasing.{PriceObservation, Purchase}
   alias Dockd.Repo
@@ -78,13 +78,14 @@ defmodule Dockd.Catalog do
 
   @doc """
   Brings every game with an IGDB id up to date: first its family (`resolve_families/1`),
-  then its metadata and Nintendo release dates.
+  then its metadata and Nintendo release dates, asked of IGDB in pages of 500 games.
   """
   def sync_igdb do
     if Dockd.IGDB.configured?() do
       family = resolve_families()
       games = Repo.all(from game in Game, where: not is_nil(game.igdb_id), preload: [:releases])
-      results = Enum.map(games, &sync_game/1)
+      externals = games |> Enum.map(& &1.igdb_id) |> fetch_externals() |> Map.new(&{&1["id"], &1})
+      results = Enum.map(games, &sync_game(&1, externals[&1.igdb_id]))
 
       {:ok,
        %{synced: Enum.count(results, &match?({:ok, _}, &1)), results: results, family: family}}
@@ -93,25 +94,29 @@ defmodule Dockd.Catalog do
     end
   end
 
-  defp sync_game(game) do
-    with {:ok, %{body: [external]}} <- Dockd.IGDB.get_games([game.igdb_id]),
-         {:ok, updated} <- Repo.transaction(fn -> apply_external(game, external) end) do
-      {:ok, sync_result(updated)}
-    else
-      {:ok, %{body: []}} -> {:error, {game.id, :not_found}}
+  defp sync_game(game, nil), do: {:error, {game.id, :not_found}}
+
+  defp sync_game(game, external) do
+    case Repo.transaction(fn -> apply_external(game, external) end) do
+      {:ok, updated} -> {:ok, sync_result(updated)}
       {:error, reason} -> {:error, {game.id, reason}}
     end
   end
 
   defp apply_external(game, external) do
-    attrs = %{
-      cover_url: cover_url(external),
-      developer: company(external, "developer"),
-      publisher: company(external, "publisher"),
-      synced_at: DateTime.utc_now()
-    }
+    attrs =
+      Map.merge(signals(external), %{
+        cover_url: cover_url(external),
+        developer: company(external, "developer"),
+        publisher: company(external, "publisher"),
+        synced_at: DateTime.utc_now()
+      })
 
-    {:ok, game} = game |> Game.changeset(attrs) |> Repo.update()
+    game =
+      case game |> Game.changeset(attrs) |> Repo.update() do
+        {:ok, game} -> game
+        {:error, changeset} -> Repo.rollback({:game_sync_failed, changeset.errors})
+      end
 
     external_releases(external)
     |> Enum.reduce_while(:ok, fn {platform, date, precision}, :ok ->
@@ -334,6 +339,17 @@ defmodule Dockd.Catalog do
   defp platform(130), do: :switch
   defp platform(508), do: :switch_2
 
+  # What the catalog search compares and orders by.
+  defp signals(external),
+    do: %{
+      alternative_names:
+        (external["alternative_names"] || [])
+        |> Enum.map(& &1["name"])
+        |> Enum.filter(&is_binary/1),
+      rating_count: external["total_rating_count"],
+      hypes: external["hypes"]
+    }
+
   defp cover_url(%{"cover" => %{"image_id" => id}}) when is_binary(id),
     do: "https://images.igdb.com/igdb/image/upload/t_cover_big/#{id}.jpg"
 
@@ -374,192 +390,98 @@ defmodule Dockd.Catalog do
     Map.merge(Map.new(linked), Map.new(own, &{&1.igdb_id, &1}))
   end
 
-  @doc """
-  Searches IGDB and returns lightweight results, each tagged with the local game when
-  the work is already in the catalog. Returns `{:error, :not_configured}` without credentials.
-  """
-  def search_igdb(query) when is_binary(query) do
-    with {:ok, %{body: externals}} <- Dockd.IGDB.search(query),
-         do:
-           {:ok,
-            externals
-            |> group_family()
-            |> igdb_results()
-            |> Enum.sort_by(&{-(&1.year || 0), &1.title})}
-  end
+  @result_limit 100
 
   @doc """
-  Searches IGDB, or the local catalog by title when IGDB is not available. Returns
-  `{:igdb | :local, results}` in the shape of `search_igdb/1`.
+  Searches the catalog by title or IGDB alternative name, minding neither case, accents
+  nor punctuation, the most rated first. Every result is a game of the catalog, as
+  `%{title:, cover_url:, platforms:, first_date:, year:, game:}`.
   """
   def search(query) when is_binary(query) do
-    case search_igdb(query) do
-      {:ok, results} ->
-        {:igdb, results}
+    case Game.fold(query) do
+      "" ->
+        []
 
-      {:error, _} ->
-        needle = String.downcase(query)
-
-        {:local,
-         list_games()
-         |> Enum.filter(&String.contains?(String.downcase(&1.title), needle))
-         |> Enum.map(&local_result/1)}
+      # Folded text holds only letters and digits: nothing LIKE reads as a wildcard.
+      folded ->
+        Repo.all(
+          from game in Game,
+            where: like(game.search_text, ^"%#{folded}%"),
+            order_by: [desc_nulls_last: game.rating_count, asc: game.title],
+            limit: @result_limit,
+            preload: :releases
+        )
+        |> results(Date.utc_today())
     end
   end
 
-  @showcase_ttl :timer.hours(1)
+  @showcase_limit 50
 
   @doc """
-  A showcase list, in the shape of `search_igdb/1`: `:upcoming`, `:recent` or `:popular`
-  (see `Dockd.IGDB.showcase/2`). IGDB answers are kept for an hour; the local catalog
-  stands in when IGDB is not available.
+  A showcase list of the catalog, in the shape of `search/1`:
+
+    * `:upcoming` not out yet, the ones dated to the day first, soonest first;
+    * `:recent` out in the last 90 days, most rated and awaited first;
+    * `:popular` out in the last year, most rated and awaited first.
+
+  A game is out when one of its releases is (`Release.launch/3`).
   """
   def showcase(list) when list in [:upcoming, :recent, :popular] do
     today = Date.utc_today()
 
-    case cached_showcase(list) do
-      {:ok, externals} -> externals |> igdb_results() |> nintendo_dates(list, today)
-      {:error, _} -> local_showcase(list, today)
-    end
+    dated =
+      from r in Release, where: r.release_date > ^Date.add(today, -366), select: r.game_id
+
+    Repo.all(from game in Game, where: game.id in subquery(dated), preload: :releases)
+    |> results(today)
+    |> showcase_list(list, today)
+    |> Enum.take(@showcase_limit)
   end
 
-  # IGDB dates a work by its first release on any platform; the Switch one can differ.
-  # Upcoming works known only by year sort after the dated ones.
-  defp nintendo_dates(results, :upcoming, today) do
-    {dated, by_year} =
-      Enum.split_with(results, &(&1.first_date && Date.compare(&1.first_date, today) == :gt))
+  defp showcase_list(results, :upcoming, _today),
+    do:
+      results
+      |> Enum.filter(&(&1.launch == :upcoming))
+      |> Enum.sort_by(&{&1.precision != :day, Date.to_gregorian_days(&1.first_date)})
 
-    Enum.sort_by(dated, & &1.first_date, Date) ++ by_year
-  end
-
-  defp nintendo_dates(results, _released, today),
-    do: Enum.filter(results, &(&1.first_date && Date.compare(&1.first_date, today) != :gt))
-
-  defp cached_showcase(list) do
-    key = {__MODULE__, :showcase, list}
-    now = System.monotonic_time(:millisecond)
-
-    case :persistent_term.get(key, nil) do
-      {expires, externals} when expires > now ->
-        {:ok, externals}
-
-      _ ->
-        with {:ok, %{body: externals}} <- Dockd.IGDB.showcase(list) do
-          externals = group_family(externals)
-          :persistent_term.put(key, {now + @showcase_ttl, externals})
-          {:ok, externals}
-        end
-    end
-  end
-
-  defp local_showcase(list, today) do
-    results = Enum.map(list_games(), &local_result/1)
-
-    case list do
-      :upcoming ->
-        results
-        |> Enum.filter(&(&1.first_date && Date.compare(&1.first_date, today) == :gt))
-        |> Enum.sort_by(& &1.first_date, Date)
-
-      :recent ->
-        released_since(results, today, 90)
-
-      :popular ->
-        released_since(results, today, 365)
-    end
-  end
+  defp showcase_list(results, :recent, today), do: released_since(results, today, 90)
+  defp showcase_list(results, :popular, today), do: released_since(results, today, 365)
 
   defp released_since(results, today, days) do
     since = Date.add(today, -days)
 
     results
-    |> Enum.filter(&(&1.first_date && Date.compare(&1.first_date, since) == :gt))
-    |> Enum.reject(&(Date.compare(&1.first_date, today) == :gt))
-    |> Enum.sort_by(& &1.first_date, {:desc, Date})
+    |> Enum.filter(&(&1.launch == :released and Date.compare(&1.first_date, since) == :gt))
+    |> Enum.sort_by(&(-((&1.game.rating_count || 0) + (&1.game.hypes || 0))))
   end
 
-  defp local_result(%Game{} = game) do
-    releases = game.releases || []
-    dates = releases |> Enum.map(& &1.release_date) |> Enum.reject(&is_nil/1)
-    first = if dates == [], do: nil, else: Enum.min(dates, Date)
+  # A game's card: its platforms and when it comes out, from the first release that is
+  # out or, when none is, the first one to come.
+  defp results(games, today) do
+    statuses =
+      games |> Enum.flat_map(& &1.releases) |> Enum.map(& &1.id) |> Dockd.Pricing.sales_statuses()
 
-    %{
-      igdb_id: game.igdb_id,
-      title: game.title,
-      cover_url: game.cover_url,
-      platforms: releases |> Enum.map(& &1.platform) |> Enum.uniq() |> Enum.sort(),
-      first_date: first,
-      year: first && first.year,
-      game: game
-    }
-  end
+    Enum.map(games, fn game ->
+      launches = Enum.map(game.releases, &{&1, Release.launch(&1, today, statuses[&1.id])})
+      first = first_release(launches, :released) || first_release(launches, :upcoming)
 
-  # One card per game: an edition or Switch 2 Edition gives way to its parent, which it
-  # joins when both came in the answer and replaces when the parent did not. The Switch
-  # 2 Edition adds its platform to the parent's card.
-  defp group_family(externals) do
-    ids = MapSet.new(externals, & &1["id"])
-
-    children =
-      for external <- externals,
-          {kind, parent} <- [IgdbFamily.relation(external)],
-          IgdbFamily.automatic?(kind),
-          do: {external["id"], {kind, parent}}
-
-    children = Map.new(children)
-
-    missing =
-      children
-      |> Map.values()
-      |> Enum.map(&elem(&1, 1))
-      |> Enum.reject(&(&1 in ids))
-      |> Enum.uniq()
-
-    parents =
-      missing
-      |> fetch_externals()
-      |> Enum.filter(&IgdbFamily.nintendo?/1)
-      |> Map.new(&{&1["id"], &1})
-
-    grouped =
-      externals
-      |> Enum.flat_map(fn external ->
-        case Map.fetch(children, external["id"]) do
-          {:ok, {_kind, parent}} ->
-            cond do
-              parent in ids -> []
-              Map.has_key?(parents, parent) -> [parents[parent]]
-              true -> [external]
-            end
-
-          :error ->
-            [external]
-        end
-      end)
-      |> Enum.uniq_by(& &1["id"])
-
-    switch_2 =
-      for external <- externals,
-          {:switch_2_edition, parent} <- [Map.get(children, external["id"])],
-          do: {parent, external}
-
-    Enum.map(grouped, fn external ->
-      switch_2
-      |> Enum.filter(&(elem(&1, 0) == external["id"]))
-      |> Enum.reduce(external, fn {_parent, edition}, parent ->
-        absorb_platforms(parent, edition)
-      end)
+      %{
+        title: game.title,
+        cover_url: game.cover_url,
+        platforms: game.releases |> Enum.map(& &1.platform) |> Enum.uniq() |> Enum.sort(),
+        launch: first && elem(first, 1),
+        precision: first && elem(first, 0).release_date_precision,
+        first_date: first && elem(first, 0).release_date,
+        year: first && elem(first, 0).release_date && elem(first, 0).release_date.year,
+        game: game
+      }
     end)
   end
 
-  defp absorb_platforms(parent, child) do
-    parent
-    |> Map.update("platforms", child["platforms"] || [], &(&1 ++ (child["platforms"] || [])))
-    |> Map.update(
-      "release_dates",
-      child["release_dates"] || [],
-      &(&1 ++ (child["release_dates"] || []))
-    )
+  defp first_release(launches, launch) do
+    launches
+    |> Enum.filter(fn {release, state} -> state == launch and release.release_date end)
+    |> Enum.min_by(fn {release, _} -> release.release_date end, Date, fn -> nil end)
   end
 
   defp fetch_externals([]), do: []
@@ -573,29 +495,6 @@ defmodule Dockd.Catalog do
         _ -> []
       end
     end)
-  end
-
-  defp igdb_results(externals) do
-    ids = Enum.map(externals, & &1["id"])
-    local = local_games(ids)
-
-    externals
-    |> Enum.map(fn external ->
-      releases = release_attributes(external)
-      dates = releases |> Enum.map(& &1.release_date) |> Enum.reject(&is_nil/1)
-      first = if dates == [], do: nil, else: Enum.min(dates, Date)
-
-      %{
-        igdb_id: external["id"],
-        title: external["name"],
-        cover_url: cover_url(external),
-        platforms: releases |> Enum.map(& &1.platform) |> Enum.uniq() |> Enum.sort(),
-        first_date: first,
-        year: first && first.year,
-        game: Map.get(local, external["id"])
-      }
-    end)
-    |> Enum.reject(&(&1.platforms == []))
   end
 
   @doc """
@@ -615,7 +514,7 @@ defmodule Dockd.Catalog do
       nil ->
         with true <- Dockd.IGDB.configured?() || {:error, :not_configured},
              {:ok, external} <- fetch_external(igdb_id) do
-          import_external(external, depth)
+          import_external(external, depth, true)
         end
     end
   end
@@ -628,21 +527,22 @@ defmodule Dockd.Catalog do
     end
   end
 
-  # The depth stops an edition of an edition from walking IGDB for good.
-  defp import_external(external, depth) do
+  # The depth stops an edition of an edition from walking IGDB for good. Without
+  # `children?` the entries that are this game wait for `resolve_families/1`.
+  defp import_external(external, depth, children?) do
     with {kind, parent_id} <- IgdbFamily.relation(external),
          true <- depth > 0 and IgdbFamily.automatic?(kind),
-         {:ok, parent} <- nintendo_parent(parent_id, depth) do
+         {:ok, parent} <- nintendo_parent(parent_id, depth, children?) do
       apply_family({:link, parent, external["id"], kind, :auto})
       if kind == :switch_2_edition, do: apply_family({:switch_2_release, parent, external})
       {:ok, get_game!(parent.id)}
     else
-      _ -> import_own(external)
+      _ -> import_own(external, children?)
     end
   end
 
   # The local game of an IGDB entry sold on a Nintendo platform, imported when missing.
-  defp nintendo_parent(igdb_id, depth) do
+  defp nintendo_parent(igdb_id, depth, children?) do
     case get_game_by_igdb_id(igdb_id) do
       %Game{} = game ->
         {:ok, game}
@@ -650,32 +550,162 @@ defmodule Dockd.Catalog do
       nil ->
         with {:ok, external} <- fetch_external(igdb_id),
              true <- IgdbFamily.nintendo?(external) || :not_nintendo,
-             do: import_external(external, depth - 1)
+             do: import_external(external, depth - 1, children?)
     end
   end
 
-  defp import_own(external) do
-    with {:ok, game} <- create_game(import_attrs(external)) do
+  defp import_own(external, children?) do
+    with {:ok, game} <- create_imported(import_attrs(external)) do
       Enum.each(release_attributes(external), &create_release(game.id, &1))
       game = get_game!(game.id)
 
       # A doubtful child of a game already here, then the entries that are this game.
       Enum.each(own_actions([{game, external}], MapSet.new()), &apply_family/1)
-      Enum.each(children_actions([game]), &apply_family/1)
+      if children?, do: Enum.each(children_actions([game]), &apply_family/1)
       {:ok, get_game!(game.id)}
     end
   end
 
+  # IGDB slugs are unique there, but a game typed in by hand may hold one already.
+  defp create_imported(attrs) do
+    with {:error, %Ecto.Changeset{errors: errors} = changeset} <- create_game(attrs) do
+      if Keyword.has_key?(errors, :slug),
+        do:
+          create_game(%{
+            attrs
+            | slug: "#{attrs.slug || Game.slugify(attrs.title)}-#{attrs.igdb_id}"
+          }),
+        else: {:error, changeset}
+    end
+  end
+
   defp import_attrs(external) do
-    %{
+    Map.merge(signals(external), %{
       title: external["name"],
+      slug: external["slug"],
       igdb_id: external["id"],
       availability: suggested_availability(external) || :multiplatform,
       cover_url: cover_url(external),
       developer: company(external, "developer"),
       publisher: company(external, "publisher"),
       synced_at: DateTime.utc_now()
-    }
+    })
+  end
+
+  # ---------------------------------------------------------------------------
+  # Curation: the catalog is what the criterion admits
+
+  @doc """
+  Brings the catalog to the criterion (`Dockd.Catalog.Curation`): imports every IGDB
+  entry it admits that is not here yet, an edition or Switch 2 Edition through its
+  game, each committed on its own, so a run that stops is picked up by the next one.
+  The entries that are the same game are joined afterwards by `resolve_families/1`.
+
+  With `prune: true` it also removes the games with an IGDB id that the criterion
+  leaves out and no account refers to (entry, ownership, purchase, price seen or veto);
+  never when the eShop ranking was not read, since its games would look unpopular.
+
+  Returns `{:ok, report}` with `admitted`, `imported`, `failed` (`{igdb_id, reason}`),
+  `kept` (titles outside the criterion kept for an account), `pruned` (titles),
+  `excluded` (reason => `%{count:, sample:}`, most rated first) and `eshop`.
+  """
+  def curate(opts \\ []) do
+    with true <- Dockd.IGDB.configured?() || {:error, :not_configured},
+         {:ok, %{decisions: decisions, eshop: eshop}} <- Curation.survey() do
+      admitted = for {entry, :admit} <- decisions, do: entry
+      {games, failed} = import_admitted(admitted)
+      {in_use, unused} = games |> outside_criterion() |> Enum.split_with(&in_use?/1)
+      prune? = Keyword.get(opts, :prune, false) and eshop == :ok
+      if prune?, do: Enum.each(unused, &Repo.delete!/1)
+
+      {:ok,
+       %{
+         admitted: length(admitted),
+         imported: Enum.count(games, &elem(&1, 1)),
+         failed: failed,
+         kept: Enum.map(in_use, & &1.title),
+         pruned: if(prune?, do: Enum.map(unused, & &1.title), else: []),
+         excluded: excluded_report(decisions),
+         eshop: eshop
+       }}
+    end
+  end
+
+  # `{[{game_id, imported?}], [{igdb_id, reason}]}`: IGDB is asked 500 entries at a time,
+  # and an entry already here, by its own id or a link, is not asked at all.
+  defp import_admitted(entries) do
+    ids = Enum.map(entries, & &1["id"])
+    here = local_games(ids)
+    found = for {_igdb_id, game} <- here, uniq: true, do: {game.id, false}
+
+    {imported, failed} =
+      ids
+      |> Enum.reject(&Map.has_key?(here, &1))
+      |> Enum.chunk_every(500)
+      |> Enum.flat_map(&import_chunk/1)
+      |> Enum.split_with(&match?({:ok, _}, &1))
+
+    Logger.info("Catálogo: #{length(imported)} jogos importados, #{length(failed)} falharam")
+
+    {Enum.uniq_by(found ++ Enum.map(imported, &elem(&1, 1)), &elem(&1, 0)),
+     Enum.map(failed, &elem(&1, 1))}
+  end
+
+  defp import_chunk(ids) do
+    case Dockd.IGDB.get_games(ids) do
+      {:ok, %{body: externals}} when is_list(externals) ->
+        listed = MapSet.new(externals, & &1["id"])
+
+        Enum.map(externals, &import_curated/1) ++
+          for id <- ids, id not in listed, do: {:error, {id, :not_found}}
+
+      {:error, reason} ->
+        Enum.map(ids, &{:error, {&1, reason}})
+    end
+  end
+
+  # An earlier entry of the run may have brought this one in, as the game of its edition.
+  defp import_curated(external) do
+    case get_game_by_igdb_id(external["id"]) do
+      %Game{} = game ->
+        {:ok, {game.id, false}}
+
+      nil ->
+        case import_external(external, 2, false) do
+          {:ok, game} -> {:ok, {game.id, true}}
+          {:error, reason} -> {:error, {external["id"], reason}}
+        end
+    end
+  end
+
+  defp outside_criterion(games) do
+    kept = Enum.map(games, &elem(&1, 0))
+
+    Repo.all(
+      from g in Game,
+        where: not is_nil(g.igdb_id) and g.id not in ^kept,
+        order_by: g.title,
+        preload: :releases
+    )
+  end
+
+  defp in_use?(game) do
+    Repo.exists?(from e in Entry, where: e.game_id == ^game.id) or
+      Enum.any?(game.releases, &(blockers(&1) != []))
+  end
+
+  defp excluded_report(decisions) do
+    for({entry, {:exclude, reason}} <- decisions, do: {reason, entry})
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Map.new(fn {reason, entries} ->
+      sample =
+        entries
+        |> Enum.sort_by(&(-(&1["total_rating_count"] || 0)))
+        |> Enum.take(10)
+        |> Enum.map(& &1["name"])
+
+      {reason, %{count: length(entries), sample: sample}}
+    end)
   end
 
   # ---------------------------------------------------------------------------

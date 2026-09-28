@@ -17,6 +17,7 @@ defmodule Dockd.Catalog.Release do
     field :physical_available, :boolean, default: false
     field :digital_available, :boolean, default: false
     field :physical_is_key_card, :boolean
+    field :eshop_searched_at, :utc_datetime_usec
     belongs_to :game, Dockd.Catalog.Game, type: :binary_id
     timestamps(type: :utc_datetime_usec)
   end

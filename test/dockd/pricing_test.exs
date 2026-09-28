@@ -29,6 +29,14 @@ defmodule Dockd.PricingTest do
     {game, releases}
   end
 
+  # A game some account has in its library: only these wait for review.
+  defp followed_with(title, platforms) do
+    {game, releases} = game_with(title, platforms)
+    {:ok, user} = user_fixture()
+    {:ok, _} = entry_fixture(user, game, %{purchase_intent: :want})
+    {game, releases}
+  end
+
   defp listing(release), do: Repo.get_by!(StoreListing, release_id: release.id)
 
   defp listing_for(nsuid) do
@@ -123,42 +131,23 @@ defmodule Dockd.PricingTest do
     end
 
     test "searches IGDB alternative names when the store uses a translated title" do
-      Application.put_env(:dockd, :igdb,
-        client_id: "id",
-        client_secret: "secret",
-        req_options: [plug: {Req.Test, "pricing-igdb"}]
-      )
-
-      IGDB.clear_cache()
-
-      Req.Test.stub("pricing-igdb", fn conn ->
-        case conn.request_path do
-          "/oauth2/token" ->
-            Req.Test.json(conn, %{access_token: "token", expires_in: 3600})
-
-          "/v4/games" ->
-            Req.Test.json(conn, [
-              %{
-                "id" => 119_388,
-                "alternative_names" => [%{"name" => "Indiana Jones e o Grande Círculo"}]
-              }
-            ])
-        end
-      end)
-
       {_, %{switch_2: release}} =
-        game_with("Indiana Jones and the Great Circle", [:switch_2], %{igdb_id: 119_388})
+        game_with("Indiana Jones and the Great Circle", [:switch_2], %{
+          alternative_names: ["インディ・ジョーンズ", "Indiana Jones e o Grande Círculo"]
+        })
 
       Pricing.match_eshop()
 
       assert %{match: :auto, external_id: "70010000098812"} = listing(release)
+      # A name in another script is never a store title.
+      refute Enum.any?(searches(), fn {_index, query} -> query =~ "ジョーンズ" end)
     end
 
     test "sends prefixes and weak titles to review with up to three candidates" do
-      {_, %{switch: ditto}} = game_with("The Swords of Ditto", [:switch])
-      {_, %{switch: ff}} = game_with("Final Fantasy XV", [:switch])
-      {_, %{switch: tmnt}} = game_with("Splintered Fate", [:switch])
-      {_, %{switch: borderlands}} = game_with("Borderlands 2", [:switch])
+      {_, %{switch: ditto}} = followed_with("The Swords of Ditto", [:switch])
+      {_, %{switch: ff}} = followed_with("Final Fantasy XV", [:switch])
+      {_, %{switch: tmnt}} = followed_with("Splintered Fate", [:switch])
+      {_, %{switch: borderlands}} = followed_with("Borderlands 2", [:switch])
 
       assert {:ok, %{auto: 0, review: 4}} = Pricing.match_eshop()
 
@@ -185,6 +174,28 @@ defmodule Dockd.PricingTest do
       assert %{match: :review, candidates: candidates} = listing(borderlands)
       assert length(candidates) == 3
       assert Enum.all?(candidates, &(&1["class"] == "weak"))
+    end
+
+    test "a game nobody follows takes safe matches only, and is searched again weekly" do
+      {game, %{switch: ditto}} = game_with("The Swords of Ditto", [:switch])
+      now = ~U[2026-09-28 12:00:00.000000Z]
+
+      assert {:ok, %{auto: 0, review: 0, none: 1}} = Pricing.match_eshop(now)
+      refute Repo.get_by(StoreListing, release_id: ditto.id)
+      assert Pricing.review_count() == 0
+      assert searches() != []
+
+      assert {:ok, %{none: 0}} = Pricing.match_eshop(DateTime.add(now, 6, :day))
+      assert searches() == []
+
+      assert {:ok, %{none: 1}} = Pricing.match_eshop(DateTime.add(now, 8, :day))
+      assert searches() != []
+
+      # Once in a library, it is searched on every run and waits for review.
+      {:ok, user} = user_fixture()
+      {:ok, _} = entry_fixture(user, game, %{purchase_intent: :want})
+      assert {:ok, %{review: 1}} = Pricing.match_eshop(DateTime.add(now, 9, :day))
+      assert %{match: :review} = listing(ditto)
     end
 
     test "fails visibly when the search key is refused, and prices still sync" do
@@ -214,7 +225,7 @@ defmodule Dockd.PricingTest do
 
   describe "review" do
     setup do
-      {_, %{switch: ditto}} = game_with("The Swords of Ditto", [:switch])
+      {_, %{switch: ditto}} = followed_with("The Swords of Ditto", [:switch])
       {:ok, %{review: 1}} = Pricing.match_eshop()
       %{ditto: ditto, listing: listing(ditto)}
     end

@@ -10,6 +10,7 @@ defmodule Dockd.Pricing do
   require Logger
   alias Dockd.Catalog.{Game, Release}
   alias Dockd.Eshop
+  alias Dockd.Library.Entry
   alias Dockd.Pricing.{CurrentPrice, EshopMatch, StoreListing, StorePrice}
   alias Dockd.Repo
 
@@ -147,84 +148,87 @@ defmodule Dockd.Pricing do
   Searches the game's title and its IGDB alternative names, in the Brazilian index
   first and the American one after (the Brazilian index misses games sold here).
   Exact and edition matches become `:auto` listings; anything weaker waits for review
-  with up to three candidates. A release without any candidate gets no listing. Both
-  are searched again on the next run, since the store lists games before launch.
+  with up to three candidates, but only for a game some account follows: the rest of
+  the catalog takes safe matches only. A release without a listing is searched again
+  on the next run, since the store lists games before launch; weekly when nobody
+  follows its game. The games followed go first, then the most rated.
   """
-  def match_eshop do
+  def match_eshop(now \\ DateTime.utc_now()) do
     if Eshop.configured?() do
-      pending = pending_releases()
-      releases = Enum.map(pending, &elem(&1, 0))
+      followed = followed_games()
 
-      match_games(
-        Enum.group_by(pending, &elem(&1, 0).game),
-        alternative_names(releases)
-      )
+      now
+      |> pending_releases(followed)
+      |> Enum.group_by(&elem(&1, 0).game)
+      |> Enum.sort_by(fn {game, _} ->
+        {not MapSet.member?(followed, game.id), -(game.rating_count || 0), game.title}
+      end)
+      |> match_games(followed, now)
     else
       {:error, :not_configured}
     end
   end
 
+  @research_after_days 7
+
   # A search failure (a rotated key answers 403) stops the matching, not the prices.
-  defp match_games(releases_by_game, alternative_names) do
+  defp match_games(releases_by_game, followed, now) do
     Enum.reduce_while(releases_by_game, {:ok, %{auto: 0, review: 0, none: 0}}, fn
       {game, releases}, {:ok, counts} ->
-        titles =
-          EshopMatch.search_titles(game.title, Map.get(alternative_names, game.igdb_id, []))
+        titles = EshopMatch.search_titles(game.title, game.alternative_names || [])
+        review? = MapSet.member?(followed, game.id)
 
-        case match_game(titles, releases) do
-          {:ok, decisions} -> {:cont, {:ok, count(counts, decisions)}}
-          {:error, reason} -> {:halt, {:error, reason}}
+        case match_game(titles, releases, review?) do
+          {:ok, decisions} ->
+            searched(releases, now)
+            {:cont, {:ok, count(counts, decisions)}}
+
+          {:error, reason} ->
+            {:halt, {:error, reason}}
         end
     end)
   end
 
+  defp followed_games,
+    do: Repo.all(from(e in Entry, distinct: true, select: e.game_id)) |> MapSet.new()
+
   # Each release with its listing in review, or nil.
-  defp pending_releases do
+  defp pending_releases(now, followed) do
+    stale = DateTime.add(now, -@research_after_days, :day)
+    followed = MapSet.to_list(followed)
+
     Repo.all(
       from r in Release,
         join: g in Game,
         on: g.id == r.game_id,
         left_join: l in StoreListing,
         on: l.release_id == r.id and l.store == :eshop_br,
-        where: r.edition == ^Release.standard_edition() and (is_nil(l.id) or l.match == :review),
-        order_by: [asc: g.title, asc: r.platform],
+        where:
+          r.edition == ^Release.standard_edition() and
+            (l.match == :review or
+               (is_nil(l.id) and
+                  (is_nil(r.eshop_searched_at) or r.eshop_searched_at < ^stale or
+                     g.id in ^followed))),
+        order_by: [asc: r.platform],
         preload: [game: g],
         select: {r, l}
     )
   end
 
-  defp alternative_names(releases) do
-    ids = releases |> Enum.map(& &1.game.igdb_id) |> Enum.reject(&is_nil/1) |> Enum.uniq()
-
-    if ids != [] and Dockd.IGDB.configured?() do
-      ids
-      |> Enum.chunk_every(500)
-      |> Enum.flat_map(&igdb_games/1)
-      |> Map.new(fn game ->
-        {game["id"], Enum.map(game["alternative_names"] || [], & &1["name"])}
-      end)
-    else
-      %{}
-    end
+  defp searched(releases, now) do
+    ids = Enum.map(releases, &elem(&1, 0).id)
+    Repo.update_all(from(r in Release, where: r.id in ^ids), set: [eshop_searched_at: now])
   end
 
-  # Without IGDB the game's own title is still searched.
-  defp igdb_games(ids) do
-    case Dockd.IGDB.get_games(ids) do
-      {:ok, %{body: games}} when is_list(games) -> games
-      _ -> []
-    end
-  end
-
-  defp match_game(titles, pending) do
+  defp match_game(titles, pending, review?) do
     platforms = pending |> Enum.map(&elem(&1, 0).platform) |> Enum.uniq()
     queries = for locale <- @locales, title <- titles, do: {locale, title}
 
     with {:ok, hits} <- search_until_settled(queries, titles, platforms, []) do
       decisions =
         Enum.map(pending, fn {release, listing} ->
-          {release, listing,
-           EshopMatch.decide(EshopMatch.candidates(titles, hits, release.platform))}
+          decision = EshopMatch.decide(EshopMatch.candidates(titles, hits, release.platform))
+          {release, listing, unless_unfollowed(decision, review?)}
         end)
 
       prices = candidate_prices(decisions)
@@ -235,6 +239,9 @@ defmodule Dockd.Pricing do
        end)}
     end
   end
+
+  defp unless_unfollowed({:review, _candidates}, false), do: :none
+  defp unless_unfollowed(decision, _review?), do: decision
 
   # The person choosing sees what each candidate costs in Brazil, and whether it is sold.
   defp candidate_prices(decisions) do

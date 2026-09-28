@@ -1,11 +1,9 @@
 defmodule DockdWeb.DiscoverLive do
   @moduledoc """
-  Descobrir: busca no catálogo inteiro do IGDB e as listas da vitrine, restritas a Switch e
-  Switch 2. É pública: para o visitante a etiqueta de status leva ao Entrar e volta aqui,
-  com o menu daquela capa aberto (`abrir`).
-
-  Sem credenciais do IGDB a busca cai para o catálogo local, o que mantém o fluxo
-  utilizável em desenvolvimento e nos testes.
+  Descobrir: busca no catálogo do Dockd e as listas da vitrine. O catálogo é curado
+  (`Dockd.Catalog.Curation`): só jogo de Switch e Switch 2 que o critério admite, e todo
+  resultado abre a página do jogo. É pública: para o visitante a etiqueta de status leva
+  ao Entrar e volta aqui, com o menu daquela capa aberto (`abrir`).
   """
   use DockdWeb, :live_view
 
@@ -53,10 +51,8 @@ defmodule DockdWeb.DiscoverLive do
   defp search(%{assigns: %{q: "", list: {_, list, _}}} = socket),
     do: assign(socket, results: with_status(Catalog.showcase(list), socket), source: :showcase)
 
-  defp search(%{assigns: %{q: q}} = socket) do
-    {source, results} = Catalog.search(q)
-    assign(socket, results: with_status(results, socket), source: source)
-  end
+  defp search(%{assigns: %{q: q}} = socket),
+    do: assign(socket, results: with_status(Catalog.search(q), socket), source: :search)
 
   # Each result carries its game's shelf item fields, so the status control reads it like
   # a Biblioteca card.
@@ -64,7 +60,7 @@ defmodule DockdWeb.DiscoverLive do
     shelf = if user, do: user |> Shelf.list() |> Map.new(&{&1.game.id, &1}), else: %{}
 
     Enum.map(results, fn result ->
-      item = result.game && shelf[result.game.id]
+      item = shelf[result.game.id]
 
       Map.merge(result, %{
         status: item && item.status,
@@ -75,14 +71,10 @@ defmodule DockdWeb.DiscoverLive do
 
   @doc "The DOM id of a result card, also the `abrir` value that opens its menu."
   def result_id(%{game: %{id: id}}), do: "result-#{id}"
-  def result_id(%{igdb_id: igdb_id}), do: "result-igdb-#{igdb_id}"
 
   @doc "Descobrir on the showcase list `lista`, with extra query `params`."
   def list_path("lancamentos", params), do: ~p"/descobrir?#{params}"
   def list_path(lista, params), do: ~p"/descobrir?#{Map.put(params, :lista, lista)}"
-
-  defp menu_values(%{game: %{id: id}}), do: %{game_id: id}
-  defp menu_values(%{igdb_id: igdb_id}), do: %{igdb_id: igdb_id}
 
   @doc "Platforms and the release date, or the year once it is out."
   def result_meta(%{first_date: %Date{} = date, platforms: platforms} = result) do
@@ -137,7 +129,7 @@ defmodule DockdWeb.DiscoverLive do
           <.poster
             title={result.title}
             cover_url={result.cover_url}
-            navigate={result.game && ~p"/jogos/#{result.game.id}"}
+            navigate={~p"/jogos/#{result.game.id}"}
           />
           <.status_link :if={!@user} back={back_path(assigns, result)} />
           <.status_menu
@@ -145,7 +137,7 @@ defmodule DockdWeb.DiscoverLive do
             id={"status-#{result_id(result)}"}
             status={result.status}
             options={Library.status_options(result)}
-            values={menu_values(result)}
+            values={%{game_id: result.game.id}}
             open={@status_open == result_id(result)}
             ask={GameEvents.ask(@asking, result)}
           />

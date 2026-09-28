@@ -49,14 +49,16 @@ defmodule Dockd.Pricing.EshopMatch do
   @doc """
   The titles to search and compare: the game's title and its alternative names,
   without those that only abbreviate the title ("Mouse" for "Mouse: P.I. for Hire"),
-  which find every other game starting with the same word.
+  which find every other game starting with the same word, and those not written in
+  Latin letters, which neither Brazilian nor American store titles use.
   """
   def search_titles(title, alternative_names) do
     main = normalize(title)
 
     alternatives =
       Enum.reject(alternative_names, fn name ->
-        String.starts_with?(main, normalize(name) <> " ")
+        String.starts_with?(main, normalize(name) <> " ") or
+          not Regex.match?(~r/[a-z]/iu, name)
       end)
 
     Enum.uniq_by([title | alternatives], &normalize/1)

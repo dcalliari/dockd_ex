@@ -46,13 +46,7 @@ defmodule DockdWeb.GameEvents do
   """
   def ask(nil, _item), do: nil
 
-  def ask(asking, item) do
-    game = Map.get(item, :game)
-    igdb_id = Map.get(item, :igdb_id)
-
-    if (game && game.id == asking.game.id) || (igdb_id && igdb_id == asking.game.igdb_id),
-      do: asking.choices
-  end
+  def ask(asking, %{game: game}), do: if(game.id == asking.game.id, do: asking.choices)
 
   @doc """
   The version and media choices Comprei offers in place for `game_id`, when it is asking
@@ -329,14 +323,6 @@ defmodule DockdWeb.GameEvents do
   end
 
   defp resolve_game(%{"game_id" => game_id}), do: {:ok, Catalog.get_game!(game_id)}
-
-  defp resolve_game(%{"igdb_id" => igdb_id}) do
-    case Integer.parse(to_string(igdb_id)) do
-      {id, ""} -> Catalog.import_igdb(id)
-      _ -> :error
-    end
-  end
-
   defp resolve_game(_params), do: :error
 
   defp standard_releases(releases),

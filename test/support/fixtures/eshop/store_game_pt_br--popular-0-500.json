@@ -1,0 +1,66 @@
+{
+  "hits": [
+    {
+      "platformCode": "NINTENDO_SWITCH",
+      "title": "The Legend of Zelda™: Tears of the Kingdom",
+      "topLevelCategoryCode": "GAMES",
+      "dlcType": null,
+      "eshopDetails": {
+        "productType": "TITLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70010000063714",
+      "softwarePublisher": "Nintendo",
+      "popularityRank": 44,
+      "objectID": "7100063714"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH_2",
+      "title": "The Legend of Zelda™: Tears of the Kingdom – Nintendo Switch™ 2 Edition",
+      "topLevelCategoryCode": "GAMES",
+      "dlcType": null,
+      "eshopDetails": {
+        "productType": "TITLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70010000096821",
+      "softwarePublisher": "Nintendo",
+      "popularityRank": 61,
+      "objectID": "7100096821"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH",
+      "title": "Cuphead",
+      "topLevelCategoryCode": "GAMES",
+      "dlcType": null,
+      "eshopDetails": {
+        "productType": "TITLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70010000016330",
+      "softwarePublisher": "StudioMDHR",
+      "popularityRank": 67,
+      "objectID": "7100016330"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH",
+      "title": "Kitten Island",
+      "topLevelCategoryCode": "GAMES",
+      "dlcType": null,
+      "eshopDetails": {
+        "productType": "TITLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70010000064684",
+      "softwarePublisher": "GAME NACIONAL",
+      "popularityRank": 115,
+      "objectID": "7100064684"
+    }
+  ],
+  "nbHits": 4,
+  "page": 0,
+  "nbPages": 1,
+  "hitsPerPage": 1000,
+  "query": "",
+  "params": "numericFilters=popularityRank>0,popularityRank<=500"
+}

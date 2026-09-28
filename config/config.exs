@@ -24,6 +24,34 @@ config :dockd,
   ecto_repos: [Dockd.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+# What enters the catalog from IGDB (Dockd.Catalog.Curation, documented in the README):
+# a game of one of `game_types` (IGDB game_type: 0 main, 3 collection, 4 standalone
+# expansion, 8 remake, 9 remaster, 10 expanded, 11 port) with a cover, popular by any
+# of the counts (the rating count of the game or of the game it remasters or ports),
+# and not from a publisher in `excluded_publishers`.
+config :dockd, :catalog_criteria,
+  game_types: [0, 3, 4, 8, 9, 10, 11],
+  min_rating_count: 10,
+  min_critic_count: 5,
+  min_hypes: 10,
+  max_eshop_rank: 2000,
+  excluded_publishers: [
+    "REDDEER.GAMES",
+    "QubicGames",
+    "HAMSTER",
+    "Hamster Corporation",
+    "eastasiasoft",
+    "Ratalaika Games",
+    "Baltoro Games",
+    "Baltoro Minis",
+    "Ocean Media",
+    "Ultimate Games",
+    "Aldora Games",
+    "EpiXR Games",
+    "17Studio",
+    "MASK"
+  ]
+
 # Configure the endpoint
 config :dockd, DockdWeb.Endpoint,
   url: [host: "localhost"],

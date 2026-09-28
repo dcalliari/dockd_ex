@@ -66,6 +66,52 @@ defmodule Dockd.Eshop do
     end
   end
 
+  @rank_window 500
+
+  @doc """
+  The Brazilian store's products ranked `max_rank` or better by popularity, each hit
+  with its `popularityRank` and `softwarePublisher`. Asked in windows of
+  #{@rank_window} ranks, since the search never pages past a thousand hits.
+  """
+  def popular(max_rank) when is_integer(max_rank) and max_rank > 0 do
+    if configured?() do
+      0
+      |> Stream.iterate(&(&1 + @rank_window))
+      |> Enum.take_while(&(&1 < max_rank))
+      |> Enum.reduce_while({:ok, []}, &ranked_window(&1, &2, max_rank))
+    else
+      {:error, :not_configured}
+    end
+  end
+
+  defp ranked_window(low, {:ok, found}, max_rank) do
+    case ranked(low, min(low + @rank_window, max_rank)) do
+      {:ok, hits} -> {:cont, {:ok, found ++ hits}}
+      error -> {:halt, error}
+    end
+  end
+
+  defp ranked(low, high) do
+    app_id = app_id()
+
+    :post
+    |> request("https://#{app_id}-dsn.algolia.net/1/indexes/#{@indexes.pt_br}/query",
+      headers: [
+        {"x-algolia-application-id", app_id},
+        {"x-algolia-api-key", config(:algolia_search_key)}
+      ],
+      json: %{
+        query: "",
+        hitsPerPage: 1000,
+        numericFilters: ["popularityRank>#{low}", "popularityRank<=#{high}"],
+        attributesToRetrieve: @search_fields ++ ~w(popularityRank softwarePublisher),
+        attributesToHighlight: [],
+        attributesToSnippet: []
+      }
+    )
+    |> body_field("hits")
+  end
+
   @doc """
   Brazilian prices for up to #{@price_batch} nsuids. Returns `{:ok, prices}` in the
   API's shape: `title_id`, `sales_status` and, when sold, `regular_price` and

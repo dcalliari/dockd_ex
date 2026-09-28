@@ -79,13 +79,21 @@ defmodule Dockd.EshopStub do
 
   defp respond(conn, test_pid, _prices) do
     {:ok, body, conn} = Plug.Conn.read_body(conn)
-    %{"query" => query} = Jason.decode!(body)
+    %{"query" => query} = request = Jason.decode!(body)
     ["1", "indexes", index, "query"] = conn.path_info
     [app_id] = Plug.Conn.get_req_header(conn, "x-algolia-application-id")
     assert conn.host == "#{app_id}-dsn.algolia.net" and app_id =~ ~r/^[A-Z0-9]+$/
     report(test_pid, conn, :search, {index, query})
 
-    file = "#{index}--#{slug(query)}.json"
+    # The popularity ranking is an empty query filtered by rank.
+    file =
+      case request["numericFilters"] do
+        ["popularityRank>" <> low, "popularityRank<=" <> high] ->
+          "#{index}--popular-#{low}-#{high}.json"
+
+        nil ->
+          "#{index}--#{slug(query)}.json"
+      end
 
     if File.exists?(Path.join(@fixtures, file)),
       do: Req.Test.json(conn, read!(file)),

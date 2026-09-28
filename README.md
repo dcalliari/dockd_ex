@@ -18,10 +18,10 @@ A restrição a Switch e Switch 2 é uma escolha de produto, não uma limitaçã
 
 Quatro telas, desenhadas a partir do design system em [`design/`](design/FONTE.md) e aprovadas em maquete antes de virarem código:
 
-- **Vitrine** em `/` para quem não entrou: três faixas de capas do catálogo (próximos lançamentos, os que chegaram agora e os em alta no IGDB), cada uma abrindo sua lista em Descobrir.
+- **Vitrine** em `/` para quem não entrou: três faixas de capas do catálogo (próximos lançamentos, os que chegaram nos últimos 90 dias e os do último ano, os mais avaliados primeiro), cada uma abrindo sua lista em Descobrir.
 - **Biblioteca** em `/`, com conta: grade de capas com um status por jogo (Quero, Backlog, Jogando, Zerado, Larguei), derivado de posse e estado de jogo; abas com contagem, filtros de plataforma e mídia, busca e ordenação.
 - **Jogo** em `/jogos/:id`: capa com plataformas e exclusividade, um único controle de status, versões com preço observado e datado, e o histórico das ações.
-- **Descobrir** em `/descobrir`: busca no IGDB inteiro restrita a Switch e Switch 2, com `Quero jogar` em um toque. Sem credenciais do IGDB, busca no catálogo local.
+- **Descobrir** em `/descobrir`: busca no catálogo do Dockd, pelo título ou por um nome alternativo do IGDB, sem ligar para acento, caixa ou pontuação, os mais avaliados primeiro, com `Quero jogar` em um toque. Todo resultado abre a página do jogo; nunca consulta o IGDB ao vivo.
 - **Comprar** em `/comprar`: a fila dos jogos em Quero, separada em próximos lançamentos, disponíveis e sem data, com o total estimado da fila por mídia e o gasto do mês numa linha no topo. Comprei grava a compra com um toque, pelo último preço visto, e Desfazer volta atrás no lugar.
 - **Entrar** em `/entrar` e **Criar conta** em `/criar-conta`: cada conta é uma biblioteca. Entra-se com e-mail e senha, e `Criar conta` abre uma conta nova sem convite. Com SMTP configurado, aparece também `Entrar por link`.
 - Sem conta, a Vitrine, Descobrir e a página do jogo mostram só o catálogo; a etiqueta `+ Adicionar` leva ao Entrar e volta à mesma capa. Biblioteca, Comprar, preço, posse, status e histórico exigem a conta.
@@ -143,6 +143,18 @@ Para carregar o cenário de demonstração em um banco descartável, execute `mi
 Para usar um proxy reverso, copie `.env.example`, preencha `PHX_HOST`, `DATABASE_URL`, `SECRET_KEY_BASE`, `TRAEFIK_NETWORK` e `TRAEFIK_ENTRYPOINT`, e execute `docker compose -f compose.traefik.yml up --build`. Esse compose não cria a rede externa: ela deve existir no ambiente escolhido. O serviço reinicia automaticamente após reinicializações do host ou do Docker.
 
 Em produção, `DATABASE_URL` e `SECRET_KEY_BASE` são obrigatórios. `PORT`, `PHX_HOST`, `POOL_SIZE` e `ECTO_IPV6` também são lidos em runtime. No compose Traefik, `IGDB_CLIENT_ID` e `IGDB_CLIENT_SECRET` habilitam a integração; `IGDB_SYNC_INTERVAL_MS` e `IGDB_SYNC_INITIAL_DELAY_MS` são opcionais e usam 86400000 ms e 1000 ms, respectivamente. `ESHOP_ALGOLIA_SEARCH_KEY` habilita o casamento com a eShop Brasil, que roda no mesmo ciclo. Migrações de release podem ser executadas com `bin/migrate` dentro da imagem.
+
+### Catálogo curado
+
+O catálogo é carregado do IGDB por um critério, e só ele aparece na busca e na vitrine. O critério mora em um lugar só, `config :dockd, :catalog_criteria` em [`config/config.exs`](config/config.exs), e o módulo `Dockd.Catalog.Curation` o explica. Entra a entrada de Switch ou Switch 2 que:
+
+- é jogo de verdade: `game_type` principal, coletânea, expansão independente, remake, remaster, expandido ou port. DLC, pacote de expansão, passe de temporada, pacote de conteúdo, atualização, episódio, mod e fork ficam de fora, e uma edição do IGDB (`version_parent`) ou uma Nintendo Switch 2 Edition entra como versão do seu jogo;
+- não foi cancelada, é boato ou saiu do ar, e tem capa;
+- é popular por qualquer um destes: `total_rating_count` do jogo, ou do jogo que ela remasteriza ou porta, pelo menos 10; `aggregated_rating_count` pelo menos 5; `hypes` pelo menos 10; ou `popularityRank` da eShop Brasil até 2000;
+- não é de editora da lista `excluded_publishers` (fábricas de shovelware e relançamentos em série, como Arcade Archives), nem pelo IGDB nem pela eShop;
+- se for coletânea, reúne jogos: a que só tem conteúdo extra é um passe, e a que tem um único jogo vendido no Switch é edição dele.
+
+Jogo de uma biblioteca fica no catálogo mesmo fora do critério. A carga inicial é `bin/dockd eval 'Dockd.Release.curate()'`: importa o que falta, remove o que ficou fora e ninguém usa (nunca quando o ranking da eShop não pôde ser lido) e imprime quantos entraram, quantos cada regra deixou de fora e os mais avaliados de cada uma. Cada jogo é gravado sozinho, então a carga pode parar e recomeçar de onde estava. A sincronização diária faz o mesmo sem remover nada, de modo que um lançamento novo entra quando passa no critério, e depois procura o produto da eShop dos jogos novos. Na eShop, casamento incerto só vai para `Conferir catálogo` quando o jogo está numa biblioteca; o resto do catálogo aceita só o casamento seguro, e uma versão não encontrada de um jogo que ninguém acompanha é procurada de novo a cada semana. IGDB a quatro pedidos por segundo, eShop a um.
 
 Edições e Nintendo Switch 2 Edition contam como um jogo só: a sincronização diária junta as entradas do IGDB que são o mesmo jogo e cria as edições que a eShop vende. Para ver antes o que ela fará num catálogo existente, suba com `IGDB_SYNC_INITIAL_DELAY_MS` alto e rode `bin/dockd eval 'Dockd.Release.families()'`, que só lista.
 

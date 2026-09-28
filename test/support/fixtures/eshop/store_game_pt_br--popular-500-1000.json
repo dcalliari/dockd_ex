@@ -1,0 +1,38 @@
+{
+  "hits": [
+    {
+      "platformCode": "NINTENDO_SWITCH",
+      "title": "Hole io",
+      "topLevelCategoryCode": "GAMES",
+      "dlcType": null,
+      "eshopDetails": {
+        "productType": "TITLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70010000069917",
+      "softwarePublisher": "QubicGames",
+      "popularityRank": 722,
+      "objectID": "7100069917"
+    },
+    {
+      "platformCode": "NINTENDO_SWITCH",
+      "title": "Cozy Cooking: Tiny Tastes",
+      "topLevelCategoryCode": "GAMES",
+      "dlcType": null,
+      "eshopDetails": {
+        "productType": "TITLE"
+      },
+      "isUpgrade": false,
+      "nsuid": "70010000099598",
+      "softwarePublisher": "REDDEER.GAMES",
+      "popularityRank": 921,
+      "objectID": "7100099598"
+    }
+  ],
+  "nbHits": 2,
+  "page": 0,
+  "nbPages": 1,
+  "hitsPerPage": 1000,
+  "query": "",
+  "params": "numericFilters=popularityRank>500,popularityRank<=1000"
+}
