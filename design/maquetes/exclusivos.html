@@ -553,9 +553,9 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 [data-theme="dark"] .gc--switch .gc__body { stroke: #8f8886; }
 .gcs { display: inline-flex; align-items: flex-end; gap: 2px; }
 
-/* Na linha, o cartucho fica onde estava o texto, logo depois da plataforma, apoiado na linha de base
-   e só um pouco mais alto que as maiúsculas do t-meta (12px de corpo, cerca de 8,6px de maiúscula). */
-.gcs--inline { margin-left: 5px; vertical-align: baseline; --gc-h: 10px; }
+/* Na linha, o cartucho fica onde estava o texto, logo depois da plataforma, centrado na altura das letras:
+   no t-meta (12px) a maiúscula sobe 9px, então 11px descidos 1px sobram 1px em cima e 1px embaixo. */
+.gcs--inline { margin-left: 5px; vertical-align: -1px; --gc-h: 11px; }
 
 /* Na capa, embaixo à direita: o alto é da etiqueta de status, que chega a ocupar a largura toda no celular. Aro claro sobre qualquer arte. */
 .gcs--cover { position: absolute; z-index: 1; bottom: 6px; right: 6px; --gc-h: 16px; pointer-events: none; filter: drop-shadow(0 1px 2px #00000080); }
@@ -752,7 +752,7 @@ var DRAWINGS = {
   } }
 };
 var ORDER = ['rotulo', 'vazado', 'pega', 'silhueta', 'faixa', 'verso', 'linha', 'macio'];
-var RECOMMENDED = 'pega';
+var RECOMMENDED = 'silhueta';
 
 function gameCard(drawing, kind) {
   return '<svg class="gc gc--' + kind + '" viewBox="0 0 16 22" aria-hidden="true">' + DRAWINGS[drawing].svg() + '</svg>';
@@ -767,7 +767,7 @@ var THEMES = ['light', 'dark'];
 
 ORDER.forEach(function (d, i) {
   var fig = document.createElement('figure');
-  fig.innerHTML = '<figcaption><b>' + String.fromCharCode(65 + i) + '</b>' + DRAWINGS[d].name + (d === RECOMMENDED ? '<span class="tag-rec">recomendado</span>' : '') + '</figcaption>';
+  fig.innerHTML = '<figcaption><b>' + String.fromCharCode(65 + i) + '</b>' + DRAWINGS[d].name + (d === RECOMMENDED ? '<span class="tag-rec">escolhido</span>' : '') + '</figcaption>';
   THEMES.forEach(function (theme) {
     var f = document.createElement('div');
     f.className = 'frame';
