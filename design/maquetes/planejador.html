@@ -297,20 +297,16 @@ body { background: var(--surface); }
 .dk-year-mark { margin: var(--space-3) 0 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
 .dk-status--sm { height: 18px; }
 
-/* Proposta · o saldo na linha de totais é o controle, como o preço é o controle do registro */
-.dk-totals { color: var(--ink-muted); }
-.dk-totals__control { display: inline-flex; align-items: baseline; padding: 2px var(--space-1); margin: -2px 0 -2px 2px; border-radius: var(--radius-sm); transition: background-color 120ms; font-variant-numeric: tabular-nums; }
-.dk-totals__control:hover, .dk-totals__control[aria-expanded="true"] { background: var(--surface-raised); }
-.dk-totals__control b { margin-left: 4px; }
-.dk-totals__control--none b { font-weight: 400; color: var(--ink-muted); }
-.dk-totals .is-short b { color: var(--red-ink); }
-.dk-form--balance { justify-content: flex-end; padding-left: 0; margin-top: calc(-1 * var(--space-3)); margin-bottom: var(--space-4); }
-.frame--phone .dk-form--balance { justify-content: flex-start; }
+/* Proposta · Físico sem preço nenhum aparece na linha, para a separação ficar visível */
+.dk-totals .is-none { font-weight: 400; color: var(--ink-muted); }
 
-/* Proposta · caminho B do saldo: o campo fica sempre na linha */
-.dk-totals--field { align-items: center; }
-.dk-totals--field .dk-form__field { flex-direction: row; align-items: center; gap: var(--space-2); }
-.dk-totals--field .dk-money input { width: 112px; }
+/* Proposta · caminho B: o total da mídia no título da seção */
+.dk-section__totals { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-1) var(--space-4); margin: 0; font-size: 12px; line-height: 16px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.dk-section__totals span { white-space: nowrap; }
+.dk-section__totals b { margin-left: 6px; color: var(--ink); font-size: 15px; font-weight: 600; }
+.dk-section__totals b.is-none { font-weight: 400; color: var(--ink-muted); }
+.dk-section__totals small { margin-left: 6px; font-size: 12px; }
+.dk-section:has(.dk-section__totals) { align-items: flex-end; }
 
 /* Proposta · a MediaTag é o controle da preferência: um toque troca Digital e Físico */
 button.dk-media { padding: 1px 4px; margin: -1px -4px; border-radius: var(--radius-sm); color: var(--ink); transition: background-color 120ms; vertical-align: baseline; }
@@ -324,99 +320,56 @@ button.dk-media:hover { background: var(--surface-sunken); }
 .dk-btn[aria-pressed="true"]:hover { background: var(--ink); }
 .dk-row--bought .dk-row__acts { gap: var(--space-3); }
 
-/* Proposta · caminho B da mídia: Choice de duas opções na linha */
-.dk-choice--media > button { display: inline-flex; align-items: center; height: 100%; padding: 0 var(--space-2); font-size: 12px; font-weight: 600; color: var(--ink-muted); }
-.dk-choice--media > button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
-
-/* Proposta · caminho B da resposta: saldo corrente, como num extrato */
-.dk-run { display: inline-flex; flex-direction: column; align-items: flex-end; min-width: 88px; padding: 2px var(--space-1); margin: -2px 0; border-radius: var(--radius-sm); font-variant-numeric: tabular-nums; transition: background-color 120ms; }
-.dk-run:hover { background: var(--surface-raised); }
-.dk-run b { font-size: 15px; line-height: 20px; font-weight: 600; }
-.dk-run small { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
-.dk-run--short b, .dk-run--short small { color: var(--red-ink); }
-.dk-run--out b { font-weight: 400; color: var(--ink-muted); }
-.dk-run--none { visibility: hidden; }
-.frame--phone .dk-run { align-items: flex-start; }
-
 .frame--phone .dk-row .dk-price { align-items: flex-start; }
 .frame--phone .dk-row .dk-row__end .dk-price small { display: none; }
-.dk-choice--media { flex: none; }
 .frame__page .dk-section { margin-top: var(--space-6); }
-.frame__page .dk-totals + .dk-section, .frame__page .dk-form--balance + .dk-section { margin-top: 0; }
+.frame__page .dk-totals + .dk-section { margin-top: 0; }
 </style>
 </head>
 <body>
 <main class="page">
 
 <section class="opt" id="resumo">
-  <div class="dk-section"><h2>Planejador de compras · 28/09/2026</h2></div>
-  <p class="lead">Sua pergunta, com os dados da sua conta no lab: <b>R$ 540,00</b> na eShop, <b>Blue Prince</b> (R$ 53,39, 40% off até 05/10), <b>Hades II</b> (R$ 76,93, 30% off até 09/10) e <b>Outer Wilds</b> (R$ 59,99, 40% off até 12/10) somam <b>R$ 190,31</b>, e sobram <b>R$ 349,69</b>. <b>The Duskbloods</b> já está casado com a eShop, mas a loja ainda não tem data nem preço, e o IGDB diz só 2026: o preço entra sozinho quando a pré-venda abrir. <b>Sports Resort</b> (22/10) já está como físico na sua conta, então sai do saldo. Os outros lançamentos digitais da fila entram na mesma conta: <b>Kingdom Hearts Collection</b> em 08/10 por R$ 427,50 e <b>Steins;Gate Reboot</b> em 29/10 por R$ 249,99.</p>
-  <p class="lead">Hoje a linha do topo de Comprar diz <b>Digital R$ 7.000,57 em 29 de 35</b>: soma o preço digital de todos os 35 jogos em Quero, inclusive os 12 que você vai comprar em mídia física. A proposta tem três peças, cada uma com dois caminhos: <b>marcar a mídia</b>, <b>informar o saldo</b> e <b>ver quanto sobra</b>. Todas as telas abaixo respondem ao toque.</p>
+  <div class="dk-section"><h2>Planejador de compras · sem saldo · 28/09/2026</h2></div>
+  <p class="lead">Refeita depois do seu retorno: <b>sem saldo</b>. Comprar ganha três coisas. A primeira é a <b>mídia de cada jogo</b>, que troca com um toque. A segunda são os <b>totais separados</b> por Digital e Físico. A terceira é <b>Agora</b>, um toque que soma à parte o que você pretende comprar já, para você comparar com o saldo que vê na eShop. As promoções vigentes e os próximos lançamentos ficam no topo. Dados da sua conta no lab, com os preços da eShop de 28/09/2026. As telas respondem ao toque.</p>
+  <ul class="lead">
+    <li><b>Padrão da mídia:</b> os 12 jogos que a sua conta já marcou como físicos continuam físicos. Entre eles estão Mario Kart World, os Zelda, os Metroid, Kirby, Pokémon Ventos e Sports Resort. Os outros 23 são digitais, porque a eShop vende todos.</li>
+    <li><b>Digital:</b> R$ 3.851,47 em 20 de 23 jogos. The Duskbloods, Cairn e Out of Words ainda não têm preço na eShop.</li>
+    <li><b>Físico:</b> nenhum dos 12 tem preço físico registrado, então aparece <b>Sem preço</b>. A regra de hoje esconde soma sem preço. Aqui ela aparece para a separação ficar visível; tocar no preço da linha registra o valor.</li>
+    <li><b>Seu exemplo:</b> Blue Prince, Hades II e Outer Wilds marcados Agora dão <b>R$ 190,31</b>. Hoje a linha diz Digital R$ 7.000,57, porque soma os 35 jogos, inclusive os físicos.</li>
+  </ul>
 </section>
 
-<section class="opt" id="midia">
-  <div class="dk-section"><h2>1 · Físico ou digital, um toque por jogo</h2></div>
-  <p class="lead">O padrão já vem pronto: os <b>12 jogos</b> que a sua conta marcou como físico na importação continuam físicos (Mario Kart World, Zelda, Metroid, Kirby, Pokémon Ventos, Sports Resort...), e o resto é digital, porque a eShop vende todos. O IGDB não diz com segurança o que sai em cartucho (Sports Resort aparece sem físico), então ele não decide nada sozinho. Um jogo físico sai do saldo, perde o <b>Agora</b> e mostra o preço físico que você registrou, ou <b>Sem preço</b>.</p>
-  <div class="row">
-    <figure class="shot"><div class="frame frame--phone" data-theme="light" data-screen="mediaTag"></div><figcaption>Caminho A · a etiqueta é o controle · 375 · claro</figcaption></figure>
-    <figure class="shot"><div class="frame frame--phone" data-theme="dark" data-screen="mediaChoice"></div><figcaption>Caminho B · Choice na linha · 375 · escuro</figcaption></figure>
-  </div>
-  <p class="lead"><b>Caminho A, recomendado:</b> a etiqueta <b>Digital</b> ou <b>Físico</b> na meta da linha troca com um toque, no lugar, como o chip de status e o preço já são controles. Não ocupa espaço novo. <b>Caminho B:</b> o Choice Digital e Físico em toda linha. Fica explícito, mas repete dois rótulos em 35 linhas e empurra o preço no celular.</p>
-</section>
-
-<section class="opt" id="saldo">
-  <div class="dk-section"><h2>2 · O saldo, um valor com data</h2></div>
-  <p class="lead">O saldo mora na linha do topo de Comprar, com a data em que mudou. <b>Comprei</b> numa versão digital desconta sozinho o valor pago, então você só volta a digitar quando põe dinheiro na conta (cartão presente, recarga). Sem saldo informado, a linha diz <b>Sem saldo</b>, que é o mesmo controle. Passados 30 dias sem mudança, a data fica em âmbar com <b>desatualizado</b>, como o preço.</p>
-  <div class="row">
-    <figure class="shot"><div class="frame frame--phone" data-theme="light" data-screen="balanceOpen"></div><figcaption>Caminho A · tocar no saldo abre o campo · 375 · claro</figcaption></figure>
-    <figure class="shot"><div class="frame frame--phone frame--short" data-theme="dark" data-screen="balanceEmpty"></div><figcaption>Caminho A · sem saldo · 375 · escuro</figcaption></figure>
-    <figure class="shot"><div class="frame frame--phone" data-theme="light" data-screen="balanceField"></div><figcaption>Caminho B · campo sempre aberto · 375 · claro</figcaption></figure>
-  </div>
+<section class="opt" id="a">
+  <div class="dk-section"><h2>Caminho A · uma linha de totais <span class="tag-rec">recomendado</span></h2></div>
+  <p class="lead">A linha do topo passa a dizer <b>Digital</b>, <b>Físico</b> e <b>Agora</b>. As seções continuam por data: <b>Promoções</b> entra primeiro, pela data em que a oferta acaba, depois Próximos lançamentos e Disponíveis. A etiqueta Digital ou Físico na meta da linha troca a mídia no lugar. Agora aparece só nos digitais com preço. Com nada marcado, Agora some da linha.</p>
   <div class="row row--desk">
-    <figure class="shot"><div class="frame frame--desk frame--short" data-theme="dark" data-screen="balanceBought"></div><figcaption>Depois de Comprei no Blue Prince: o saldo desceu sozinho · escuro</figcaption></figure>
-  </div>
-  <p class="lead"><b>Caminho A, recomendado:</b> o saldo é um botão na linha, como o preço; o toque abre um campo só, já preenchido, com <b>Atualizar saldo</b>. <b>Caminho B:</b> o campo fica sempre aberto no topo e a conta muda enquanto você digita. Economiza um toque, mas põe um formulário permanente numa tela de lista, para um valor que muda poucas vezes por mês.</p>
-</section>
-
-<section class="opt" id="resposta">
-  <div class="dk-section"><h2>3 · Quanto sobra, numa olhada</h2></div>
-  <p class="lead"><b>Caminho A, recomendado · marcar Agora.</b> Comprar ganha a seção <b>Promoções</b> no topo, só com os digitais em oferta, pela data em que a oferta acaba; eles já chegam marcados <b>Agora</b>. A linha passa a dizer <b>Saldo · Agora · Sobra</b>. Em Próximos lançamentos, o digital que não cabe no que sobra diz quanto falta. Sem tocar em nada, a tela responde: sobram R$ 349,69; Kingdom Hearts Collection não cabe (falta R$ 77,81); Steins;Gate cabe; The Duskbloods ainda sem preço. Desmarcar um jogo ou marcar outro refaz a conta no lugar.</p>
-  <div class="row row--desk">
-    <figure class="shot"><div class="frame frame--desk" data-theme="light" data-screen="planSelect"></div><figcaption>Caminho A · Comprar · desktop · claro</figcaption></figure>
+    <figure class="shot"><div class="frame frame--desk" data-theme="light" data-screen="lineAgora"></div><figcaption>Caminho A · os 3 da promoção marcados Agora · desktop · claro</figcaption></figure>
   </div>
   <div class="row">
-    <figure class="shot"><div class="frame frame--phone" data-theme="dark" data-screen="planSelect"></div><figcaption>Caminho A · 375 · escuro</figcaption></figure>
-    <figure class="shot"><div class="frame frame--phone" data-theme="light" data-screen="planChain"></div><figcaption>Caminho B · 375 · claro</figcaption></figure>
-  </div>
-  <p class="lead"><b>Caminho B · ordem sugerida com saldo corrente.</b> Comprar se divide em <b>Digital</b> e <b>Físico</b>. O Digital vira uma fila por prazo: promoções pela data em que acabam, depois lançamentos pela data. Cada linha diz o saldo depois dela, como um extrato; o que não cabe diz quanto falta e não gasta nada. Tocar no saldo da linha tira o jogo da conta. Não exige nenhum toque, mas a fila decide por você: Steins;Gate (29/10) vem antes do Duskbloods e come o saldo dele, que fica em R$ 99,70 até você tirar Steins;Gate. E cada linha passa a ter dois valores.</p>
-  <div class="row row--desk">
-    <figure class="shot"><div class="frame frame--desk" data-theme="dark" data-screen="planChain"></div><figcaption>Caminho B · Comprar · desktop · escuro</figcaption></figure>
+    <figure class="shot"><div class="frame frame--phone" data-theme="dark" data-screen="lineAgora"></div><figcaption>Caminho A · 375 · escuro</figcaption></figure>
+    <figure class="shot"><div class="frame frame--phone" data-theme="light" data-screen="line"></div><figcaption>Caminho A · nada marcado · 375 · claro</figcaption></figure>
   </div>
 </section>
 
-<section class="opt" id="onde">
-  <div class="dk-section"><h2>Onde mora e o que muda</h2></div>
-  <table class="cases">
-    <thead><tr><th>Peça</th><th>Hoje</th><th>Com a proposta</th></tr></thead>
-    <tbody>
-      <tr><td>Lugar</td><td>Comprar é a fila de Quero, por data</td><td><b>Comprar</b>, sem página nova nem destino novo: o plano é como a fila é comprada. Página própria seria um quinto destino que repete a fila; Início continua com a faixa Em promoção, que leva a Comprar</td></tr>
-      <tr><td>Linha do topo</td><td>Digital R$ 7.000,57 em 29 de 35 · Físico quando há preço · Gasto em setembro</td><td>Sai o <b>total Digital</b>. Entram <b>Saldo eShop</b>, <b>Agora</b> e <b>Sobra</b> (ou Falta, em vermelho). <b>Físico</b> fica, somando só os jogos marcados físicos e só com preço físico (hoje nenhum tem, então não aparece). Gasto do mês fica</td></tr>
-      <tr><td>Seções</td><td>Próximos lançamentos · Disponíveis · Sem data</td><td><b>Promoções</b> entra no topo; os outros continuam, e Disponíveis perde os jogos que foram para Promoções</td></tr>
-      <tr><td>Linha do jogo</td><td>Preço · Comprei</td><td>Etiqueta Digital ou Físico na meta · Preço da mídia escolhida · <b>Agora</b> nos digitais com preço · Comprei</td></tr>
-      <tr><td>Dado guardado</td><td>Preferência de mídia já existe no domínio (5 valores, sem tela)</td><td>A etiqueta grava só físico ou digital. Agora é a intenção <b>planned</b>, que o domínio já tem e continua sendo Quero. O saldo é um valor novo na conta, com a data: a única migração</td></tr>
-    </tbody>
-  </table>
+<section class="opt" id="b">
+  <div class="dk-section"><h2>Caminho B · uma seção por mídia</h2></div>
+  <p class="lead">Comprar se divide em <b>Digital</b> e <b>Físico</b>, e cada seção leva o próprio total no título. Dentro de cada uma vêm primeiro as promoções, depois os lançamentos, depois o resto. A separação fica mais visível, mas as promoções e os lançamentos se dividem entre as duas seções. Um jogo que troca de mídia fica no lugar até a próxima visita.</p>
+  <div class="row row--desk">
+    <figure class="shot"><div class="frame frame--desk" data-theme="dark" data-screen="split"></div><figcaption>Caminho B · os 3 marcados Agora · desktop · escuro</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure class="shot"><div class="frame frame--phone" data-theme="light" data-screen="split"></div><figcaption>Caminho B · 375 · claro</figcaption></figure>
+  </div>
 </section>
 
 <section class="opt" id="recomendacao">
   <div class="dk-section"><h2>Recomendação</h2></div>
   <ul class="lead">
-    <li><b>Mídia:</b> caminho A, a etiqueta na meta da linha, com o padrão que a conta já tem.</li>
-    <li><b>Saldo:</b> caminho A, o valor na linha como controle, descontado sozinho a cada Comprei digital.</li>
-    <li><b>Resposta:</b> caminho A, Promoções no topo já marcadas Agora, e Saldo · Agora · Sobra na linha. Responde a sua pergunta sem nenhum toque e deixa você escolher o resto; o caminho B escolhe a ordem por você.</li>
-    <li><b>Lugar:</b> Comprar. Não precisa de página nova.</li>
+    <li><b>Caminho A</b>, em Comprar, sem página nova. Ele muda pouco a tela que você já aprovou e deixa as promoções e os lançamentos juntos no topo.</li>
+    <li><b>Na linha do topo</b>, o total Digital passa a somar só os jogos digitais e ganha a companhia de Físico e Agora. Gasto do mês continua.</li>
+    <li><b>No banco</b>, a preferência de mídia já existe. Agora pode usar a intenção <b>planned</b>, que o domínio já tem e continua sendo Quero. Não há migração.</li>
   </ul>
-  <p class="note">Preços e prazos da eShop Brasil sincronizados em 28/09/2026. O saldo de R$ 540,00 é o que você informou. Nenhum jogo em Quero tem preço físico registrado; o único preço físico da conta é o do Donkey Kong Bananza, que já é seu.</p>
 </section>
 
 </main>
@@ -507,69 +460,42 @@ function dateBlock(l, soon) {
 function section(title, count, extra) { return '<div class="dk-section"><h2>' + title + (count === undefined ? '' : '<span>' + count + '</span>') + '</h2>' + (extra || '') + '</div>'; }
 
 // ---------------------------------------------------------------------------
-// Estado de cada moldura: mídia por jogo, Agora, saldo, compras e o que saiu do saldo corrente.
+// Estado de cada moldura: mídia por jogo, Agora e compras. Um jogo que troca de mídia fica no lugar.
 
 function initialState(cfg) {
-  var st = { physical: {}, agora: {}, bought: {}, skip: {}, form: !!cfg.formOpen,
-    balance: cfg.balance === 'empty' ? null : { cents: 54000, date: '28/09' } };
-  GAMES.forEach(function (g) {
-    st.physical[g.id] = !!g.physical;
-    if (g.promo && cfg.plan === 'select') st.agora[g.id] = true;
-  });
-  (cfg.bought || []).forEach(function (id) { st.bought[id] = true; delete st.agora[id]; });
+  var st = { physical: {}, agora: {}, bought: {} };
+  GAMES.forEach(function (g) { st.physical[g.id] = !!g.physical; });
+  (cfg.agora || []).forEach(function (id) { st.agora[id] = true; });
   return st;
 }
 
 function priceOf(g, st) { return st.physical[g.id] ? null : g.price; }
-function spent(st) {
-  return Object.keys(st.bought).reduce(function (sum, id) { return sum + BY[id].price; }, 0);
+function spent(st) { return Object.keys(st.bought).reduce(function (sum, id) { return sum + BY[id].price; }, 0); }
+function open(st) { return GAMES.filter(function (g) { return !st.bought[g.id]; }); }
+function total(st, physical) {
+  var games = open(st).filter(function (g) { return st.physical[g.id] === physical; });
+  var priced = games.filter(function (g) { return priceOf(g, st); });
+  return { cents: priced.reduce(function (sum, g) { return sum + g.price; }, 0), priced: priced.length, of: games.length };
 }
-function balanceNow(st) { return st.balance ? st.balance.cents - spent(st) : null; }
 function agoraTotal(st) {
-  return GAMES.reduce(function (sum, g) { return sum + (st.agora[g.id] && !st.bought[g.id] && priceOf(g, st) ? g.price : 0); }, 0);
+  return open(st).reduce(function (sum, g) { return sum + (st.agora[g.id] && priceOf(g, st) ? g.price : 0); }, 0);
 }
 
-// ---------------------------------------------------------------------------
-// Linha do topo
-
-function balanceControl(st) {
-  if (!st.balance) return '<span>Saldo eShop<button type="button" class="dk-totals__control dk-totals__control--none" data-balance aria-expanded="' + st.form + '"><b>Sem saldo</b></button></span>';
-  return '<span>Saldo eShop<button type="button" class="dk-totals__control" data-balance aria-expanded="' + st.form + '"><b>' + money(balanceNow(st)) + '</b><small>em ' + st.balance.date + '</small></button></span>';
+function totalHtml(label, t) {
+  if (!t.of) return '';
+  if (!t.priced) return '<span>' + label + '<b class="is-none">Sem preço</b><small>' + t.of + ' jogos</small></span>';
+  return '<span>' + label + '<b>' + money(t.cents) + '</b><small>em ' + t.priced + ' de ' + t.of + '</small></span>';
 }
-
-function balanceField(st) {
-  var value = st.balance ? money(balanceNow(st)).replace('R$ ', '') : '';
-  return '<span class="dk-form__field"><span>Saldo eShop</span><span class="dk-money"><input data-balance-input inputmode="decimal" placeholder="540,00" value="' + value + '" aria-label="Saldo na eShop"></span></span>' +
-    (st.balance ? '<small>em ' + st.balance.date + '</small>' : '');
+function agoraHtml(st) {
+  var agora = agoraTotal(st);
+  return agora ? '<span>Agora<b>' + money(agora) + '</b></span>' : '';
 }
-
-function totalsHtml(cfg, st) {
-  var parts = [cfg.balance === 'field' ? balanceField(st) : balanceControl(st)];
-  if (cfg.plan === 'select') {
-    var agora = agoraTotal(st);
-    if (agora > 0) parts.push('<span>Agora<b>' + money(agora) + '</b></span>');
-    if (st.balance) {
-      var left = balanceNow(st) - agora;
-      parts.push(left >= 0 ? '<span>Sobra<b>' + money(left) + '</b></span>' : '<span class="is-short">Falta<b>' + money(-left) + '</b></span>');
-    }
-  }
-  if (Object.keys(st.bought).length) parts.push('<span>Gasto em setembro<b>' + money(spent(st)) + '</b></span>');
-  var html = '<div class="dk-totals' + (cfg.balance === 'field' ? ' dk-totals--field' : '') + '">' + parts.join('') + '</div>';
-  if (st.form) {
-    var value = st.balance ? money(balanceNow(st)).replace('R$ ', '') : '';
-    html += '<form class="dk-form dk-form--balance" data-balance-form><label class="dk-form__field"><span>Saldo na eShop</span><span class="dk-money"><input name="balance" inputmode="decimal" placeholder="540,00" value="' + value + '" aria-label="Saldo na eShop"></span></label>' +
-      '<div class="dk-form__actions"><button type="submit" class="dk-btn dk-btn--primary dk-btn--sm">Atualizar saldo</button><button type="button" class="dk-link" data-cancel>Cancelar</button></div></form>';
-  }
-  return html;
+function spentHtml(st) {
+  return Object.keys(st.bought).length ? '<span>Gasto em setembro<b>' + money(spent(st)) + '</b></span>' : '';
 }
 
 // ---------------------------------------------------------------------------
 // Linha de um jogo
-
-function mediaControl(g, st, cfg) {
-  if (cfg.media !== 'tag') return '';
-  return ' · <button type="button" class="dk-media" data-media="' + g.id + '" aria-label="Mídia preferida">' + (st.physical[g.id] ? 'Físico' : 'Digital') + '</button>';
-}
 
 function priceHtml(g, st) {
   var value = priceOf(g, st);
@@ -577,123 +503,80 @@ function priceHtml(g, st) {
   return '<button type="button" class="dk-price"><b>' + money(value) + '</b><small>' + SEEN + '</small></button>';
 }
 
-function rowHtml(g, st, cfg, opts) {
+function rowHtml(g, st, opts) {
+  opts = opts || {};
   var bought = st.bought[g.id];
   var digital = !st.physical[g.id];
   var meta = g.plats + mark(g.excl);
+  var end;
   if (bought) {
     meta += ' · Digital';
+    end = '<div class="dk-row__acts"><span class="dk-status dk-status--backlog dk-status--sm">Backlog</span><button type="button" class="dk-price dk-price--paid"><b>' + money(g.price) + '</b></button><button type="button" class="dk-link" data-undo="' + g.id + '">Desfazer</button></div>';
   } else {
-    meta += mediaControl(g, st, cfg);
-    if (g.promo && digital) meta += cfg.plan === 'chain' ? ' · −' + g.promo.pct + '%' : ' · −' + g.promo.pct + '% até ' + g.promo.ends;
-    if (opts.short) meta += ' · <span class="dk-short">falta ' + money(opts.short) + '</span>';
-  }
-
-  var end = '';
-  if (cfg.media === 'choice' && !bought) {
-    end += '<div class="dk-choice dk-choice--media" role="group" aria-label="Mídia preferida"><button type="button" data-choice="' + g.id + '" data-physical="0" aria-pressed="' + digital + '">Digital</button><button type="button" data-choice="' + g.id + '" data-physical="1" aria-pressed="' + !digital + '">Físico</button></div>';
-  }
-  if (bought) {
-    end += '<div class="dk-row__acts"><span class="dk-status dk-status--backlog dk-status--sm">Backlog</span><button type="button" class="dk-price dk-price--paid"><b>' + money(g.price) + '</b></button><button type="button" class="dk-link" data-undo="' + g.id + '">Desfazer</button></div>';
-  } else {
-    end += priceHtml(g, st);
-    if (opts.run !== undefined) end += opts.run;
+    meta += ' · <button type="button" class="dk-media" data-media="' + g.id + '" aria-label="Mídia preferida">' + (digital ? 'Digital' : 'Físico') + '</button>';
+    if (g.promo && digital) meta += ' · −' + g.promo.pct + '% até ' + g.promo.ends;
+    end = priceHtml(g, st);
     var acts = '';
-    if (cfg.plan === 'select' && digital && g.price) acts += '<button type="button" class="dk-btn dk-btn--secondary dk-btn--sm" data-agora="' + g.id + '" aria-pressed="' + !!st.agora[g.id] + '">Agora</button>';
+    if (digital && g.price) acts += '<button type="button" class="dk-btn dk-btn--secondary dk-btn--sm" data-agora="' + g.id + '" aria-pressed="' + !!st.agora[g.id] + '">Agora</button>';
     if (!g.launch) acts += '<button type="button" class="dk-btn dk-btn--secondary dk-btn--sm" data-buy="' + g.id + '">Comprei</button>';
     if (acts) end += '<div class="dk-row__acts">' + acts + '</div>';
   }
-  var thumb = opts.thumb || (g.launch ? dateBlock(g.launch, g.launch.soon) : poster(g));
+  var thumb = g.launch ? dateBlock(g.launch, g.launch.soon) : poster(g);
   return '<div class="dk-row dk-row--wide' + (bought ? ' dk-row--bought' : '') + '">' + thumb +
     '<div><a class="dk-row__title" href="#">' + esc(g.title) + '</a><div class="dk-row__meta">' + meta + '</div></div>' +
     '<div class="dk-row__end">' + end + '</div></div>';
 }
 
-// ---------------------------------------------------------------------------
-// Caminho A: Promoções, Próximos lançamentos e Disponíveis; o digital que não cabe no que sobra diz quanto falta.
-
-function planSelect(cfg, st) {
-  var promos = GAMES.filter(function (g) { return g.promo; });
-  var upcoming = GAMES.filter(function (g) { return g.launch; });
-  var available = GAMES.filter(function (g) { return !g.launch && !g.promo; });
-  var left = st.balance ? balanceNow(st) - agoraTotal(st) : null;
-
-  function short(g) {
-    var p = priceOf(g, st);
-    if (left === null || !p || st.agora[g.id] || st.bought[g.id]) return 0;
-    return p > Math.max(left, 0) ? p - Math.max(left, 0) : 0;
-  }
-
-  var html = totalsHtml(cfg, st) + section('Promoções', promos.length) +
-    promos.map(function (g) { return rowHtml(g, st, cfg, {}); }).join('');
-
-  html += section('Próximos lançamentos', upcoming.length);
+function upcomingHtml(games, st) {
+  var html = '';
   var year = null;
-  upcoming.forEach(function (g) {
+  games.forEach(function (g) {
     if (year !== null && g.launch.year !== year) html += '<p class="dk-year-mark">' + g.launch.year + '</p>';
     year = g.launch.year;
-    html += rowHtml(g, st, cfg, { short: short(g) });
+    html += rowHtml(g, st);
   });
-
-  if (!cfg.short) {
-    html += section('Disponíveis', available.length) + available.map(function (g) { return rowHtml(g, st, cfg, {}); }).join('');
-  }
   return html;
 }
 
-// ---------------------------------------------------------------------------
-// Caminho B: Digital como fila por prazo com o saldo corrente, depois Físico.
+// A mídia de cada seção é a que o jogo tinha ao abrir a tela.
+var PROMOS = GAMES.filter(function (g) { return g.promo; });
+var UPCOMING = GAMES.filter(function (g) { return g.launch; });
+var AVAILABLE = GAMES.filter(function (g) { return !g.launch && !g.promo; });
+function digitalOnly(list) { return list.filter(function (g) { return !g.physical; }); }
+function physicalOnly(list) { return list.filter(function (g) { return g.physical; }); }
+function rows(list, st) { return list.map(function (g) { return rowHtml(g, st); }).join(''); }
 
-function planChain(cfg, st) {
-  var digital = GAMES.filter(function (g) { return !g.physical; });
-  var chain = digital.filter(function (g) { return g.promo; })
-    .concat(digital.filter(function (g) { return g.launch; }));
-  var rest = digital.filter(function (g) { return !g.promo && !g.launch; });
-  var physical = GAMES.filter(function (g) { return g.physical; });
+// Caminho A: uma linha de totais e as seções por data, com Promoções no topo.
+function lineHtml(st) {
+  return '<div class="dk-totals">' + totalHtml('Digital', total(st, false)) + totalHtml('Físico', total(st, true)) + agoraHtml(st) + spentHtml(st) + '</div>' +
+    section('Promoções', PROMOS.length) + rows(PROMOS, st) +
+    section('Próximos lançamentos', UPCOMING.length) + upcomingHtml(UPCOMING, st) +
+    section('Disponíveis', AVAILABLE.length) + rows(AVAILABLE, st);
+}
 
-  var bal = st.balance ? balanceNow(st) : null;
-  var html = totalsHtml(cfg, st) + section('Digital', digital.length);
-
-  chain.forEach(function (g) {
-    var p = priceOf(g, st);
-    var run;
-    if (bal === null || st.bought[g.id]) {
-      run = '';
-    } else if (st.skip[g.id]) {
-      run = '<button type="button" class="dk-run dk-run--out" data-run="' + g.id + '"><b>fora</b><small>da conta</small></button>';
-    } else if (!p) {
-      run = '<button type="button" class="dk-run" data-run="' + g.id + '"><b>' + money(bal) + '</b><small>sobra</small></button>';
-    } else if (p <= bal) {
-      bal -= p;
-      run = '<button type="button" class="dk-run" data-run="' + g.id + '"><b>' + money(bal) + '</b><small>sobra</small></button>';
-    } else {
-      run = '<button type="button" class="dk-run dk-run--short" data-run="' + g.id + '"><b>' + money(p - bal) + '</b><small>falta</small></button>';
-    }
-    var thumb = g.promo ? dateBlock({ day: g.promo.day, mon: 'out' }, true) : undefined;
-    html += rowHtml(g, st, cfg, { run: run, thumb: thumb });
-  });
-
-  if (!cfg.short) {
-    html += '<p class="dk-year-mark">Sem prazo</p>' + rest.map(function (g) { return rowHtml(g, st, cfg, {}); }).join('');
-    html += section('Físico', physical.length) + physical.map(function (g) { return rowHtml(g, st, cfg, {}); }).join('');
-  }
-  return html;
+// Caminho B: uma seção por mídia, cada uma com o próprio total no título.
+function headTotal(parts) { return '<p class="dk-section__totals">' + parts.join('') + '</p>'; }
+function splitHtml(st) {
+  var digital = digitalOnly(PROMOS).concat(digitalOnly(UPCOMING), digitalOnly(AVAILABLE));
+  var physical = physicalOnly(PROMOS).concat(physicalOnly(UPCOMING), physicalOnly(AVAILABLE));
+  return (Object.keys(st.bought).length ? '<div class="dk-totals">' + spentHtml(st) + '</div>' : '') +
+    section('Digital', digital.length, headTotal([agoraHtml(st), totalHtml('Total', total(st, false))])) +
+    '<p class="dk-year-mark">Promoções</p>' + rows(digitalOnly(PROMOS), st) +
+    '<p class="dk-year-mark">Lançamentos</p>' + rows(digitalOnly(UPCOMING), st) +
+    '<p class="dk-year-mark">Disponíveis</p>' + rows(digitalOnly(AVAILABLE), st) +
+    section('Físico', physical.length, headTotal([totalHtml('Total', total(st, true))])) +
+    '<p class="dk-year-mark">Lançamentos</p>' + rows(physicalOnly(UPCOMING), st) +
+    '<p class="dk-year-mark">Disponíveis</p>' + rows(physicalOnly(AVAILABLE), st);
 }
 
 // ---------------------------------------------------------------------------
 
+var MINE = ['blue', 'hades', 'outer'];
 var SCREENS = {
-  mediaTag: { media: 'tag', balance: 'line', plan: 'select', short: true },
-  mediaChoice: { media: 'choice', balance: 'line', plan: 'select', short: true },
-  balanceOpen: { media: 'tag', balance: 'line', plan: 'select', formOpen: true, short: true },
-  balanceEmpty: { media: 'tag', balance: 'empty', plan: 'select', short: true },
-  balanceField: { media: 'tag', balance: 'field', plan: 'select', short: true },
-  balanceBought: { media: 'tag', balance: 'line', plan: 'select', bought: ['blue'], short: true },
-  planSelect: { media: 'tag', balance: 'line', plan: 'select' },
-  planChain: { media: 'tag', balance: 'line', plan: 'chain' }
+  line: { render: lineHtml },
+  lineAgora: { render: lineHtml, agora: MINE },
+  split: { render: splitHtml, agora: MINE }
 };
-
-function render(cfg, st) { return cfg.plan === 'chain' ? planChain(cfg, st) : planSelect(cfg, st); }
 
 document.querySelectorAll('.frame').forEach(function (frame) {
   var cfg = SCREENS[frame.dataset.screen];
@@ -705,34 +588,18 @@ document.querySelectorAll('.frame').forEach(function (frame) {
   frame.appendChild(document.getElementById('bottomnav').content.cloneNode(true));
   frame.querySelectorAll('[data-dest="comprar"]').forEach(function (a) { a.setAttribute('aria-current', 'page'); });
 
-  function draw() { page.innerHTML = render(cfg, st); }
+  function draw() { page.innerHTML = cfg.render(st); }
   draw();
 
   // Tudo muda no lugar, sem diálogo nem aviso.
   page.addEventListener('click', function (e) {
     var t;
     if ((t = e.target.closest('[data-media]'))) { st.physical[t.dataset.media] = !st.physical[t.dataset.media]; }
-    else if ((t = e.target.closest('[data-choice]'))) { st.physical[t.dataset.choice] = t.dataset.physical === '1'; }
     else if ((t = e.target.closest('[data-agora]'))) { st.agora[t.dataset.agora] = !st.agora[t.dataset.agora]; }
-    else if ((t = e.target.closest('[data-balance]'))) { st.form = !st.form; }
-    else if ((t = e.target.closest('[data-cancel]'))) { st.form = false; }
-    else if ((t = e.target.closest('[data-buy]'))) { st.bought[t.dataset.buy] = true; delete st.agora[t.dataset.buy]; }
-    else if ((t = e.target.closest('[data-undo]'))) { delete st.bought[t.dataset.undo]; if (BY[t.dataset.undo].promo && cfg.plan === 'select') st.agora[t.dataset.undo] = true; }
-    else if ((t = e.target.closest('[data-run]'))) { st.skip[t.dataset.run] = !st.skip[t.dataset.run]; }
+    else if ((t = e.target.closest('[data-buy]'))) { st.bought[t.dataset.buy] = true; }
+    else if ((t = e.target.closest('[data-undo]'))) { delete st.bought[t.dataset.undo]; }
     else return;
     e.preventDefault();
-    draw();
-    if (st.form) { var input = page.querySelector('[data-balance-form] input'); if (input) input.focus(); }
-  });
-  page.addEventListener('submit', function (e) {
-    e.preventDefault();
-    var cents = parseMoney(e.target.querySelector('input').value);
-    if (cents !== null) { st.balance = { cents: cents + spent(st), date: '28/09' }; st.form = false; draw(); }
-  });
-  page.addEventListener('change', function (e) {
-    if (!e.target.matches('[data-balance-input]')) return;
-    var cents = parseMoney(e.target.value);
-    st.balance = cents === null ? null : { cents: cents + spent(st), date: '28/09' };
     draw();
   });
 });
