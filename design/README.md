@@ -53,7 +53,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 
 Acima de 768px: uma barra superior de `nav-height` com o wordmark, os destinos Início, Biblioteca, Comprar e Descobrir, e a busca à direita. Abaixo: a barra superior fica com wordmark e lupa, e os quatro destinos vão para uma barra inferior fixa de `nav-height`, só texto, com o mesmo indicador `red` do destino ativo. Não há barra lateral, menu hambúrguer nem ícone nos destinos.
 
-Para a conta, Início é `/`: faixas pessoais de Jogando agora, Em promoção e Da sua lista. Biblioteca é `/biblioteca`, a grade com abas e filtros. Descobrir continua em `/descobrir`, para busca e listas do catálogo. A escolha A está em `maquetes/inicio-conta.html`.
+Para a conta, Início é `/`: faixas pessoais de Jogando agora, Amigos jogando, Em promoção e Da sua lista. Biblioteca é `/biblioteca`, a grade com abas e filtros. Descobrir continua em `/descobrir`, para busca e listas do catálogo. A escolha A está em `maquetes/inicio-conta.html`.
 
 ### Busca única no topo
 
@@ -65,7 +65,19 @@ Filtro de lista é uma linha logo abaixo das abas: rótulos em `t-label`, caixa 
 
 ### Área do visitante
 
-Sem conta, o Dockd mostra só o catálogo (`maquetes/area-publica.html`). São públicos `/`, que vira a vitrine do catálogo em três faixas, Descobrir e a página do jogo, que mostra capa, ficha, plataformas e versões, sem status, preço, posse nem histórico. A barra do visitante tem Descobrir, a busca, Entrar e Criar conta; no celular, só Entrar, sem barra inferior. A etiqueta do visitante é `+ Adicionar`, que leva ao Entrar e volta à mesma capa com o menu aberto. Biblioteca, Comprar e tudo que grava exigem conta: abrir Comprar sem conta leva ao Entrar e volta para Comprar. Nenhum dado de uma conta aparece para o visitante.
+Sem conta, o Dockd mostra só o catálogo (`maquetes/area-publica.html`). São públicos `/`, que vira a vitrine do catálogo em três faixas, Descobrir e a página do jogo, que mostra capa, ficha, plataformas e versões, sem status, preço, posse nem histórico. A barra do visitante tem Descobrir, a busca, Entrar e Criar conta; no celular, só Entrar, sem barra inferior. A etiqueta do visitante é `+ Adicionar`, que leva ao Entrar e volta à mesma capa com o menu aberto. Biblioteca, Comprar e tudo que grava exigem conta: abrir Comprar sem conta leva ao Entrar e volta para Comprar. Nenhum dado de uma conta aparece para o visitante, exceto o perfil público (`/u/:nome`) de quem o deixou Público.
+
+## Perfil e amigos
+
+Decidido em 28/09/2026 (`maquetes/perfil-social.html`: Estante, amigo B, privacidade A, entrada A). Cada conta tem um perfil em `/u/:nome`; o nome vem do e-mail na criação da conta, sem campo novo. O perfil é o primeiro item do menu da conta; não existe destino novo na barra.
+
+- **Estante.** ProfileHead no topo: o nome em `t-display`, sem foto nem iniciais, `seguindo · seguidores` no metadado e FollowButton à direita. Embaixo, Jogando agora, Zerados e Quero em faixas de capas (sete, e `Ver todos` abre a grade), e Recente em linhas, uma por jogo, com o verbo do histórico (`Zerou`, `Começou a jogar`, `Quer`) e o tempo relativo. Backlog e Larguei ficam fora das faixas. As capas levam a etiqueta de quem olha, como em Descobrir.
+- **Nunca no perfil:** preço visto ou pago, compra, Comprei, gasto, a fila de Comprar, versão vetada, mídia, loja, e-mail e token.
+- **Seguir** é de um lado só. FollowButton diz `Seguir`, ou `Seguir de volta` quando a outra conta já segue; seguindo, diz `Seguindo`, e apontar mostra `Deixar de seguir` em `red-ink`. Clicar desfaz no lugar, sem confirmação; Seguir refaz. O visitante vai ao Entrar e volta ao perfil.
+- **Amigo** é quem segue e é seguido. A marca é `Amigo` em `t-label` `ink-muted` ao lado do nome, no ProfileHead e nas listas; o botão continua `Seguindo`.
+- **Listas.** `/u/:nome/seguidores` e `/u/:nome/seguindo`, em abas, uma PersonRow por conta: a capa do que ela joga agora na coluna da miniatura, o nome, `Jogando Título · N zerados` e FollowButton pequeno.
+- **Privacidade.** O perfil é Público por padrão, aberto também ao visitante. No próprio perfil, uma Choice `Público · Só amigos` fica no lugar do botão Seguir. Com Só amigos, quem não é amigo vê o nome, as contagens e Seguir, e `Perfil só para amigos.`; não há pedido de aprovação, porque amigo já é quem a conta segue de volta.
+- **Início.** A faixa Amigos jogando vem logo depois de Jogando agora e só aparece quando algum amigo joga algo: uma capa por jogo, com o nome do amigo no lugar da plataforma e a etiqueta de quem olha.
 
 ## Estados de um jogo
 

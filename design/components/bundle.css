@@ -274,3 +274,33 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
   .dk-match__option .dk-price, .dk-match[data-state="confirmed"] .dk-price { align-items: flex-start; }
   .dk-match[data-state="confirmed"] > .dk-row > :first-child { grid-row: span 2; align-self: start; }
 }
+
+/* ProfileHead: o nome em t-display, sem foto nem iniciais; as contagens de seguir no metadado e,
+   à direita, FollowButton ou, no próprio perfil, a Choice de quem vê (maquetes/perfil-social.html) */
+.dk-profile { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-4); align-items: center; margin: var(--space-5) 0; }
+.dk-profile__who { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; }
+.dk-profile__who h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-profile__meta { grid-column: 1; margin: 0; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-profile__meta a { transition: color 120ms; }
+.dk-profile__meta a:hover { color: var(--ink); }
+.dk-profile__meta b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.dk-profile__you { margin-left: var(--space-3); padding-left: var(--space-3); border-left: 1px solid var(--line); }
+.dk-profile__action { grid-column: 2; grid-row: 1 / span 2; }
+@media (max-width: 767px) {
+  .dk-profile { grid-template-columns: minmax(0, 1fr); }
+  .dk-profile__action { grid-column: 1; grid-row: auto; justify-self: start; margin-top: var(--space-2); }
+}
+
+/* FollowButton: Seguindo é o controle do vínculo; apontar mostra o que o clique faz */
+.dk-follow { min-width: 132px; }
+.dk-btn--sm.dk-follow { min-width: 118px; }
+.dk-follow:hover { color: var(--red-ink); border-color: var(--red-ink); background: var(--surface); }
+.dk-follow:hover > span { display: none; }
+.dk-follow:hover::after { content: attr(data-leave); }
+
+/* Amigo: os dois se seguem. t-label ao lado do nome, onde o nome aparecer */
+.dk-friend { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); white-space: nowrap; }
+.dk-row__title .dk-friend { margin-left: var(--space-1); }
+
+/* Recente do perfil: o verbo do histórico em negrito na meta da linha */
+.dk-verb { color: var(--ink); font-weight: 600; }

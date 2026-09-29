@@ -242,7 +242,7 @@ defmodule DockdWeb.DockdComponents do
 
   @doc """
   The account item of the NavBar: the name opens a menu, like a FilterBar menu, with the
-  email, Conferir catálogo while something waits for a person, the API token and Sair.
+  email, the public profile, Conferir catálogo while something waits for a person, the API token and Sair.
   Copying the token swaps its label in place.
   """
   attr :user, :map, required: true
@@ -254,6 +254,9 @@ defmodule DockdWeb.DockdComponents do
       <summary>{@user.name} <.icon name="hero-chevron-down" /></summary>
       <ul class="dk-filter__menu">
         <li class="dk-account__who">{@user.email}</li>
+        <li :if={@user.username}>
+          <.link id="account-profile" navigate={~p"/u/#{@user.username}"}>Perfil</.link>
+        </li>
         <li :if={@user.admin and @catalog_review > 0}>
           <.link id="account-catalog-review" navigate={~p"/conferir"}>
             Conferir catálogo <small>{@catalog_review}</small>
@@ -1333,4 +1336,166 @@ defmodule DockdWeb.DockdComponents do
     </ol>
     """
   end
+
+  # ---------------------------------------------------------------------------
+  # Profile (maquetes/perfil-social.html, decided on 28/09/2026)
+
+  @doc """
+  ProfileHead: the name in `t-display`, with no photo nor initials, the friend label when
+  the viewer and the owner follow each other, the follows in the metadata and, at the
+  right, FollowButton or, on one's own profile, the Choice of who sees it.
+  """
+  attr :owner, :map, required: true
+  attr :counts, :map, required: true
+  attr :relation, :atom, required: true
+  attr :links, :boolean, default: true, doc: "false while the profile is closed to the viewer"
+
+  def profile_head(assigns) do
+    ~H"""
+    <header id="profile-head" class="dk-profile">
+      <div class="dk-profile__who">
+        <h1 class="t-display">{@owner.name}</h1>
+        <.friend_mark :if={@relation == :friends} />
+      </div>
+      <p class="dk-profile__meta">
+        <.link :if={@links} id="profile-following" navigate={~p"/u/#{@owner.username}/seguindo"}>
+          <b>{@counts.following}</b> seguindo
+        </.link>
+        <span :if={!@links}><b>{@counts.following}</b> seguindo</span>
+        ·
+        <.link :if={@links} id="profile-followers" navigate={~p"/u/#{@owner.username}/seguidores"}>
+          <b>{@counts.followers}</b> {followers_label(@counts.followers)}
+        </.link>
+        <span :if={!@links}><b>{@counts.followers}</b> {followers_label(@counts.followers)}</span>
+        <span :if={@relation == :followed_by} class="dk-profile__you">Segue você</span>
+      </p>
+      <div class="dk-profile__action">
+        <.visibility_choice :if={@relation == :self} visibility={@owner.profile_visibility} />
+        <.follow_button :if={@relation != :self} relation={@relation} username={@owner.username} />
+      </div>
+    </header>
+    """
+  end
+
+  defp followers_label(1), do: "seguidor"
+  defp followers_label(_), do: "seguidores"
+
+  @doc "The friend label beside a name: both accounts follow each other."
+  def friend_mark(assigns) do
+    ~H"""
+    <span class="dk-friend">Amigo</span>
+    """
+  end
+
+  @doc """
+  FollowButton: Seguir, or Seguir de volta when the other account already follows; once
+  following it reads Seguindo, and clicking it unfollows in place, with no confirmation.
+  A visitor goes to Entrar and comes back to the profile.
+  """
+  attr :relation, :atom, required: true
+  attr :username, :string, required: true
+  attr :size, :string, default: "md", values: ~w(md sm)
+  attr :id, :string, default: "follow-button"
+
+  def follow_button(%{relation: :visitor} = assigns) do
+    ~H"""
+    <.link
+      id={@id}
+      href={DockdWeb.UserAuth.sign_in_path(~p"/u/#{@username}")}
+      class={["dk-btn", "dk-btn--primary", @size == "sm" && "dk-btn--sm"]}
+    >
+      Seguir
+    </.link>
+    """
+  end
+
+  def follow_button(%{relation: relation} = assigns) when relation in [:following, :friends] do
+    ~H"""
+    <button
+      id={@id}
+      type="button"
+      class={["dk-btn", "dk-btn--secondary", "dk-follow", @size == "sm" && "dk-btn--sm"]}
+      data-leave="Deixar de seguir"
+      aria-label="Seguindo: deixar de seguir"
+      phx-click="unfollow"
+      phx-value-username={@username}
+    >
+      <span>Seguindo</span>
+    </button>
+    """
+  end
+
+  def follow_button(%{relation: :self} = assigns), do: ~H""
+
+  def follow_button(assigns) do
+    ~H"""
+    <button
+      id={@id}
+      type="button"
+      class={["dk-btn", "dk-btn--primary", @size == "sm" && "dk-btn--sm"]}
+      phx-click="follow"
+      phx-value-username={@username}
+    >
+      {if(@relation == :followed_by, do: "Seguir de volta", else: "Seguir")}
+    </button>
+    """
+  end
+
+  attr :visibility, :atom, required: true
+
+  defp visibility_choice(assigns) do
+    ~H"""
+    <form id="profile-visibility" phx-change="set_visibility">
+      <div class="dk-choice" role="radiogroup" aria-label="Quem vê o perfil">
+        <label :for={{value, text} <- [public: "Público", friends: "Só amigos"]}>
+          <input type="radio" name="visibility" value={value} checked={@visibility == value} />
+          <span>{text}</span>
+        </label>
+      </div>
+    </form>
+    """
+  end
+
+  @doc """
+  PersonRow: an account in a list of followers or followed, with the cover of what it
+  plays now in the thumbnail column and FollowButton at the end.
+  """
+  attr :person, :map, required: true, doc: "from `Dockd.Social.people/3`"
+
+  def person_row(assigns) do
+    ~H"""
+    <div id={"person-#{@person.user.username}"} class="dk-row dk-person">
+      <.poster
+        :if={@person.playing}
+        title={@person.playing.title}
+        cover_url={@person.playing.cover_url}
+        size="sm"
+      />
+      <span :if={!@person.playing} class="dk-poster dk-poster--sm"></span>
+      <div>
+        <.link navigate={~p"/u/#{@person.user.username}"} class="dk-row__title">
+          {@person.user.name} <.friend_mark :if={@person.relation == :friends} />
+        </.link>
+        <div class="dk-row__meta">
+          {meta([
+            @person.playing && "Jogando #{@person.playing.title}",
+            finished_label(@person.finished)
+          ])}
+        </div>
+      </div>
+      <div class="dk-row__end">
+        <.follow_button
+          id={"follow-#{@person.user.username}"}
+          relation={@person.relation}
+          username={@person.user.username}
+          size="sm"
+        />
+      </div>
+    </div>
+    """
+  end
+
+  defp finished_label(0), do: nil
+  defp finished_label(1), do: "1 zerado"
+  defp finished_label(n), do: "#{n} zerados"
 end

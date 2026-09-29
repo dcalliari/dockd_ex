@@ -1,13 +1,14 @@
 defmodule DockdWeb.HomeLive do
   @moduledoc """
-  Início da conta: faixas pessoais que levam à Biblioteca, Comprar e Descobrir.
+  Início da conta: faixas pessoais que levam à Biblioteca, Comprar e Descobrir, e o que os
+  amigos jogam agora (`maquetes/perfil-social.html`, caminho A de Onde entra).
   Visitantes continuam vendo a vitrine pública em `DockdWeb.Showcase`.
   """
   use DockdWeb, :live_view
 
   alias Dockd.Catalog.Release
   alias Dockd.Library.Shelf
-  alias Dockd.{Pricing, Purchasing}
+  alias Dockd.{Pricing, Purchasing, Social}
   alias DockdWeb.{GameEvents, Showcase, UserAuth}
 
   @game_events GameEvents.events()
@@ -43,9 +44,16 @@ defmodule DockdWeb.HomeLive do
     wanted = Enum.filter(items, &(&1.status == :quero))
     sales = items |> Enum.flat_map(& &1.releases) |> Enum.map(& &1.id) |> Pricing.sales_statuses()
     prices = Map.new(wanted, &{&1.game.id, Purchasing.current_game_price(user, &1.releases)})
+    mine = Map.new(items, &{&1.game.id, &1})
 
     assign(socket,
       playing: Enum.filter(items, &(&1.status == :jogando)) |> Enum.take(7),
+      friends:
+        user
+        |> Social.friends_playing()
+        |> Enum.map(
+          &{mine[&1.game.id] || %Shelf{game: &1.game, releases: &1.game.releases}, &1.names}
+        ),
       promotions:
         wanted
         |> Enum.filter(&promotion?(prices[&1.game.id]))
@@ -60,6 +68,10 @@ defmodule DockdWeb.HomeLive do
       sales: sales
     )
   end
+
+  defp names_label([name]), do: name
+  defp names_label([first, second]), do: "#{first} e #{second}"
+  defp names_label([first | rest]), do: "#{first} e mais #{length(rest)}"
 
   defp promotion?(%{discount_ends_at: %DateTime{}}), do: true
   defp promotion?(_price), do: false
@@ -102,6 +114,22 @@ defmodule DockdWeb.HomeLive do
       </.section_head>
       <div :if={@playing != []} id="home-playing-strip" class="dk-strip dk-home-strip">
         <.home_card :for={item <- @playing} item={item} rail="playing" asking={@asking} />
+      </div>
+
+      <.section_head
+        :if={@friends != []}
+        id="home-friends"
+        title="Amigos jogando"
+        count={length(@friends)}
+      />
+      <div :if={@friends != []} id="home-friends-strip" class="dk-strip dk-home-strip">
+        <.home_card
+          :for={{item, names} <- @friends}
+          item={item}
+          rail="friends"
+          names={names}
+          asking={@asking}
+        />
       </div>
 
       <.section_head
@@ -149,6 +177,7 @@ defmodule DockdWeb.HomeLive do
   attr :rail, :string, required: true
   attr :price, :map, default: nil
   attr :release, :map, default: nil
+  attr :names, :list, default: nil, doc: "the friends playing the game, on Amigos jogando"
   attr :asking, :map, required: true
 
   defp home_card(assigns) do
@@ -170,7 +199,9 @@ defmodule DockdWeb.HomeLive do
       />
       <.link navigate={~p"/jogos/#{@item.game.id}"} class="dk-card__text">
         <span class="dk-card__title">{@item.game.title}</span>
-        <span class="dk-card__meta">{card_meta(@item, @release)}</span>
+        <span class="dk-card__meta">
+          {if(@names, do: names_label(@names), else: card_meta(@item, @release))}
+        </span>
       </.link>
       <.price :if={@price} observation={@price} />
     </div>

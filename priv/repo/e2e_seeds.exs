@@ -4,10 +4,11 @@ alias Dockd.Library
 alias Dockd.Pricing.{StoreListing, StorePrice}
 alias Dockd.Purchasing
 alias Dockd.Repo
+alias Dockd.Social
 
 Ecto.Adapters.SQL.query!(
   Repo,
-  "TRUNCATE users_tokens, store_prices, store_listings, events, price_observations, purchases, ownerships, release_vetoes, entries, releases, games, users RESTART IDENTITY CASCADE"
+  "TRUNCATE follows, users_tokens, store_prices, store_listings, events, price_observations, purchases, ownerships, release_vetoes, entries, releases, games, users RESTART IDENTITY CASCADE"
 )
 
 {:ok, owner} = Accounts.register_user(%{email: "e2e@dockd.local", password: "senha-da-jornada-e2e"})
@@ -260,5 +261,14 @@ end
 
 _discovery_candidate = create_game.("Discovery Candidate", nil, %{})
 _visitor_pick = create_game.("Visitor Pick", Date.add(today, 60), %{})
+
+# Perfil e amigos: Amiga e o dono se seguem (amigos) e ela joga Friendly Voyage; Fã só segue o dono.
+friendly = create_game.("Friendly Voyage", Date.add(today, -90), %{})
+{:ok, friend} = Accounts.register_user(%{email: "amiga@dockd.local", password: "senha-da-amiga-e2e"})
+{:ok, fan} = Accounts.register_user(%{email: "fa@dockd.local", password: "senha-do-fa-e2e"})
+{:ok, _} = Library.set_status(friend, friendly.game, :jogando)
+:ok = Social.follow(owner, friend)
+:ok = Social.follow(friend, owner)
+:ok = Social.follow(fan, owner)
 
 IO.puts("Dockd E2E fixture loaded: #{length(owned_games)} owned games and 30 wishlist entries")

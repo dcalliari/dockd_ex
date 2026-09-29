@@ -26,8 +26,8 @@ defmodule DockdWeb.Router do
     plug :require_admin_user
   end
 
-  # The catalog is public: a visitor explores it and each game, while personal data and
-  # every write need an account (see `DockdWeb.UserAuth.halt_visitor_events/2`).
+  # The catalog and public profiles are public: a visitor explores them, while personal
+  # data and every write need an account (see `DockdWeb.UserAuth.halt_visitor_events/2`).
   scope "/", DockdWeb do
     pipe_through :browser
 
@@ -37,6 +37,12 @@ defmodule DockdWeb.Router do
       live "/descobrir", DiscoverLive, :index
       live "/jogos/:id", GameLive, :show
       live "/sobre", AboutLive, :show
+      live "/u/:username", ProfileLive, :show
+      live "/u/:username/seguidores", ProfileLive, :followers
+      live "/u/:username/seguindo", ProfileLive, :following
+      live "/u/:username/jogando", ProfileLive, :jogando
+      live "/u/:username/zerados", ProfileLive, :zerado
+      live "/u/:username/quero", ProfileLive, :quero
       live "/entrar", SignInLive, :new
       live "/criar-conta", SignInLive, :register
       live "/entrar/:token", MagicLinkLive, :new

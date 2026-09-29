@@ -60,9 +60,10 @@ custom classes must fully style the input
 ### Contas no Dockd
 
 - Autenticação veio do `phx.gen.auth` adaptado: `DockdWeb.UserAuth` atribui `@current_scope`, que é `nil` para o visitante; nunca existe `@current_user`. A API lê o mesmo `conn.assigns.current_scope` do token Bearer (`require_api_user`).
-- Sem muro de login (maquete `design/maquetes/area-publica.html`): `/`, Descobrir e a página do jogo são públicas e mostram ao visitante só o catálogo. Tela que grava algo chama `UserAuth.halt_visitor_events/2` no `mount`; tela só de conta fica no escopo com `:require_authenticated_user` e declara `on_mount {DockdWeb.UserAuth, :require_authenticated}`. A etiqueta do visitante é `status_link/1`, que leva ao Entrar com `volta`.
+- Sem muro de login (maquete `design/maquetes/area-publica.html`): `/`, Descobrir, a página do jogo e o perfil público (`/u/:username`) são públicos; ao visitante aparecem só o catálogo e os perfis abertos. Tela que grava algo chama `UserAuth.halt_visitor_events/2` no `mount`; tela só de conta fica no escopo com `:require_authenticated_user` e declara `on_mount {DockdWeb.UserAuth, :require_authenticated}`. A etiqueta do visitante é `status_link/1`, que leva ao Entrar com `volta`.
 - Os contextos de domínio recebem o `%User{}` (`scope.user`), não o escopo. Uma conta é uma biblioteca, sem papel nem admin.
 - Entrar e Criar conta são `DockdWeb.SignInLive` (maquete `design/maquetes/entrar.html`, caminho C, no painel sobre as capas, caminho C de `entrar-v2.html`). Erros aparecem no campo e o estado muda no lugar; não use flash visível. Link de entrada só existe quando `Accounts.magic_link_enabled?/0` (SMTP configurado).
+- Perfil público e amigos ficam em `Dockd.Social` e `DockdWeb.ProfileLive` (`/u/:username`, regras em "Perfil e amigos" de `design/README.md`): o nome no endereço vem do e-mail, amigo é seguir mútuo, e o perfil nunca mostra preço, compra nem a fila de Comprar.
 - Testes de LiveView usam `setup :register_and_log_in_user`; de API, `setup :register_api_user` (ambos em `DockdWeb.ConnCase`).
 
 <!-- usage-rules-start -->
