@@ -161,7 +161,7 @@ defmodule Dockd.Accounts.User do
   defp validate_password(changeset, opts) do
     changeset
     |> validate_required([:password], message: "Informe a senha")
-    |> validate_length(:password, min: 12, max: 72, message: "Mínimo de 12 caracteres")
+    |> validate_length(:password, min: 8, max: 72, message: "Mínimo de 8 caracteres")
     |> maybe_hash_password(opts)
   end
 

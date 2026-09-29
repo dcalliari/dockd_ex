@@ -21,7 +21,7 @@ defmodule Dockd.AccountsTest do
     test "rejects a bad email, a short password and a taken email, in Portuguese" do
       {:error, changeset} = Accounts.register_user(%{email: "sem arroba", password: "curta"})
 
-      assert %{email: ["E-mail inválido"], password: ["Mínimo de 12 caracteres"]} =
+      assert %{email: ["E-mail inválido"], password: ["Mínimo de 8 caracteres"]} =
                errors_on(changeset)
 
       user = user_fixture()

@@ -107,7 +107,7 @@ defmodule DockdWeb.SignInLiveTest do
       |> render_submit()
 
       assert has_element?(view, ".dk-field__error", "E-mail já tem conta")
-      assert has_element?(view, ".dk-field__error", "Mínimo de 12 caracteres")
+      assert has_element?(view, ".dk-field__error", "Mínimo de 8 caracteres")
     end
   end
 
