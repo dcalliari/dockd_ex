@@ -2,11 +2,11 @@ defmodule DockdWeb.BuyLive do
   @moduledoc """
   Comprar: the games in Quero, the digital ones on sale first by when the sale ends, then
   by release date, each with its media, edition, price, Agora and Comprei, under one line
-  with the total of the queue per media, the Agora subtotal per media (never combined,
-  `design/maquetes/edicao-comprar.html`) and what was spent this month
-  (`design/maquetes/planejador.html`, caminho A). With more than one edition, the
-  EditionTag (`design/maquetes/edicao-comprar.html`, caminho A) opens a choice under the
-  row: picking one pins the price and total to that release instead of the cheapest.
+  with the total of the queue per media and what was spent this month, and the Agora
+  subtotal per media (never combined, `design/maquetes/edicao-comprar.html`) on its own
+  line below (`design/maquetes/planejador.html`, caminho A). With more than one edition,
+  the EditionTag (`design/maquetes/edicao-comprar.html`, caminho A) opens a choice under
+  the row: picking one pins the price and total to that release instead of the cheapest.
   A game bought here stays in its place with Backlog and Desfazer, and one on sale stays
   in Promoções, until the screen is left.
   """
@@ -456,14 +456,20 @@ defmodule DockdWeb.BuyLive do
             {label}<b class="dk-totals__none">Sem preço</b><small>{games_count(@estimate[media].of)}</small>
           <% end %>
         </span>
+        <span :if={@spent > 0} id="month-spending">
+          Gasto em {month_name(@today)}<b>{money(@spent)}</b>
+        </span>
+      </p>
+      <p
+        :if={@planned.digital > 0 or @planned.physical > 0}
+        id="planned-totals"
+        class="dk-totals"
+      >
         <span :if={@planned.digital > 0} id="planned-total-digital">
           Agora digital<b>{money(@planned.digital)}</b>
         </span>
         <span :if={@planned.physical > 0} id="planned-total-physical">
           Agora físico<b>{money(@planned.physical)}</b>
-        </span>
-        <span :if={@spent > 0} id="month-spending">
-          Gasto em {month_name(@today)}<b>{money(@spent)}</b>
         </span>
       </p>
 

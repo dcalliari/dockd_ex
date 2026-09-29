@@ -429,11 +429,12 @@ defmodule DockdWeb.BuyLiveTest do
       events = length(Activity.list_events(ctx.user))
       {:ok, view, _html} = live(conn, "/comprar")
 
+      refute has_element?(view, "#planned-totals")
       refute has_element?(view, "#planned-total-digital")
       view |> element("#plan-#{ctx.soon.id}") |> render_click()
       view |> element("#plan-#{ctx.later.id}") |> render_click()
 
-      assert has_element?(view, "#planned-total-digital", "R$ 113,38")
+      assert has_element?(view, "#planned-totals #planned-total-digital", "R$ 113,38")
       assert has_element?(view, ~s(#plan-#{ctx.soon.id}[aria-pressed="true"]))
       assert Shelf.item(ctx.user, ctx.soon).status == :quero
       assert length(Activity.list_events(ctx.user)) == events
