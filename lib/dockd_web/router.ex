@@ -53,6 +53,7 @@ defmodule DockdWeb.Router do
 
         live "/biblioteca", LibraryLive, :index
         live "/comprar", BuyLive, :index
+        live "/configuracoes", SettingsLive, :edit
       end
     end
 

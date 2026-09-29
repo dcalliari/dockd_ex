@@ -257,6 +257,7 @@ defmodule DockdWeb.DockdComponents do
         <li :if={@user.username}>
           <.link id="account-profile" navigate={~p"/u/#{@user.username}"}>Perfil</.link>
         </li>
+        <li><.link id="account-settings" navigate={~p"/configuracoes"}>Configurações</.link></li>
         <li :if={@user.admin and @catalog_review > 0}>
           <.link id="account-catalog-review" navigate={~p"/conferir"}>
             Conferir catálogo <small>{@catalog_review}</small>
@@ -295,7 +296,7 @@ defmodule DockdWeb.DockdComponents do
   attr :field, Phoenix.HTML.FormField, required: true
   attr :type, :string, default: "text"
   attr :placeholder, :string, required: true
-  attr :rest, :global, include: ~w(autocomplete disabled readonly required)
+  attr :rest, :global, include: ~w(autocomplete disabled readonly required phx-debounce)
 
   def text_field(assigns) do
     assigns = assign(assigns, :errors, Enum.map(assigns.field.errors, &translate_error/1))
@@ -450,6 +451,25 @@ defmodule DockdWeb.DockdComponents do
     <div id={@id} class="dk-section">
       <h2>{@title}<span :if={@count}>{@count}</span></h2>
       {render_slot(@action)}
+    </div>
+    """
+  end
+
+  @doc """
+  SettingsRow: a labelled row that edits in place, in Configurações
+  (design/maquetes/configuracoes.html, opção A). `confirm` styles the row as the inline
+  confirmation that replaces a native dialog, for trocar e-mail and excluir conta.
+  """
+  attr :id, :string, default: nil
+  attr :label, :string, required: true
+  attr :confirm, :boolean, default: false
+  slot :inner_block, required: true
+
+  def settings_row(assigns) do
+    ~H"""
+    <div id={@id} class={["dk-settings-row", @confirm && "dk-settings-row--confirm"]}>
+      <div class="dk-settings-row__label">{@label}</div>
+      <div class="dk-settings-row__field">{render_slot(@inner_block)}</div>
     </div>
     """
   end
@@ -1441,11 +1461,17 @@ defmodule DockdWeb.DockdComponents do
     """
   end
 
+  @doc """
+  Choice for who sees the profile: Público or Só amigos. The same control everywhere it
+  appears (the profile page and Configurações), so `set_visibility` grabs and saves it in
+  place, with no separate save button.
+  """
   attr :visibility, :atom, required: true
+  attr :id, :string, default: "profile-visibility"
 
-  defp visibility_choice(assigns) do
+  def visibility_choice(assigns) do
     ~H"""
-    <form id="profile-visibility" phx-change="set_visibility">
+    <form id={@id} phx-change="set_visibility">
       <div class="dk-choice" role="radiogroup" aria-label="Quem vê o perfil">
         <label :for={{value, text} <- [public: "Público", friends: "Só amigos"]}>
           <input type="radio" name="visibility" value={value} checked={@visibility == value} />

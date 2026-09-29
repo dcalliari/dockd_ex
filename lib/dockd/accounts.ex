@@ -64,6 +64,44 @@ defmodule Dockd.Accounts do
     |> update_user_and_delete_all_tokens()
   end
 
+  @doc "Changeset for the display name form."
+  def change_user_name(user, attrs \\ %{}), do: User.name_changeset(user, attrs)
+
+  @doc "Updates the display name."
+  def update_user_name(user, attrs), do: user |> User.name_changeset(attrs) |> Repo.update()
+
+  @doc "Changeset for the username form."
+  def change_user_username(user, attrs \\ %{}, opts \\ []),
+    do: User.username_changeset(user, attrs, opts)
+
+  @doc "Updates the username, which is also the profile address."
+  def update_user_username(user, attrs),
+    do: user |> User.username_changeset(attrs) |> Repo.update()
+
+  @doc "Changeset for the password form."
+  def change_user_password(user, attrs \\ %{}), do: User.password_changeset(user, attrs)
+
+  @doc "Changeset for the email form."
+  def change_user_email(user, attrs \\ %{}), do: User.email_changeset(user, attrs)
+
+  @doc """
+  Changes the email after checking the current password. Expires every token of the
+  user, like a password change: whoever is signed in elsewhere signs in again with the
+  new email.
+  """
+  def update_user_email(user, current_password, attrs) do
+    if User.valid_password?(user, current_password) do
+      user
+      |> User.email_changeset(attrs)
+      |> update_user_and_delete_all_tokens()
+    else
+      {:error, :invalid_password}
+    end
+  end
+
+  @doc "Deletes the account and everything in it: library, purchases, prices and history."
+  def delete_user(%User{} = user), do: Repo.delete(user)
+
   ## Session
 
   @doc "Generates a session token."
