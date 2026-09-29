@@ -389,6 +389,56 @@ defmodule Dockd.Library do
     end)
   end
 
+  @doc """
+  The media a wanted game will be bought in: `:physical` when the entry prefers it,
+  `:digital` otherwise, since the eShop sells nearly every game.
+  """
+  def media(%Entry{media_preference: preference})
+      when preference in [:physical, :physical_preferred],
+      do: :physical
+
+  def media(_entry), do: :digital
+
+  @doc """
+  Records the media a game will be bought in, Comprar's MediaTag. Agora is only for
+  digital games, so a planned game that turns physical goes back to only wanted.
+  """
+  def set_media(%User{} = user, game_id, media) when media in [:physical, :digital] do
+    case get_entry_for_game(user, game_id) do
+      nil ->
+        {:error, :not_found}
+
+      entry ->
+        entry
+        |> entry_changeset(%{
+          media_preference: media,
+          purchase_intent:
+            if(media == :physical and entry.purchase_intent == :planned,
+              do: :want,
+              else: entry.purchase_intent
+            )
+        })
+        |> Repo.update()
+    end
+  end
+
+  @doc """
+  Marks a wanted game to buy now (`:planned`) or back to only wanted, for Comprar's
+  Agora subtotal. Both are Quero, so it is not a status change and writes no event:
+  the history and the friends feed never see it. A preordered game is left alone.
+  """
+  def plan(%User{} = user, game_id, planned?) when is_boolean(planned?) do
+    case get_entry_for_game(user, game_id) do
+      %Entry{purchase_intent: intent} = entry when intent in [:want, :planned] ->
+        entry
+        |> entry_changeset(%{purchase_intent: if(planned?, do: :planned, else: :want)})
+        |> Repo.update()
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
   @doc "Returns the entry for a game, scoped to a user, or nil when absent."
   def get_entry_for_game(%User{id: user_id}, game_id),
     do: Repo.one(from e in Entry, where: e.user_id == ^user_id and e.game_id == ^game_id)

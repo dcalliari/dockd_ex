@@ -113,4 +113,43 @@ defmodule Dockd.LibraryStatusTest do
     assert Shelf.first_release(%{item | releases: [undated, later]}).id == later.id
     assert Shelf.first_release(%{item | releases: []}) == nil
   end
+
+  test "the media to buy in is physical only when the entry prefers it", %{user: user, game: game} do
+    assert Library.media(nil) == :digital
+
+    for {preference, media} <- [
+          physical: :physical,
+          physical_preferred: :physical,
+          digital: :digital,
+          digital_preferred: :digital,
+          either: :digital
+        ] do
+      assert Library.media(%Dockd.Library.Entry{media_preference: preference}) == media
+    end
+
+    {:ok, _} = Library.set_status(user, game, :quero)
+    assert {:ok, entry} = Library.set_media(user, game.id, :physical)
+    assert Library.media(entry) == :physical
+    assert Library.set_media(user, Ecto.UUID.generate(), :digital) == {:error, :not_found}
+  end
+
+  test "Agora plans a wanted game without a status change or an event", %{user: user, game: game} do
+    {:ok, _} = Library.set_status(user, game, :quero)
+    events = Activity.list_events(user)
+
+    assert {:ok, %{purchase_intent: :planned}} = Library.plan(user, game.id, true)
+    assert Shelf.item(user, game).status == :quero
+    assert {:ok, %{purchase_intent: :want}} = Library.plan(user, game.id, false)
+    assert Activity.list_events(user) == events
+
+    {:ok, _} = Library.plan(user, game.id, true)
+
+    assert {:ok, %{purchase_intent: :want, media_preference: :physical}} =
+             Library.set_media(user, game.id, :physical)
+
+    assert Activity.list_events(user) == events
+
+    {:ok, _} = Library.set_status(user, game, :jogando)
+    assert Library.plan(user, game.id, true) == {:error, :not_found}
+  end
 end
