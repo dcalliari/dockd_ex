@@ -39,6 +39,24 @@ defmodule DockdWeb.ProfileLiveTest do
              )
     end
 
+    test "the Quero preview renders exactly 7 covers so CSS shows only a full row",
+         %{conn: conn, ana: ana} do
+      for index <- 1..10 do
+        {:ok, _} = Library.set_status(ana, game_fixture(%{title: "Wish #{index}"}), :quero)
+      end
+
+      {:ok, view, html} = live(conn, ~p"/u/ana")
+
+      assert has_element?(view, ~s|.dk-strip.dk-home-strip#profile-quero-strip|)
+
+      assert html
+             |> LazyHTML.from_document()
+             |> LazyHTML.query("#profile-quero-strip .dk-card")
+             |> Enum.count() == 7
+
+      assert has_element?(view, "#profile-quero a", "Ver todos")
+    end
+
     test "sees only the name when the profile is for friends", %{conn: conn, ana: ana} do
       {:ok, _} = Social.set_visibility(ana, :friends)
       {:ok, view, _html} = live(conn, ~p"/u/ana")

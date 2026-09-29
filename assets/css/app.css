@@ -403,7 +403,13 @@ button.dk-media:hover { background: var(--surface-sunken); }
 /* Strip: uma linha de capas na vitrine do visitante; no celular rola de lado */
 .dk-strip { display: grid; grid-auto-flow: column; grid-auto-columns: 104px; gap: var(--space-3); overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
 .dk-strip .dk-card { scroll-snap-align: start; }
-@media (min-width: 768px) { .dk-strip { grid-auto-columns: minmax(0, 1fr); overflow: visible; } .dk-home-strip { grid-auto-flow: unset; grid-template-columns: repeat(auto-fit, minmax(var(--cover-min), 160px)); } }
+@media (min-width: 768px) { .dk-strip { grid-auto-columns: minmax(0, 1fr); overflow: visible; } .dk-home-strip { grid-auto-flow: unset; grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* A prévia nunca mostra uma linha incompleta: com a lista sempre cortada em 7 (Enum.take),
+   cada faixa esconde o que sobraria numa segunda linha parcial no número de colunas do momento. */
+@media (min-width: 768px) { .dk-home-strip > :nth-child(n+5) { display: none; } }
+@media (min-width: 1024px) { .dk-home-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); } .dk-home-strip > :nth-child(5) { display: flex; } .dk-home-strip > :nth-child(n+6) { display: none; } }
+@media (min-width: 1280px) { .dk-home-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); } .dk-home-strip > :nth-child(6) { display: flex; } .dk-home-strip > :nth-child(n+7) { display: none; } }
+@media (min-width: 1440px) { .dk-home-strip { grid-template-columns: repeat(7, minmax(0, 1fr)); } .dk-home-strip > :nth-child(7) { display: flex; } }
 
 /* GameRow */
 .dk-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }
