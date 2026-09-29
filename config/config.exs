@@ -32,7 +32,7 @@ config :dockd,
 # and not from a publisher in `excluded_publishers`.
 config :dockd, :catalog_criteria,
   game_types: [0, 3, 4, 8, 9, 10, 11],
-  min_rating_count: 50,
+  min_rating_count: 45,
   min_critic_count: 5,
   min_hypes: 20,
   max_eshop_rank: 500,

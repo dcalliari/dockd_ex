@@ -150,7 +150,7 @@ O catálogo é carregado do IGDB por um critério, e só ele aparece na busca e 
 
 - é jogo de verdade: `game_type` principal, coletânea, expansão independente, remake, remaster, expandido ou port. DLC, pacote de expansão, passe de temporada, pacote de conteúdo, atualização, episódio, mod e fork ficam de fora, e uma edição do IGDB (`version_parent`) ou uma Nintendo Switch 2 Edition entra como versão do seu jogo;
 - não foi cancelada, é boato ou saiu do ar, e tem capa;
-- é popular por qualquer um destes: `total_rating_count` do jogo, ou do jogo que ela remasteriza ou porta, pelo menos 50; `aggregated_rating_count` pelo menos 5; ainda não saiu no Switch e `hypes` pelo menos 20; `popularityRank` da eShop Brasil até 500; ou é publicada pela Nintendo, no IGDB ou na eShop (`Nintendo`, `Nintendo of America`, `Nintendo of Europe` e outras grafias da mesma empresa);
+- é popular por qualquer um destes: `total_rating_count` do jogo, ou do jogo que ela remasteriza ou porta, pelo menos 45; `aggregated_rating_count` pelo menos 5; ainda não saiu no Switch e `hypes` pelo menos 20; `popularityRank` da eShop Brasil até 500; ou é publicada pela Nintendo, no IGDB ou na eShop (`Nintendo`, `Nintendo of America`, `Nintendo of Europe` e outras grafias da mesma empresa);
 - não é de editora da lista `excluded_publishers` (fábricas de shovelware e relançamentos em série, como Arcade Archives), nem pelo IGDB nem pela eShop;
 - se for coletânea, reúne jogos: a que só tem conteúdo extra é um passe, e a que tem um único jogo vendido no Switch é edição dele.
 
