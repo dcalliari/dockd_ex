@@ -29,9 +29,9 @@ defmodule DockdWeb.ProfileLiveTest do
       {:ok, view, html} = live(conn, ~p"/u/ana")
 
       assert has_element?(view, "#profile-head h1", "Ana")
-      assert has_element?(view, "#profile-jogando-strip #profile-jogando-#{ctx.playing.id}")
-      assert has_element?(view, "#profile-quero-strip #profile-quero-#{ctx.wanted.id}")
-      refute has_element?(view, "#profile-zerado")
+      assert has_element?(view, "#profile-playing-now #profile-now-#{ctx.playing.id}")
+      assert has_element?(view, "#profile-stats a[href='/u/ana/quero']", "1 quero")
+      assert has_element?(view, "#profile-sidebar")
       assert has_element?(view, "#recent-#{ctx.playing.id} .dk-verb", "Começou a jogar")
       refute html =~ "R$"
       refute html =~ "79,90"
@@ -43,22 +43,16 @@ defmodule DockdWeb.ProfileLiveTest do
              )
     end
 
-    test "the Quero preview renders exactly 7 covers so CSS shows only a full row",
+    test "keeps the Quero count in the sidebar without another home-like rail",
          %{conn: conn, ana: ana} do
       for index <- 1..10 do
         {:ok, _} = Library.set_status(ana, game_fixture(%{title: "Wish #{index}"}), :quero)
       end
 
-      {:ok, view, html} = live(conn, ~p"/u/ana")
+      {:ok, view, _html} = live(conn, ~p"/u/ana")
 
-      assert has_element?(view, ~s|.dk-strip.dk-home-strip#profile-quero-strip|)
-
-      assert html
-             |> LazyHTML.from_document()
-             |> LazyHTML.query("#profile-quero-strip .dk-card")
-             |> Enum.count() == 7
-
-      assert has_element?(view, "#profile-quero a", "Ver todos")
+      assert has_element?(view, "#profile-stats a[href='/u/ana/quero']", "11 quero")
+      refute has_element?(view, "#profile-quero-strip")
     end
 
     test "sees only the name when the profile is for friends", %{conn: conn, ana: ana} do
@@ -142,7 +136,7 @@ defmodule DockdWeb.ProfileLiveTest do
       :ok = Social.follow(ana, user)
       {:ok, view, _html} = live(conn, ~p"/u/ana")
       refute has_element?(view, "#profile-closed")
-      assert has_element?(view, "#profile-jogando")
+      assert has_element?(view, "#profile-playing")
     end
 
     test "chooses who sees its own profile in place of Seguir", %{conn: conn, user: user} do
@@ -161,9 +155,21 @@ defmodule DockdWeb.ProfileLiveTest do
       {:ok, _} = Library.set_status(user, ctx.playing, :zerado, owned_elsewhere: true)
       {:ok, view, _html} = live(conn, ~p"/u/ana")
 
-      card = "#profile-jogando-#{ctx.playing.id}"
+      card = "#profile-now-#{ctx.playing.id}"
       assert has_element?(view, "#{card}[data-status='zerado']")
-      assert has_element?(view, "#profile-quero-#{ctx.wanted.id} .dk-status--add")
+    end
+
+    test "chooses favorites in its own profile", %{conn: conn, user: user} = ctx do
+      {:ok, _} = Library.set_status(user, ctx.playing, :jogando, owned_elsewhere: true)
+      {:ok, view, _html} = live(conn, ~p"/u/#{user.username}/favoritos")
+
+      view
+      |> element("#profile-picker-favorite-#{ctx.playing.id}", "Favoritar")
+      |> render_click()
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{user.username}")
+      assert has_element?(view, "#profile-favorite-#{ctx.playing.id}")
+      assert has_element?(view, "#profile-edit-favorites", "Editar favoritos")
     end
 
     test "lists followers with the friend label and each follow button",

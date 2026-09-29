@@ -43,6 +43,7 @@ defmodule DockdWeb.Router do
       live "/u/:username/jogando", ProfileLive, :jogando
       live "/u/:username/zerados", ProfileLive, :zerado
       live "/u/:username/quero", ProfileLive, :quero
+      live "/u/:username/favoritos", ProfileLive, :favorites
       live "/u/:username/diario", ProfileLive, :diary
       live "/entrar", SignInLive, :new
       live "/criar-conta", SignInLive, :register

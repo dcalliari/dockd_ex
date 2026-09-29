@@ -301,6 +301,29 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
   .dk-profile__action { grid-column: 1; grid-row: auto; justify-self: start; margin-top: var(--space-2); }
 }
 
+/* Perfil: identidade e atividade na coluna principal; números e relações na lateral. */
+.dk-profile-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: var(--space-7); align-items: start; }
+.dk-profile-main { min-width: 0; }
+.dk-profile-sidebar { min-width: 0; padding-left: var(--space-5); border-left: 1px solid var(--line); }
+.dk-profile-sidebar > section + section { margin-top: var(--space-5); }
+.dk-profile-sidebar .dk-section { margin-top: 0; }
+.dk-profile-favorites { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+.dk-profile-now .dk-card { width: min(100%, 220px); }
+.dk-profile-timeline { position: relative; padding-left: var(--space-5); }
+.dk-profile-timeline::before { content: ""; position: absolute; left: 4px; top: var(--space-3); bottom: var(--space-3); width: 1px; background: var(--line-strong); }
+.dk-profile-timeline .dk-row { position: relative; }
+.dk-profile-timeline .dk-row::before { content: ""; position: absolute; left: calc(-1 * var(--space-5)); top: 20px; width: 9px; height: 9px; border-radius: 2px; background: var(--ink); }
+.dk-profile-timeline .dk-row:first-child::before { background: var(--red); }
+.dk-profile-stats { display: grid; gap: var(--space-2); }
+.dk-profile-stats a, .dk-profile-meta { margin: 0; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-profile-stats a:hover { color: var(--ink); }
+.dk-profile-stats b, .dk-profile-meta b { color: var(--ink); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) {
+  .dk-profile-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+  .dk-profile-sidebar { padding: var(--space-5) 0 0; border-top: 1px solid var(--line); border-left: 0; }
+  .dk-profile-favorites { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* FollowButton: Seguindo é o controle do vínculo; apontar mostra o que o clique faz */
 .dk-follow { min-width: 132px; }
 .dk-btn--sm.dk-follow { min-width: 118px; }

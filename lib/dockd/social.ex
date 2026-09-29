@@ -13,7 +13,7 @@ defmodule Dockd.Social do
   alias Dockd.Activity.Event
   alias Dockd.Library.{Entry, Shelf}
   alias Dockd.Repo
-  alias Dockd.Social.Follow
+  alias Dockd.Social.{Follow, ProfileFavorite}
 
   @playing [:playing, :paused]
   @wanting ~w(want planned preordered)
@@ -139,6 +139,81 @@ defmodule Dockd.Social do
       following: Repo.aggregate(from(f in Follow, where: f.follower_id == ^id), :count),
       followers: Repo.aggregate(from(f in Follow, where: f.followed_id == ^id), :count)
     }
+  end
+
+  @doc "The four games a person chose as the signature of their profile."
+  def favorites(%User{id: user_id}) do
+    Repo.all(
+      from f in ProfileFavorite,
+        where: f.user_id == ^user_id,
+        order_by: f.position,
+        preload: [game: :releases]
+    )
+  end
+
+  @doc "Adds a current library game to a profile, up to four chosen games."
+  def favorite(%User{} = user, %{} = game) do
+    if Enum.any?(Shelf.list(user), &(&1.game.id == game.id)) do
+      case Repo.get_by(ProfileFavorite, user_id: user.id, game_id: game.id) do
+        %ProfileFavorite{} -> :ok
+        nil -> insert_favorite(user, game)
+      end
+    else
+      {:error, :not_found}
+    end
+  end
+
+  defp insert_favorite(%User{id: user_id}, %{id: game_id}) do
+    position =
+      Repo.aggregate(from(f in ProfileFavorite, where: f.user_id == ^user_id), :max, :position) ||
+        0
+
+    if position == 4 do
+      {:error, :limit}
+    else
+      %ProfileFavorite{}
+      |> ProfileFavorite.changeset(%{user_id: user_id, game_id: game_id, position: position + 1})
+      |> Repo.insert()
+      |> case do
+        {:ok, _favorite} -> :ok
+        {:error, changeset} -> {:error, changeset}
+      end
+    end
+  end
+
+  @doc "Removes a game from a person's chosen profile favorites."
+  def unfavorite(%User{id: user_id}, %{id: game_id}) do
+    Repo.delete_all(
+      from(f in ProfileFavorite, where: f.user_id == ^user_id and f.game_id == ^game_id)
+    )
+
+    :ok
+  end
+
+  @doc "Compact library counts for the profile sidebar, without purchases or prices."
+  def profile_stats(%User{} = user) do
+    items = Shelf.list(user)
+
+    %{
+      games: length(items),
+      playing: Enum.count(items, &(&1.status == :jogando)),
+      finished: Enum.count(items, &(&1.status == :zerado)),
+      wanted: Enum.count(items, &(&1.status == :quero)),
+      platforms: items |> Enum.flat_map(& &1.platforms) |> Enum.frequencies(),
+      media: items |> Enum.flat_map(&Shelf.media/1) |> Enum.frequencies(),
+      friends: friend_count(user)
+    }
+  end
+
+  defp friend_count(%User{id: user_id}) do
+    Repo.aggregate(
+      from(f in Follow,
+        join: back in Follow,
+        on: back.follower_id == f.followed_id and back.followed_id == f.follower_id,
+        where: f.follower_id == ^user_id
+      ),
+      :count
+    )
   end
 
   @doc """

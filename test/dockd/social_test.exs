@@ -178,6 +178,33 @@ defmodule Dockd.SocialTest do
       refute Map.has_key?(shelf, :backlog)
     end
 
+    test "keeps up to four chosen games and removes a favorite with the game", %{
+      ana: ana,
+      games: games
+    } do
+      assert :ok = Social.favorite(ana, games.playing.game)
+      assert :ok = Social.favorite(ana, games.playing.game)
+      assert [favorite] = Social.favorites(ana)
+      assert favorite.game_id == games.playing.game.id
+      assert :ok = Social.favorite(ana, games.finished.game)
+      assert :ok = Social.favorite(ana, games.wanted.game)
+      assert :ok = Social.favorite(ana, games.owned.game)
+      assert {:error, :limit} = Social.favorite(ana, games.dropped.game)
+
+      assert {:ok, :ok} = Library.set_status(ana, games.playing.game, nil)
+      refute Enum.any?(Social.favorites(ana), &(&1.game_id == games.playing.game.id))
+    end
+
+    test "counts the library without prices or purchases", %{ana: ana} do
+      stats = Social.profile_stats(ana)
+
+      assert stats.games == 5
+      assert stats.playing == 1
+      assert stats.finished == 1
+      assert stats.wanted == 1
+      assert stats.media.digital == 4
+    end
+
     test "Recente says the change behind each current status and nothing bought or owned",
          %{ana: ana, games: games} do
       recent = Social.recent(ana, 10)

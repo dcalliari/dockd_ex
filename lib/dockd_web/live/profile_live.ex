@@ -1,10 +1,11 @@
 defmodule DockdWeb.ProfileLive do
   @moduledoc """
-  Perfil público em `/u/:username` (`maquetes/perfil-social.html`, Estante): Jogando,
-  Zerados e Quero em faixas e o Recente em linhas; as listas de seguidores e seguindo; e a
-  grade inteira de uma faixa; e o Diário (`maquetes/perfil-diario.html`, caminho A), uma
-  linha por troca de status com o bloco de data na primeira do dia. As capas levam a
-  etiqueta de quem olha, como em Descobrir.
+  Perfil público em `/u/:username` (`maquetes/perfil-redesenho.html`, Cartão de visita):
+  favoritos escolhidos, Jogando agora e Recente na coluna principal, com os números da
+  estante e relações na lateral; as listas de seguidores e seguindo; as grades completas
+  de status; e o Diário (`maquetes/perfil-diario.html`, caminho A), uma linha por troca de
+  status com o bloco de data na primeira do dia. As capas levam a etiqueta de quem olha,
+  como em Descobrir.
 
   O perfil é aberto na web por padrão; com Só amigos, quem não é amigo vê só o nome, as
   contagens e o botão Seguir.
@@ -17,7 +18,6 @@ defmodule DockdWeb.ProfileLive do
   alias DockdWeb.{GameEvents, UserAuth}
 
   @game_events GameEvents.events()
-  @strip 7
   @day 10
   @sections [
     jogando: {"Jogando agora", "jogando"},
@@ -35,7 +35,7 @@ defmodule DockdWeb.ProfileLive do
      |> assign(owner: owner, user: viewer, page_title: owner.name)
      |> assign(open_days: MapSet.new())
      |> GameEvents.init()
-     |> UserAuth.halt_visitor_events(["more_day"])
+     |> UserAuth.halt_visitor_events(["favorite", "more_day", "unfavorite"])
      |> load()}
   end
 
@@ -51,6 +51,26 @@ defmodule DockdWeb.ProfileLive do
   def handle_event("unfollow", %{"username" => username}, socket) do
     :ok = Social.unfollow(socket.assigns.user, Social.get_profile!(username))
     {:noreply, load(socket)}
+  end
+
+  def handle_event("favorite", %{"game_id" => game_id}, socket) do
+    with %{relation: :self, owner: owner} <- socket.assigns,
+         %{game: game} <- Library.get_entry_by_game(owner, game_id),
+         :ok <- Social.favorite(owner, game) do
+      {:noreply, load(socket)}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("unfavorite", %{"game_id" => game_id}, socket) do
+    with %{relation: :self, owner: owner} <- socket.assigns,
+         %{game: game} <- Library.get_entry_by_game(owner, game_id) do
+      :ok = Social.unfavorite(owner, game)
+      {:noreply, load(socket)}
+    else
+      _ -> {:noreply, socket}
+    end
   end
 
   def handle_event("more_day", %{"day" => day}, socket),
@@ -101,11 +121,17 @@ defmodule DockdWeb.ProfileLive do
 
   defp load_view(%{assigns: %{owner: owner, user: viewer}} = socket, true) do
     mine = if viewer, do: viewer |> Shelf.list() |> Map.new(&{&1.game.id, &1}), else: %{}
+    shelf = Social.shelf(owner)
+    favorites = Social.favorites(owner)
 
     assign(socket,
-      shelf: Social.shelf(owner),
+      shelf: shelf,
+      favorites: favorites,
+      favorite_ids: favorites |> Map.new(&{&1.game_id, true}),
+      stats: Social.profile_stats(owner),
       recent: if(socket.assigns.live_action == :show, do: Social.recent(owner), else: []),
-      mine: mine
+      mine: mine,
+      favorite_items: Shelf.list(owner)
     )
   end
 
@@ -119,7 +145,7 @@ defmodule DockdWeb.ProfileLive do
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, strip: @strip, sections: @sections, day: @day)
+    assigns = assign(assigns, sections: @sections, day: @day)
 
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope} catalog_review={@catalog_review}>
@@ -142,62 +168,107 @@ defmodule DockdWeb.ProfileLive do
       <%= if @visible do %>
         <%= case @live_action do %>
           <% :show -> %>
-            <%= for {status, {title, _}} <- @sections, @shelf[status] != [] do %>
-              <.section_head id={"profile-#{status}"} title={title} count={length(@shelf[status])}>
-                <:action :if={length(@shelf[status]) > @strip}>
-                  <.link navigate={section_path(@owner, status)}>Ver todos</.link>
-                </:action>
-              </.section_head>
-              <div id={"profile-#{status}-strip"} class="dk-strip dk-home-strip">
-                <.profile_card
-                  :for={item <- Enum.take(@shelf[status], @strip)}
-                  item={mine(@mine, item)}
-                  rail={status}
-                  user={@user}
-                  asking={@asking}
-                  back={~p"/u/#{@owner.username}"}
-                />
-              </div>
-            <% end %>
-
-            <.empty_state
-              :if={Enum.all?(@sections, fn {status, _} -> @shelf[status] == [] end)}
-              id="profile-empty"
-            >
-              Nada jogando, zerado ou na lista.
-            </.empty_state>
-
-            <%= if @recent != [] do %>
-              <.section_head id="profile-recent" title="Recente">
-                <:action>
-                  <.link id="profile-diary-link" navigate={~p"/u/#{@owner.username}/diario"}>
-                    Ver diário
-                  </.link>
-                </:action>
-              </.section_head>
-              <div id="profile-recent-rows">
-                <div
-                  :for={change <- @recent}
-                  id={"recent-#{change.item.game.id}"}
-                  class="dk-row"
-                >
-                  <.poster
-                    title={change.item.game.title}
-                    cover_url={change.item.game.cover_url}
-                    navigate={~p"/jogos/#{change.item.game.id}"}
-                    size="sm"
-                  />
-                  <div>
-                    <.link navigate={~p"/jogos/#{change.item.game.id}"} class="dk-row__title">
-                      {change.item.game.title}
+            <div id="profile-layout" class="dk-profile-layout">
+              <main class="dk-profile-main">
+                <.section_head id="profile-favorites" title="Favoritos" count={length(@favorites)}>
+                  <:action :if={@relation == :self}>
+                    <.link id="profile-edit-favorites" navigate={~p"/u/#{@owner.username}/favoritos"}>
+                      Editar favoritos
                     </.link>
-                    <div class="dk-row__meta">
-                      <b class="dk-verb">{change.verb}</b> · {relative_label(change.at)}
+                  </:action>
+                </.section_head>
+                <div :if={@favorites != []} id="profile-favorites-grid" class="dk-profile-favorites">
+                  <.favorite_card
+                    :for={favorite <- @favorites}
+                    favorite={favorite}
+                    editable={@relation == :self}
+                  />
+                </div>
+
+                <%= if @shelf.jogando != [] do %>
+                  <% item = hd(@shelf.jogando) %>
+                  <.section_head
+                    id="profile-playing"
+                    title="Jogando agora"
+                    count={length(@shelf.jogando)}
+                  >
+                    <:action :if={length(@shelf.jogando) > 1}>
+                      <.link navigate={section_path(@owner, :jogando)}>Ver todos</.link>
+                    </:action>
+                  </.section_head>
+                  <div id="profile-playing-now" class="dk-profile-now">
+                    <.profile_card
+                      item={mine(@mine, item)}
+                      rail={:now}
+                      user={@user}
+                      asking={@asking}
+                      back={~p"/u/#{@owner.username}"}
+                    />
+                  </div>
+                <% end %>
+
+                <%= if @recent != [] do %>
+                  <.section_head id="profile-recent" title="Recente">
+                    <:action>
+                      <.link id="profile-diary-link" navigate={~p"/u/#{@owner.username}/diario"}>
+                        Ver diário
+                      </.link>
+                    </:action>
+                  </.section_head>
+                  <div id="profile-recent-rows" class="dk-profile-timeline">
+                    <div
+                      :for={change <- @recent}
+                      id={"recent-#{change.item.game.id}"}
+                      class="dk-row"
+                    >
+                      <.poster
+                        title={change.item.game.title}
+                        cover_url={change.item.game.cover_url}
+                        navigate={~p"/jogos/#{change.item.game.id}"}
+                        size="sm"
+                      />
+                      <div>
+                        <.link navigate={~p"/jogos/#{change.item.game.id}"} class="dk-row__title">
+                          {change.item.game.title}
+                        </.link>
+                        <div class="dk-row__meta">
+                          <b class="dk-verb">{change.verb}</b> · {relative_label(change.at)}
+                        </div>
+                      </div>
+                      <div class="dk-row__end"></div>
                     </div>
                   </div>
-                  <div class="dk-row__end"></div>
-                </div>
+                <% end %>
+
+                <.empty_state
+                  :if={@favorites == [] && @shelf.jogando == [] && @recent == []}
+                  id="profile-empty"
+                >
+                  Nada no perfil ainda.
+                </.empty_state>
+              </main>
+
+              <aside id="profile-sidebar" class="dk-profile-sidebar">
+                <.profile_stats stats={@stats} counts={@counts} owner={@owner} />
+              </aside>
+            </div>
+          <% :favorites -> %>
+            <%= if @relation == :self do %>
+              <.section_head
+                id="profile-favorite-picker"
+                title="Favoritos"
+                count={length(@favorites)}
+              />
+              <div id="profile-favorite-picker-grid" class="dk-grid">
+                <.favorite_picker_card
+                  :for={item <- @favorite_items}
+                  item={item}
+                  favorite={@favorite_ids[item.game.id]}
+                  full={length(@favorites) == 4}
+                />
               </div>
+            <% else %>
+              <.empty_state id="profile-favorite-closed">Somente você edita favoritos.</.empty_state>
             <% end %>
           <% :diary -> %>
             <.section_head id="profile-diary" title="Diário" count={@diary_count} />
@@ -311,6 +382,108 @@ defmodule DockdWeb.ProfileLive do
       </div>
       <.status_chip status={@entry.status} size="sm" />
     </div>
+    """
+  end
+
+  attr :favorite, :map, required: true
+  attr :editable, :boolean, default: false
+
+  defp favorite_card(assigns) do
+    ~H"""
+    <div id={"profile-favorite-#{@favorite.game_id}"} class="dk-card">
+      <.poster
+        title={@favorite.game.title}
+        cover_url={@favorite.game.cover_url}
+        availability={@favorite.game.availability}
+        navigate={~p"/jogos/#{@favorite.game.id}"}
+      />
+      <.link navigate={~p"/jogos/#{@favorite.game.id}"} class="dk-card__text">
+        <span class="dk-card__title">{@favorite.game.title}</span>
+        <span class="dk-card__meta">{platform_label(@favorite.game.releases)}</span>
+      </.link>
+      <button
+        :if={@editable}
+        id={"profile-unfavorite-#{@favorite.game_id}"}
+        type="button"
+        class="dk-link"
+        phx-click="unfavorite"
+        phx-value-game_id={@favorite.game_id}
+      >
+        Remover favorito
+      </button>
+    </div>
+    """
+  end
+
+  attr :item, :map, required: true
+  attr :favorite, :boolean, required: true
+  attr :full, :boolean, required: true
+
+  defp favorite_picker_card(assigns) do
+    ~H"""
+    <div id={"profile-picker-#{@item.game.id}"} class="dk-card">
+      <.poster
+        title={@item.game.title}
+        cover_url={@item.game.cover_url}
+        faded={@item.status in [:zerado, :larguei]}
+        availability={@item.game.availability}
+        navigate={~p"/jogos/#{@item.game.id}"}
+      />
+      <.link navigate={~p"/jogos/#{@item.game.id}"} class="dk-card__text">
+        <span class="dk-card__title">{@item.game.title}</span>
+        <span class="dk-card__meta">{platform_label(@item.releases)}</span>
+      </.link>
+      <button
+        id={"profile-picker-favorite-#{@item.game.id}"}
+        type="button"
+        class="dk-link"
+        phx-click={if(@favorite, do: "unfavorite", else: "favorite")}
+        phx-value-game_id={@item.game.id}
+        disabled={!@favorite && @full}
+      >
+        {if(@favorite, do: "Remover favorito", else: "Favoritar")}
+      </button>
+    </div>
+    """
+  end
+
+  attr :stats, :map, required: true
+  attr :counts, :map, required: true
+  attr :owner, :map, required: true
+
+  defp profile_stats(assigns) do
+    ~H"""
+    <section id="profile-stats">
+      <.section_head id="profile-stats-head" title="Estante" count={@stats.games} />
+      <div class="dk-profile-stats">
+        <.link navigate={section_path(@owner, :jogando)}><b>{@stats.playing}</b> jogando</.link>
+        <.link navigate={section_path(@owner, :zerado)}><b>{@stats.finished}</b> zerados</.link>
+        <.link navigate={section_path(@owner, :quero)}><b>{@stats.wanted}</b> quero</.link>
+      </div>
+    </section>
+
+    <section id="profile-platforms">
+      <.section_head id="profile-platforms-head" title="Plataformas" />
+      <p class="dk-profile-meta"><b>{Map.get(@stats.platforms, :switch, 0)}</b> Switch</p>
+      <p class="dk-profile-meta"><b>{Map.get(@stats.platforms, :switch_2, 0)}</b> Switch 2</p>
+    </section>
+
+    <section id="profile-media">
+      <.section_head id="profile-media-head" title="Mídia" />
+      <p class="dk-profile-meta"><b>{Map.get(@stats.media, :physical, 0)}</b> físico</p>
+      <p class="dk-profile-meta"><b>{Map.get(@stats.media, :digital, 0)}</b> digital</p>
+    </section>
+
+    <section id="profile-people-summary">
+      <.section_head id="profile-people-summary-head" title="Pessoas" />
+      <p class="dk-profile-meta">
+        <.link navigate={~p"/u/#{@owner.username}/seguindo"}><b>{@counts.following}</b> seguindo</.link>
+      </p>
+      <p class="dk-profile-meta">
+        <.link navigate={~p"/u/#{@owner.username}/seguidores"}><b>{@counts.followers}</b> seguidores</.link>
+      </p>
+      <p class="dk-profile-meta"><b>{@stats.friends}</b> amigos</p>
+    </section>
     """
   end
 
