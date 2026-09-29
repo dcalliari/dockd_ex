@@ -20,6 +20,7 @@ defmodule Dockd.Library.Entry do
     field :notes, :string
     belongs_to :user, Dockd.Accounts.User, type: :binary_id
     belongs_to :game, Dockd.Catalog.Game, type: :binary_id
+    belongs_to :preferred_release, Dockd.Catalog.Release, type: :binary_id
     timestamps(type: :utc_datetime_usec)
   end
 
@@ -40,7 +41,8 @@ defmodule Dockd.Library.Entry do
         :owned_elsewhere_note,
         :duration_override_minutes,
         :pace_override,
-        :notes
+        :notes,
+        :preferred_release_id
       ])
       |> validate_required([:user_id, :game_id])
       |> validate_number(:target_price_cents, greater_than_or_equal_to: 0)

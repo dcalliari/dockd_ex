@@ -103,6 +103,32 @@ defmodule Dockd.PurchasingTest do
     assert %{price_cents: 25_000} = Purchasing.current_game_price(user, releases, :physical)
   end
 
+  test "a chosen edition's own price wins, never a cheaper one under its name",
+       %{user: user, release: release} = ctx do
+    edition = release_fixture(ctx.game, %{platform: :switch, edition: "Archaeologist Edition"})
+    store_price_fixture(release, %{regular_cents: 9_999})
+    store_price_fixture(edition, %{regular_cents: 14_999})
+    releases = [release, edition]
+
+    # No preference: the cheapest wins, same as before.
+    assert %{price_cents: 9_999} = Purchasing.current_game_price(user, releases, nil, nil)
+
+    # Chosen and pricier: its own price shows, not the standard release's.
+    assert %{price_cents: 14_999, release_id: id} =
+             Purchasing.current_game_price(user, releases, nil, edition.id)
+
+    assert id == edition.id
+
+    # Chosen but unpriced: no price at all, never a silent substitute.
+    unpriced = release_fixture(ctx.game, %{platform: :switch, edition: "Digital Deluxe"})
+    releases = [release, edition, unpriced]
+    assert Purchasing.current_game_price(user, releases, nil, unpriced.id) == nil
+
+    # Chosen but vetoed: falls back to the cheapest as if nothing had been chosen.
+    {:ok, _} = Library.create_veto(user, %{release_id: edition.id})
+    assert %{price_cents: 9_999} = Purchasing.current_game_price(user, releases, nil, edition.id)
+  end
+
   defp observe(user, release, format, cents, seconds) do
     {:ok, _} =
       Purchasing.create_price_observation(user, %{

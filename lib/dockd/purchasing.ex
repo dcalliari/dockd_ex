@@ -157,12 +157,24 @@ defmodule Dockd.Purchasing do
   platforms and editions, that the user has not vetoed, optionally of one media. On a
   tie the standard edition wins. The price's `release_id` says which release it is, so
   a screen can name an edition that is not the standard one.
-  """
-  def current_game_price(%User{} = user, releases, format \\ nil) do
-    vetoed = vetoed_release_ids(user, Enum.map(releases, & &1.id))
 
-    releases
-    |> Enum.reject(&(&1.id in vetoed))
+  With `preferred_release_id` (Comprar's EditionTag), the price follows that release
+  instead: exactly its price, or nil when it has none, never another edition's price
+  under its name. A vetoed or unknown preferred release falls back to the cheapest one,
+  as if none had been chosen.
+  """
+  def current_game_price(%User{} = user, releases, format \\ nil, preferred_release_id \\ nil) do
+    vetoed = vetoed_release_ids(user, Enum.map(releases, & &1.id))
+    candidates = Enum.reject(releases, &(&1.id in vetoed))
+
+    case preferred_release_id && Enum.find(candidates, &(&1.id == preferred_release_id)) do
+      nil -> cheapest_price(user, candidates, format)
+      release -> current_price(user, release.id, format)
+    end
+  end
+
+  defp cheapest_price(user, candidates, format) do
+    candidates
     |> Enum.flat_map(fn release ->
       case current_price(user, release.id, format) do
         nil -> []

@@ -111,7 +111,8 @@ defmodule DockdWeb.BuyLiveTest do
     assert has_element?(view, "#estimate-digital .dk-totals__none", "Sem preço")
     assert has_element?(view, "#estimate-digital", "4 jogos")
     refute has_element?(view, "#estimate-physical")
-    refute has_element?(view, "#planned-total")
+    refute has_element?(view, "#planned-total-digital")
+    refute has_element?(view, "#planned-total-physical")
   end
 
   test "the estimate adds each media's prices and says how many games it covers",
@@ -183,6 +184,57 @@ defmodule DockdWeb.BuyLiveTest do
 
     assert has_element?(view, "#price-#{ctx.available.id}", "R$ 279,90")
     refute has_element?(view, "#queue-#{ctx.available.id} .dk-row__meta", "Deluxe")
+  end
+
+  test "the EditionTag pins a pricier edition, so its own price and total follow it",
+       %{conn: conn} = ctx do
+    store_price_fixture(ctx.available_release, %{regular_cents: 9_999})
+
+    archaeologist =
+      release_fixture(ctx.available, %{
+        platform: :switch,
+        edition: "Archaeologist Edition",
+        release_date: ctx.available_release.release_date
+      })
+
+    store_price_fixture(archaeologist, %{regular_cents: 14_999})
+    {:ok, view, _html} = live(conn, "/comprar")
+
+    assert has_element?(view, "#edition-#{ctx.available.id}", "Padrão")
+    assert has_element?(view, "#price-#{ctx.available.id}", "R$ 99,99")
+
+    view |> element("#edition-#{ctx.available.id}") |> render_click()
+    assert has_element?(view, "#edition-choice-#{ctx.available.id}", "Switch · R$ 99,99")
+
+    assert has_element?(
+             view,
+             "#edition-choice-#{ctx.available.id}",
+             "Switch · Archaeologist Edition · R$ 149,99"
+           )
+
+    view
+    |> element(
+      ~s(#edition-choice-#{ctx.available.id} button[phx-value-release_id="#{archaeologist.id}"])
+    )
+    |> render_click()
+
+    refute has_element?(view, "#edition-choice-#{ctx.available.id}")
+    assert has_element?(view, "#edition-#{ctx.available.id}", "Archaeologist")
+    assert has_element?(view, "#price-#{ctx.available.id}", "R$ 149,99")
+    assert has_element?(view, "#estimate-digital", "R$ 149,99")
+
+    assert Dockd.Library.get_entry_for_game(ctx.user, ctx.available.id).preferred_release_id ==
+             archaeologist.id
+
+    # Reloading the screen keeps the pinned edition.
+    {:ok, view, _html} = live(conn, "/comprar")
+    assert has_element?(view, "#edition-#{ctx.available.id}", "Archaeologist")
+    assert has_element?(view, "#price-#{ctx.available.id}", "R$ 149,99")
+  end
+
+  test "the EditionTag never appears for a game with a single release", %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/comprar")
+    refute has_element?(view, "#edition-#{ctx.available.id}")
   end
 
   test "with an edition on sale, Comprei opens the choices under the row", %{conn: conn} = ctx do
@@ -377,19 +429,50 @@ defmodule DockdWeb.BuyLiveTest do
       events = length(Activity.list_events(ctx.user))
       {:ok, view, _html} = live(conn, "/comprar")
 
-      refute has_element?(view, "#planned-total")
+      refute has_element?(view, "#planned-total-digital")
       view |> element("#plan-#{ctx.soon.id}") |> render_click()
       view |> element("#plan-#{ctx.later.id}") |> render_click()
 
-      assert has_element?(view, "#planned-total", "R$ 113,38")
+      assert has_element?(view, "#planned-total-digital", "R$ 113,38")
       assert has_element?(view, ~s(#plan-#{ctx.soon.id}[aria-pressed="true"]))
       assert Shelf.item(ctx.user, ctx.soon).status == :quero
       assert length(Activity.list_events(ctx.user)) == events
 
       view |> element("#plan-#{ctx.later.id}") |> render_click()
-      assert has_element?(view, "#planned-total", "R$ 53,39")
+      assert has_element?(view, "#planned-total-digital", "R$ 53,39")
       assert has_element?(view, ~s(#plan-#{ctx.later.id}[aria-pressed="false"]))
       assert Library.get_entry_for_game(ctx.user, ctx.later.id).purchase_intent == :want
+    end
+
+    test "Agora also offers a physical game, with its own subtotal that never merges with digital",
+         %{conn: conn} = ctx do
+      release = hd(Dockd.Catalog.get_game!(ctx.soon.id).releases)
+
+      {:ok, view, _html} = live(conn, "/comprar")
+      view |> element("#media-#{ctx.soon.id}") |> render_click()
+      refute has_element?(view, "#plan-#{ctx.soon.id}")
+
+      observe(ctx.user, release, :physical, 34_990)
+      {:ok, view, _html} = live(conn, "/comprar")
+
+      assert has_element?(view, "#price-#{ctx.soon.id}", "R$ 349,90")
+      assert has_element?(view, "#plan-#{ctx.soon.id}")
+
+      view |> element("#plan-#{ctx.soon.id}") |> render_click()
+      assert has_element?(view, "#planned-total-physical", "R$ 349,90")
+      refute has_element?(view, "#planned-total-digital")
+
+      # A digital game marked too keeps its own subtotal, never summed with the physical one.
+      view |> element("#plan-#{ctx.later.id}") |> render_click()
+      assert has_element?(view, "#planned-total-physical", "R$ 349,90")
+      assert has_element?(view, "#planned-total-digital", "R$ 59,99")
+
+      # Switching media moves the value from one subtotal to the other, still marked.
+      view |> element("#media-#{ctx.soon.id}") |> render_click()
+      assert Library.get_entry_for_game(ctx.user, ctx.soon.id).purchase_intent == :planned
+      assert has_element?(view, ~s(#plan-#{ctx.soon.id}[aria-pressed="true"]))
+      refute has_element?(view, "#planned-total-physical")
+      assert has_element?(view, "#planned-total-digital", "R$ 113,38")
     end
   end
 end

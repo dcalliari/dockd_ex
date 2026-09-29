@@ -133,6 +133,24 @@ defmodule Dockd.LibraryStatusTest do
     assert Library.set_media(user, Ecto.UUID.generate(), :digital) == {:error, :not_found}
   end
 
+  test "the edition to buy is only ever one of the game's own releases",
+       %{user: user, game: game} = ctx do
+    edition = release_fixture(game, %{platform: :switch, edition: "Archaeologist Edition"})
+    other_game = game_fixture(%{title: "Another game"})
+    other_release = release_fixture(other_game, %{platform: :switch})
+
+    {:ok, _} = Library.set_status(user, game, :quero)
+
+    assert {:ok, entry} = Library.set_edition(user, game.id, edition.id)
+    assert entry.preferred_release_id == edition.id
+
+    assert {:ok, entry} = Library.set_edition(user, game.id, ctx.release.id)
+    assert entry.preferred_release_id == ctx.release.id
+
+    assert Library.set_edition(user, game.id, other_release.id) == {:error, :not_found}
+    assert Library.set_edition(user, Ecto.UUID.generate(), edition.id) == {:error, :not_found}
+  end
+
   test "Agora plans a wanted game without a status change or an event", %{user: user, game: game} do
     {:ok, _} = Library.set_status(user, game, :quero)
     events = Activity.list_events(user)
@@ -144,7 +162,8 @@ defmodule Dockd.LibraryStatusTest do
 
     {:ok, _} = Library.plan(user, game.id, true)
 
-    assert {:ok, %{purchase_intent: :want, media_preference: :physical}} =
+    # Switching media keeps Agora: it is no longer digital-only.
+    assert {:ok, %{purchase_intent: :planned, media_preference: :physical}} =
              Library.set_media(user, game.id, :physical)
 
     assert Activity.list_events(user) == events

@@ -252,13 +252,15 @@ defmodule Dockd.Library do
         :owned_elsewhere_note,
         :duration_override_minutes,
         :pace_override,
-        :notes
+        :notes,
+        :preferred_release_id
       ])
       |> validate_required([:user_id, :game_id])
       |> validate_number(:target_price_cents, greater_than_or_equal_to: 0)
       |> validate_number(:duration_override_minutes, greater_than: 0)
       |> unique_constraint([:user_id, :game_id])
       |> assoc_constraint(:game)
+      |> assoc_constraint(:preferred_release)
 
   defp ownership_changeset(o, attrs),
     do:
@@ -400,25 +402,32 @@ defmodule Dockd.Library do
   def media(_entry), do: :digital
 
   @doc """
-  Records the media a game will be bought in, Comprar's MediaTag. Agora is only for
-  digital games, so a planned game that turns physical goes back to only wanted.
+  Records the media a game will be bought in, Comprar's MediaTag. Agora follows whichever
+  media is marked, so switching it never drops a planned game back to only wanted.
   """
   def set_media(%User{} = user, game_id, media) when media in [:physical, :digital] do
+    case get_entry_for_game(user, game_id) do
+      nil -> {:error, :not_found}
+      entry -> entry |> entry_changeset(%{media_preference: media}) |> Repo.update()
+    end
+  end
+
+  @doc """
+  Records the edition a wanted game will be bought in, Comprar's EditionTag: the price
+  and total then follow this release instead of the cheapest one. `release_id` must be
+  one of the game's own releases.
+  """
+  def set_edition(%User{} = user, game_id, release_id) do
     case get_entry_for_game(user, game_id) do
       nil ->
         {:error, :not_found}
 
       entry ->
-        entry
-        |> entry_changeset(%{
-          media_preference: media,
-          purchase_intent:
-            if(media == :physical and entry.purchase_intent == :planned,
-              do: :want,
-              else: entry.purchase_intent
-            )
-        })
-        |> Repo.update()
+        if Repo.exists?(from r in Release, where: r.id == ^release_id and r.game_id == ^game_id) do
+          entry |> entry_changeset(%{preferred_release_id: release_id}) |> Repo.update()
+        else
+          {:error, :not_found}
+        end
     end
   end
 

@@ -1,15 +1,20 @@
 defmodule DockdWeb.BuyLive do
   @moduledoc """
   Comprar: the games in Quero, the digital ones on sale first by when the sale ends, then
-  by release date, each with its media, price, Agora and Comprei, under one line with the
-  total of the queue per media, the Agora subtotal and what was spent this month
-  (`design/maquetes/planejador.html`, caminho A). A game bought here stays in its place
-  with Backlog and Desfazer, and one on sale stays in Promoções, until the screen is left.
+  by release date, each with its media, edition, price, Agora and Comprei, under one line
+  with the total of the queue per media, the Agora subtotal per media (never combined,
+  `design/maquetes/edicao-comprar.html`) and what was spent this month
+  (`design/maquetes/planejador.html`, caminho A). With more than one edition, the
+  EditionTag (`design/maquetes/edicao-comprar.html`, caminho A) opens a choice under the
+  row: picking one pins the price and total to that release instead of the cheapest.
+  A game bought here stays in its place with Backlog and Desfazer, and one on sale stays
+  in Promoções, until the screen is left.
   """
   use DockdWeb, :live_view
 
   on_mount {DockdWeb.UserAuth, :require_authenticated}
 
+  alias Dockd.Catalog
   alias Dockd.Catalog.Release
   alias Dockd.Library
   alias Dockd.Library.Shelf
@@ -26,7 +31,7 @@ defmodule DockdWeb.BuyLive do
 
     {:ok,
      socket
-     |> assign(page_title: "Comprar", user: user, promotions: nil)
+     |> assign(page_title: "Comprar", user: user, promotions: nil, editing: nil)
      |> GameEvents.init()
      |> load()}
   end
@@ -44,7 +49,16 @@ defmodule DockdWeb.BuyLive do
       )
 
     prices =
-      Map.new(items, &{&1.game.id, Purchasing.current_game_price(user, &1.releases, &1.media)})
+      Map.new(
+        items,
+        &{&1.game.id,
+         Purchasing.current_game_price(
+           user,
+           &1.releases,
+           &1.media,
+           &1.entry.preferred_release_id
+         )}
+      )
 
     promotions = socket.assigns.promotions || promotions(items, prices)
     {promoted, queue} = Enum.split_with(items, &Map.has_key?(promotions, &1.game.id))
@@ -92,22 +106,32 @@ defmodule DockdWeb.BuyLive do
     %{total: Enum.sum_by(priced, & &1.price_cents), priced: length(priced), of: length(games)}
   end
 
-  # Agora: what the digital games marked to buy now cost, to hold against the eShop balance.
+  # Agora: what the games marked to buy now cost, digital and physical kept apart, never
+  # summed into one number, since they compare against different balances.
   defp planned_total(items, prices) do
-    items
-    |> Enum.filter(&planned?/1)
+    planned = Enum.filter(items, &planned?/1)
+
+    %{
+      digital: planned_media_total(planned, prices, :digital),
+      physical: planned_media_total(planned, prices, :physical)
+    }
+  end
+
+  defp planned_media_total(planned, prices, media) do
+    planned
+    |> Enum.filter(&(&1.media == media))
     |> Enum.map(&prices[&1.game.id])
     |> Enum.reject(&is_nil/1)
     |> Enum.sum_by(& &1.price_cents)
   end
 
-  defp planned?(%{media: :digital, entry: %{purchase_intent: :planned}}), do: true
+  defp planned?(%{entry: %{purchase_intent: :planned}}), do: true
   defp planned?(_item), do: false
 
-  # Agora is offered on a wanted digital game with a price that is not preordered.
+  # Agora is offered on any wanted game with a price in its chosen media, not preordered.
   defp plannable?(item, price, bought),
     do:
-      item.media == :digital and price != nil and not Map.has_key?(bought, item.game.id) and
+      price != nil and not Map.has_key?(bought, item.game.id) and
         item.entry.purchase_intent in [:want, :planned]
 
   # Out once any version is; else upcoming by its first date, or undated.
@@ -132,7 +156,7 @@ defmodule DockdWeb.BuyLive do
 
   @impl true
   def handle_event(event, params, socket) when event in @game_events,
-    do: GameEvents.handle_event(event, params, socket, &load/1)
+    do: GameEvents.handle_event(event, params, assign(socket, :editing, nil), &load/1)
 
   def handle_event("set_media", %{"game_id" => game_id, "media" => media}, socket) do
     case Map.fetch(@media, media) do
@@ -140,12 +164,47 @@ defmodule DockdWeb.BuyLive do
       :error -> :ok
     end
 
-    {:noreply, load(socket)}
+    {:noreply, socket |> assign(:editing, nil) |> load()}
   end
 
   def handle_event("plan", %{"game_id" => game_id} = params, socket) do
     Library.plan(socket.assigns.user, game_id, params["planned"] == "true")
     {:noreply, load(socket)}
+  end
+
+  # The EditionTag toggles its own choice: a second tap on the same game closes it.
+  def handle_event("edition_menu", %{"game_id" => game_id}, socket) do
+    case socket.assigns.editing do
+      %{game_id: ^game_id} ->
+        {:noreply, assign(socket, :editing, nil)}
+
+      _ ->
+        {:noreply,
+         socket
+         |> GameEvents.init()
+         |> assign(:editing, %{game_id: game_id, options: edition_options(socket, game_id)})}
+    end
+  end
+
+  def handle_event(
+        "set_edition",
+        %{"game_id" => game_id, "release_id" => release_id},
+        socket
+      ) do
+    Library.set_edition(socket.assigns.user, game_id, release_id)
+    {:noreply, socket |> assign(:editing, nil) |> load()}
+  end
+
+  def handle_event("cancel_edition", _params, socket),
+    do: {:noreply, assign(socket, :editing, nil)}
+
+  # Each edition's own price, in the media the row already shows, for the choice under it.
+  defp edition_options(socket, game_id) do
+    user = socket.assigns.user
+    media = user |> Library.get_entry_for_game(game_id) |> Library.media()
+    releases = Catalog.get_game!(game_id).releases
+
+    Enum.map(releases, &%{release: &1, price: Purchasing.current_price(user, &1.id, media)})
   end
 
   defp year_marks(items) do
@@ -159,16 +218,6 @@ defmodule DockdWeb.BuyLive do
   defp games_count(1), do: "1 jogo"
   defp games_count(count), do: "#{count} jogos"
 
-  # The lowest price can be an edition's: its short name keeps the number from surprising.
-  defp price_edition(%{release_id: release_id}, releases) when is_binary(release_id) do
-    case Enum.find(releases, &(&1.id == release_id)) do
-      nil -> nil
-      release -> edition_label(release)
-    end
-  end
-
-  defp price_edition(_price, _releases), do: nil
-
   # Once bought here, the row says which version and edition it was.
   defp row_meta(item, %{release_id: release_id}) do
     case Enum.find(item.releases, &(&1.id == release_id)) do
@@ -177,13 +226,23 @@ defmodule DockdWeb.BuyLive do
     end
   end
 
-  # The exclusivity mark sits right after the platforms, so the edition comes after it.
-  defp edition_suffix(price, releases) do
-    case price_edition(price, releases) do
-      nil -> nil
-      edition -> " · #{edition}"
+  # The EditionTag's closed label: the edition the account chose, or the one behind the
+  # price shown, or Padrão when neither says otherwise.
+  defp edition_tag_label(item, price) do
+    preferred =
+      item.entry.preferred_release_id &&
+        Enum.find(item.releases, &(&1.id == item.entry.preferred_release_id))
+
+    case preferred || price_release(price, item.releases) do
+      nil -> "Padrão"
+      release -> edition_label(release) || "Padrão"
     end
   end
+
+  defp price_release(%{release_id: release_id}, releases) when is_binary(release_id),
+    do: Enum.find(releases, &(&1.id == release_id))
+
+  defp price_release(_price, _releases), do: nil
 
   attr :id, :string, required: true
   attr :game_id, :string, required: true
@@ -209,6 +268,63 @@ defmodule DockdWeb.BuyLive do
   defp price_open?(%{kind: :price, key: key}, game_id), do: key == game_id
   defp price_open?(_form, _game_id), do: false
 
+  attr :id, :string, required: true
+  attr :game_id, :string, required: true
+  attr :label, :string, required: true
+
+  # EditionTag: like the MediaTag, the current edition is the control, but with more than
+  # two editions a tap opens the choice under the row instead of swapping in place.
+  defp edition_tag(assigns) do
+    ~H"""
+    <button
+      id={@id}
+      type="button"
+      class="dk-media"
+      aria-label="Edição"
+      phx-click="edition_menu"
+      phx-value-game_id={@game_id}
+    >
+      {@label}
+    </button>
+    """
+  end
+
+  defp edition_open?(%{game_id: game_id}, game_id), do: true
+  defp edition_open?(_editing, _game_id), do: false
+
+  attr :id, :string, required: true
+  attr :game_id, :string, required: true
+  attr :selected_id, :string, default: nil
+  attr :options, :list, required: true
+
+  # The choice is the action (design/components/bundle.css): picking an edition closes
+  # the panel and the row's price and total follow it at once.
+  defp edition_choice(assigns) do
+    ~H"""
+    <div id={@id} class="dk-form">
+      <div class="dk-form__field">
+        <span>Edição</span>
+        <div class="dk-choice" role="radiogroup" aria-label="Edição">
+          <button
+            :for={option <- @options}
+            type="button"
+            aria-pressed={to_string(option.release.id == @selected_id)}
+            phx-click="set_edition"
+            phx-value-game_id={@game_id}
+            phx-value-release_id={option.release.id}
+          >
+            {release_label(option.release)} · {option_price_text(option.price)}
+          </button>
+        </div>
+      </div>
+      <button type="button" class="dk-link" phx-click="cancel_edition">Cancelar</button>
+    </div>
+    """
+  end
+
+  defp option_price_text(nil), do: "Sem preço"
+  defp option_price_text(price), do: money(price.price_cents, price.currency)
+
   attr :item, :map, required: true
   attr :price, :map, default: nil
   attr :form, :map, default: nil
@@ -219,6 +335,7 @@ defmodule DockdWeb.BuyLive do
   attr :today, Date, required: true
   attr :thumb, :string, default: "poster", values: ~w(poster date)
   attr :plannable, :boolean, default: false
+  attr :editing, :map, default: nil
 
   defp queue_row(assigns) do
     ~H"""
@@ -245,10 +362,15 @@ defmodule DockdWeb.BuyLive do
           <div :if={!@bought[@item.game.id]} class="dk-row__meta">
             {platform_label(@item.releases)}<.exclusive_mark availability={@item.game.availability} />
             ·
-            <.media_toggle id={"media-#{@item.game.id}"} game_id={@item.game.id} media={@item.media} />{edition_suffix(
-              @price,
-              @item.releases
-            )}
+            <.media_toggle id={"media-#{@item.game.id}"} game_id={@item.game.id} media={@item.media} />
+            <%= if length(@item.releases) > 1 do %>
+              ·
+              <.edition_tag
+                id={"edition-#{@item.game.id}"}
+                game_id={@item.game.id}
+                label={edition_tag_label(@item, @price)}
+              />
+            <% end %>
           </div>
         </div>
         <div class="dk-row__end">
@@ -296,6 +418,13 @@ defmodule DockdWeb.BuyLive do
         form={@form}
         error={@error}
       />
+      <.edition_choice
+        :if={edition_open?(@editing, @item.game.id)}
+        id={"edition-choice-#{@item.game.id}"}
+        game_id={@item.game.id}
+        selected_id={@item.entry.preferred_release_id}
+        options={@editing.options}
+      />
     </div>
     """
   end
@@ -327,8 +456,11 @@ defmodule DockdWeb.BuyLive do
             {label}<b class="dk-totals__none">Sem preço</b><small>{games_count(@estimate[media].of)}</small>
           <% end %>
         </span>
-        <span :if={@planned > 0} id="planned-total">
-          Agora<b>{money(@planned)}</b>
+        <span :if={@planned.digital > 0} id="planned-total-digital">
+          Agora digital<b>{money(@planned.digital)}</b>
+        </span>
+        <span :if={@planned.physical > 0} id="planned-total-physical">
+          Agora físico<b>{money(@planned.physical)}</b>
         </span>
         <span :if={@spent > 0} id="month-spending">
           Gasto em {month_name(@today)}<b>{money(@spent)}</b>
@@ -347,6 +479,7 @@ defmodule DockdWeb.BuyLive do
           buying={@buying}
           bought={@bought}
           today={@today}
+          editing={@editing}
         />
       <% end %>
 
@@ -364,6 +497,7 @@ defmodule DockdWeb.BuyLive do
           error={@form_error}
           bought={@bought}
           today={@today}
+          editing={@editing}
         />
       <% end %>
       <.empty_state :if={@upcoming == []}>Nenhum lançamento na fila.</.empty_state>
@@ -379,6 +513,7 @@ defmodule DockdWeb.BuyLive do
         buying={@buying}
         bought={@bought}
         today={@today}
+        editing={@editing}
       />
       <.empty_state :if={@available == []}>Nada disponível na fila.</.empty_state>
 
@@ -394,6 +529,7 @@ defmodule DockdWeb.BuyLive do
           error={@form_error}
           bought={@bought}
           today={@today}
+          editing={@editing}
         />
       <% end %>
     </Layouts.app>

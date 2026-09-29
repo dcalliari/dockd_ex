@@ -240,7 +240,7 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 .dk-choice > label { position: relative; display: flex; }
 .dk-choice > label > input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .dk-choice > button:hover, .dk-choice > label > span:hover { color: var(--ink); background: var(--surface-raised); }
-.dk-choice > label > input:checked + span { background: var(--ink); color: var(--on-ink); }
+.dk-choice > label > input:checked + span, .dk-choice > button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
 .dk-choice > label > input:focus-visible + span { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 
 /* Vistos: os preços já vistos do jogo, dentro do registro de preço */
