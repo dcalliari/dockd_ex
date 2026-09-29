@@ -1197,10 +1197,11 @@ defmodule DockdWeb.DockdComponents do
   attr :date, Date, default: nil
   attr :precision, :atom, default: :day
   attr :today, Date, default: nil
+  attr :release, :boolean, default: true, doc: "false for a day of the Diário, never red"
 
   def date_block(assigns) do
     today = assigns.today || Date.utc_today()
-    soon = assigns.date && Date.diff(assigns.date, today) in 0..14
+    soon = (assigns.release and assigns.date) && Date.diff(assigns.date, today) in 0..14
     assigns = assign(assigns, soon: soon, month: assigns.date && month_label(assigns.date))
 
     ~H"""

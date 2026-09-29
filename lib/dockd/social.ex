@@ -207,6 +207,51 @@ defmodule Dockd.Social do
   def recent(%User{id: owner_id} = owner, limit \\ 5) do
     shelf = owner |> Shelf.list() |> Map.new(&{&1.game.id, &1})
 
+    owner_id
+    |> status_events()
+    |> Enum.flat_map(fn event ->
+      case change(event) do
+        nil ->
+          []
+
+        {:backlog, _verb} ->
+          []
+
+        {status, verb} ->
+          [%{game_id: event.game_id, status: status, verb: verb, at: event.occurred_at}]
+      end
+    end)
+    |> Enum.uniq_by(& &1.game_id)
+    |> Enum.flat_map(fn %{game_id: game_id, status: status} = change ->
+      case shelf[game_id] do
+        %Shelf{status: ^status} = item -> [%{item: item, verb: change.verb, at: change.at}]
+        _ -> []
+      end
+    end)
+    |> Enum.take(limit)
+  end
+
+  @doc """
+  The Diário of a profile (`maquetes/perfil-diario.html`, caminho A): every status change
+  of `owner`, newest first, each with the status it marked. Games that left the library
+  stay out, and so do purchases, prices, ownership and vetoes.
+  """
+  def diary(%User{id: owner_id} = owner) do
+    shelf = owner |> Shelf.list() |> Map.new(&{&1.game.id, &1})
+
+    owner_id
+    |> status_events()
+    |> Enum.flat_map(fn event ->
+      with {status, _verb} <- change(event),
+           %Shelf{} = item <- shelf[event.game_id] do
+        [%{id: event.id, item: item, status: status, at: event.occurred_at}]
+      else
+        _ -> []
+      end
+    end)
+  end
+
+  defp status_events(owner_id) do
     Repo.all(
       from e in Event,
         where:
@@ -223,23 +268,6 @@ defmodule Dockd.Social do
         order_by: [desc: e.occurred_at],
         limit: 500
     )
-    |> Enum.flat_map(fn event ->
-      case change(event) do
-        nil ->
-          []
-
-        {status, verb} ->
-          [%{game_id: event.game_id, status: status, verb: verb, at: event.occurred_at}]
-      end
-    end)
-    |> Enum.uniq_by(& &1.game_id)
-    |> Enum.flat_map(fn %{game_id: game_id, status: status} = change ->
-      case shelf[game_id] do
-        %Shelf{status: ^status} = item -> [%{item: item, verb: change.verb, at: change.at}]
-        _ -> []
-      end
-    end)
-    |> Enum.take(limit)
   end
 
   defp change(%Event{type: :started}), do: {:jogando, "Começou a jogar"}
@@ -270,5 +298,8 @@ defmodule Dockd.Social do
        when intent in @wanting,
        do: {:quero, "Quer"}
 
+  # Entering the library without wanting it is entering owned: Backlog needs an ownership.
+  # :backlogged stays out: a purchase writes it, and the profile never shows purchases.
+  defp change(%Event{type: :added}), do: {:backlog, "Entrou na biblioteca"}
   defp change(_event), do: nil
 end

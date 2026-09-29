@@ -2,7 +2,9 @@ defmodule DockdWeb.ProfileLive do
   @moduledoc """
   Perfil público em `/u/:username` (`maquetes/perfil-social.html`, Estante): Jogando,
   Zerados e Quero em faixas e o Recente em linhas; as listas de seguidores e seguindo; e a
-  grade inteira de uma faixa. As capas levam a etiqueta de quem olha, como em Descobrir.
+  grade inteira de uma faixa; e o Diário (`maquetes/perfil-diario.html`, caminho A), uma
+  linha por troca de status com o bloco de data na primeira do dia. As capas levam a
+  etiqueta de quem olha, como em Descobrir.
 
   O perfil é aberto na web por padrão; com Só amigos, quem não é amigo vê só o nome, as
   contagens e o botão Seguir.
@@ -16,6 +18,7 @@ defmodule DockdWeb.ProfileLive do
 
   @game_events GameEvents.events()
   @strip 7
+  @day 10
   @sections [
     jogando: {"Jogando agora", "jogando"},
     zerado: {"Zerados", "zerados"},
@@ -30,8 +33,9 @@ defmodule DockdWeb.ProfileLive do
     {:ok,
      socket
      |> assign(owner: owner, user: viewer, page_title: owner.name)
+     |> assign(open_days: MapSet.new())
      |> GameEvents.init()
-     |> UserAuth.halt_visitor_events([])
+     |> UserAuth.halt_visitor_events(["more_day"])
      |> load()}
   end
 
@@ -48,6 +52,9 @@ defmodule DockdWeb.ProfileLive do
     :ok = Social.unfollow(socket.assigns.user, Social.get_profile!(username))
     {:noreply, load(socket)}
   end
+
+  def handle_event("more_day", %{"day" => day}, socket),
+    do: {:noreply, update(socket, :open_days, &MapSet.put(&1, Date.from_iso8601!(day)))}
 
   def handle_event("set_visibility", %{"visibility" => visibility}, socket) do
     %{owner: owner, user: user} = socket.assigns
@@ -83,6 +90,15 @@ defmodule DockdWeb.ProfileLive do
     assign(socket, people: Social.people(socket.assigns.owner, action, socket.assigns.user))
   end
 
+  defp load_view(%{assigns: %{live_action: :diary, owner: owner}} = socket, true) do
+    entries = Social.diary(owner)
+
+    assign(socket,
+      diary_count: length(entries),
+      diary: Enum.chunk_by(entries, &DateTime.to_date(&1.at))
+    )
+  end
+
   defp load_view(%{assigns: %{owner: owner, user: viewer}} = socket, true) do
     mine = if viewer, do: viewer |> Shelf.list() |> Map.new(&{&1.game.id, &1}), else: %{}
 
@@ -103,7 +119,7 @@ defmodule DockdWeb.ProfileLive do
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, strip: @strip, sections: @sections)
+    assigns = assign(assigns, strip: @strip, sections: @sections, day: @day)
 
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope} catalog_review={@catalog_review}>
@@ -152,7 +168,13 @@ defmodule DockdWeb.ProfileLive do
             </.empty_state>
 
             <%= if @recent != [] do %>
-              <.section_head id="profile-recent" title="Recente" />
+              <.section_head id="profile-recent" title="Recente">
+                <:action>
+                  <.link id="profile-diary-link" navigate={~p"/u/#{@owner.username}/diario"}>
+                    Ver diário
+                  </.link>
+                </:action>
+              </.section_head>
               <div id="profile-recent-rows">
                 <div
                   :for={change <- @recent}
@@ -177,6 +199,35 @@ defmodule DockdWeb.ProfileLive do
                 </div>
               </div>
             <% end %>
+          <% :diary -> %>
+            <.section_head id="profile-diary" title="Diário" count={@diary_count} />
+            <div id="diary">
+              <%= for [first | _] = entries <- @diary do %>
+                <.diary_entry
+                  :for={
+                    {entry, index} <-
+                      Enum.with_index(Enum.take(entries, day_limit(@open_days, entries, @day)))
+                  }
+                  entry={entry}
+                  first={index == 0}
+                />
+                <div
+                  :if={length(entries) > day_limit(@open_days, entries, @day)}
+                  class="dk-entry dk-entry--more"
+                >
+                  <button
+                    id={"diary-more-#{Date.to_iso8601(DateTime.to_date(first.at))}"}
+                    type="button"
+                    class="dk-link"
+                    phx-click="more_day"
+                    phx-value-day={Date.to_iso8601(DateTime.to_date(first.at))}
+                  >
+                    Mais {length(entries) - @day} neste dia
+                  </button>
+                </div>
+              <% end %>
+            </div>
+            <.empty_state :if={@diary == []} id="diary-empty">Nada no diário ainda.</.empty_state>
           <% action when action in [:followers, :following] -> %>
             <.tabs id="profile-people-tabs">
               <:tab
@@ -220,6 +271,46 @@ defmodule DockdWeb.ProfileLive do
         <% end %>
       <% end %>
     </Layouts.app>
+    """
+  end
+
+  # Um dia cheio mostra dez linhas até Mais N abrir o resto no lugar.
+  defp day_limit(open_days, [first | _] = entries, day) do
+    if MapSet.member?(open_days, DateTime.to_date(first.at)), do: length(entries), else: day
+  end
+
+  attr :entry, :map, required: true
+  attr :first, :boolean, required: true
+
+  # DiaryEntry: a data abre o dia, a etiqueta diz o que a pessoa marcou.
+  defp diary_entry(assigns) do
+    ~H"""
+    <div
+      id={"diary-#{@entry.id}"}
+      class={["dk-entry", @first && "dk-entry--first"]}
+      data-status={@entry.status}
+    >
+      <div class="dk-entry__date">
+        <.date_block :if={@first} date={DateTime.to_date(@entry.at)} release={false} />
+      </div>
+      <.poster
+        title={@entry.item.game.title}
+        cover_url={@entry.item.game.cover_url}
+        navigate={~p"/jogos/#{@entry.item.game.id}"}
+        size="sm"
+      />
+      <div class="dk-entry__text">
+        <.link navigate={~p"/jogos/#{@entry.item.game.id}"} class="dk-row__title">
+          {@entry.item.game.title}
+        </.link>
+        <div class="dk-row__meta">
+          {platform_label(@entry.item.releases)}<.exclusive_mark availability={
+            @entry.item.game.availability
+          } />
+        </div>
+      </div>
+      <.status_chip status={@entry.status} size="sm" />
+    </div>
     """
   end
 

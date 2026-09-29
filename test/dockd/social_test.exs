@@ -133,6 +133,21 @@ defmodule Dockd.SocialTest do
       assert length(recent) == 4
     end
 
+    test "the Diário lists every status change of games still in the library",
+         %{ana: ana, games: games} do
+      {:ok, _} = Library.set_status(ana, games.playing.game, :zerado)
+      diary = Social.diary(ana)
+      marks = Enum.map(diary, &{&1.item.game.id, &1.status})
+
+      assert hd(marks) == {games.playing.game.id, :zerado}
+      assert {games.playing.game.id, :jogando} in marks
+      assert {games.owned.game.id, :backlog} in marks
+      assert {games.wanted.game.id, :quero} in marks
+      assert {games.dropped.game.id, :larguei} in marks
+      refute Enum.any?(marks, fn {id, _} -> id == games.removed.game.id end)
+      assert length(diary) == 6
+    end
+
     test "Amigos jogando shows only what mutual follows play", %{ana: ana, games: games} do
       bia = account("bia@example.com")
       caio = account("caio@example.com")

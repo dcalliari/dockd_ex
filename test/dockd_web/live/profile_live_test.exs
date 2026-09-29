@@ -47,6 +47,43 @@ defmodule DockdWeb.ProfileLiveTest do
       assert has_element?(view, "#profile-closed", "Perfil só para amigos.")
       refute has_element?(view, "#profile-jogando")
       refute has_element?(view, "#profile-followers")
+
+      {:ok, view, _html} = live(conn, ~p"/u/ana/diario")
+      assert has_element?(view, "#profile-closed")
+      refute has_element?(view, "#diary")
+    end
+
+    test "opens the Diário from Recente, one row per change with the date on the first",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/u/ana")
+      assert has_element?(view, "#profile-diary-link[href='/u/ana/diario']", "Ver diário")
+
+      {:ok, view, html} = live(conn, ~p"/u/ana/diario")
+      assert has_element?(view, "#profile-back", "Ana")
+      assert has_element?(view, "#profile-diary", "Diário")
+      assert has_element?(view, "#diary .dk-entry[data-status='jogando']", "Hollow Knight")
+      assert has_element?(view, "#diary .dk-entry[data-status='quero']", "Hades II")
+      assert has_element?(view, "#diary .dk-entry--first .dk-date")
+      refute has_element?(view, "#diary .dk-date--soon")
+
+      assert html |> LazyHTML.from_document() |> LazyHTML.query("#diary .dk-date") |> Enum.count() ==
+               1
+
+      refute html =~ "R$"
+    end
+
+    test "a full day shows ten rows and Mais N opens the rest in place", %{conn: conn, ana: ana} do
+      for index <- 1..12 do
+        {:ok, _} = Library.set_status(ana, game_fixture(%{title: "Wish #{index}"}), :quero)
+      end
+
+      {:ok, view, _html} = live(conn, ~p"/u/ana/diario")
+      today = Date.to_iso8601(Date.utc_today())
+      assert view |> element("#diary-more-#{today}") |> render() =~ "Mais 4 neste dia"
+
+      view |> element("#diary-more-#{today}") |> render_click()
+      refute has_element?(view, "#diary-more-#{today}")
+      assert has_element?(view, "#diary .dk-entry", "Wish 1")
     end
 
     test "finds no profile for an unknown name", %{conn: conn} do

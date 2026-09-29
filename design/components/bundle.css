@@ -304,3 +304,13 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 
 /* Recente do perfil: o verbo do histórico em negrito na meta da linha */
 .dk-verb { color: var(--ink); font-weight: 600; }
+
+/* DiaryEntry: data, capa, título e a etiqueta do que a pessoa marcou; o bloco de data só na
+   primeira linha do dia, que abre com um fio line-strong (maquetes/perfil-diario.html, caminho A) */
+.dk-entry { display: grid; grid-template-columns: 44px 33px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }
+.dk-entry--first { border-top: 1px solid var(--line-strong); margin-top: -1px; }
+#diary > .dk-entry--first:first-child { border-top: 0; margin-top: 0; }
+.dk-entry__date { width: 44px; height: 44px; }
+.dk-entry__text { min-width: 0; }
+.dk-entry--more { grid-template-columns: 44px 33px minmax(0, 1fr); }
+.dk-entry--more > .dk-link { grid-column: 3; justify-self: start; }

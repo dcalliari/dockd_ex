@@ -78,10 +78,29 @@ test("Só amigos closes the profile to a visitor and Público opens it again", a
   await visitor.close();
 });
 
+test("Ver diário opens the Diário, one row per change, and Mais N opens the rest", async ({ page }) => {
+  await signIn(page);
+  await page.goto("/u/e2e");
+  await page.locator("#profile-diary-link").click();
+  await expect(page).toHaveURL(/\/u\/e2e\/diario$/);
+
+  const rows = page.locator("#diary .dk-entry:not(.dk-entry--more)");
+  await expect(rows.first().locator(".dk-date")).toBeVisible();
+  await expect(page.locator("#diary .dk-date--soon")).toHaveCount(0);
+  await expect(page.getByText("R$")).toHaveCount(0);
+
+  const more = page.locator("#diary .dk-entry--more .dk-link").first();
+  await expect(more).toContainText("neste dia");
+  const before = await rows.count();
+  await more.click();
+  await expect.poll(() => rows.count()).toBeGreaterThan(before);
+  if (shots) await page.screenshot({ path: `${shots}/diario-1280.png`, fullPage: true });
+});
+
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 375, height: 800 }, hasTouch: true, isMobile: true });
 
-  test("the profile and the followers fit at 375", async ({ page }) => {
+  test("the profile, the followers and the Diário fit at 375", async ({ page }) => {
     await signIn(page);
     await page.goto("/u/amiga");
     await expect(page.locator("#profile-head")).toBeVisible();
@@ -92,5 +111,10 @@ test.describe("on a phone", () => {
     await expect(page.locator("#person-amiga")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
     if (shots) await page.screenshot({ path: `${shots}/seguidores-375.png`, fullPage: true });
+
+    await page.goto("/u/e2e/diario");
+    await expect(page.locator("#diary .dk-entry").first()).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
+    if (shots) await page.screenshot({ path: `${shots}/diario-375.png` });
   });
 });
