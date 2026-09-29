@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Configurações de conta · 3 caminhos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
+<style>
+:root, [data-theme="light"] { --surface:#ffffff;--surface-raised:#f4f2f1;--surface-sunken:#ebe8e6;--line:#dedad8;--line-strong:#8f8886;--ink:#161414;--ink-muted:#6a6462;--on-ink:#ffffff;--red:#e60012;--red-hover:#cc0010;--on-red:#ffffff;--red-ink:#d4000f;--warn:#9a5b00;--poster-edge:#0000001f;--focus-ring:var(--red-ink); }
+[data-theme="dark"] { --surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink); } }
+:root { --gold:#f2c200;--on-gold:#ffffff;--scrim:#000000a6;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--radius-sm:3px;--radius-md:6px;--container-max:1120px;--nav-height:56px;--control-height:36px;--thumb-height:44px;--cover-min:140px;--font-sans:"Archivo", "Helvetica Neue", Arial, sans-serif; }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { max-width: 100%; }
+body { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* type */
+.t-label { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; }
+
+/* review harness (not Dockd chrome) */
+.page { width: min(100%, 1600px); margin: 0 auto; padding: var(--space-5) var(--space-4) var(--space-7); }
+.review { max-width: 80ch; margin-bottom: var(--space-6); }
+.review h1 { font-size: 20px; line-height: 26px; margin: 0 0 var(--space-2); }
+.review .dk-section h2 { font-size: 11px; }
+.opt { margin-bottom: var(--space-7); }
+.opt > p.lead, .opt > ul.lead, .review > ul.lead, .review > p.lead { margin: 0 0 var(--space-4); max-width: 80ch; font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+.opt > p.lead b, .opt > ul.lead b, .review b { color: var(--ink); }
+.opt > ul.lead, .review > ul.lead { padding-left: 20px; }
+.row { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-bottom: var(--space-5); align-items: flex-start; }
+.row--desk .shot { flex: 1 1 560px; }
+.shot { margin: 0; min-width: 0; }
+.shot figcaption { margin-top: var(--space-2); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.tag-rec { display: inline-block; margin-left: var(--space-2); padding: 0 6px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 10px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px; }
+.tag-new { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: var(--radius-sm); background: var(--surface-sunken); color: var(--ink-muted); font-size: 10px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px; }
+.tag-old { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); color: var(--ink-muted); font-size: 10px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px; }
+@media (max-width: 420px) { .frame--phone { width: calc(100vw - 2 * var(--space-4)); } .row--desk .shot { flex-basis: 100%; } }
+
+/* frame harness */
+.frame { position: relative; overflow: auto; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
+.frame--desk { height: 760px; }
+.frame--short { height: 420px; }
+.frame--phone { width: 375px; height: 720px; }
+.frame .dk-nav { position: sticky; top: 0; z-index: 3; }
+.frame .dk-nav__search { margin-left: 0; }
+.frame .dk-account { margin-left: auto; }
+.frame--phone .dk-nav__links, .frame--phone .dk-nav__search { display: none; }
+.frame--phone .dk-nav__icon { margin-left: 0; display: inline-flex; }
+.frame--desk .dk-nav__icon { display: none; }
+.frame .dk-bottomnav { display: none; }
+.frame__page { max-width: 640px; margin: 0 auto; padding: var(--space-5) var(--space-4) var(--space-6); }
+.frame--phone .frame__page { padding: var(--space-4) var(--space-4) var(--space-6); }
+
+/* NavBar */
+.dk-nav { height: var(--nav-height); display: flex; align-items: center; gap: var(--space-5); padding: 0 var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
+.dk-wordmark { font-size: 22px; line-height: 24px; font-weight: 900; font-stretch: 125%; letter-spacing: -0.02em; color: var(--ink); }
+.dk-wordmark i { font-style: normal; color: var(--red); }
+.dk-nav__links { display: flex; gap: var(--space-4); }
+.dk-nav__link { padding: 4px 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-bottom: 2px solid transparent; }
+.dk-nav__link[aria-current="page"] { color: var(--ink); border-bottom-color: var(--red); }
+.dk-search { position: relative; }
+.dk-nav__search { margin-left: auto; width: 260px; }
+.dk-search input { width: 100%; height: var(--control-height); padding: 0 var(--space-3) 0 36px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; }
+.dk-search svg { position: absolute; left: 12px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--ink-muted); }
+.dk-nav__icon { margin-left: auto; display: none; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--ink); }
+.dk-nav__icon svg { width: 20px; height: 20px; }
+.icon { width: 16px; height: 16px; display: inline-block; vertical-align: -3px; }
+
+/* Account menu */
+.dk-account { position: relative; }
+.dk-account > summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 0; cursor: pointer; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.dk-account > summary::-webkit-details-marker { display: none; }
+.dk-account > summary svg { width: 12px; height: 12px; }
+.dk-account__who { padding: 6px var(--space-3) var(--space-2); margin-bottom: var(--space-1); border-bottom: 1px solid var(--line); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-filter__menu { position: absolute; left: auto; right: 0; top: calc(100% + var(--space-2)); z-index: 4; min-width: 208px; margin: 0; padding: var(--space-1) 0; list-style: none; background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.dk-account .dk-filter__menu button, .dk-account .dk-filter__menu a { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 6px var(--space-3); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink); text-align: left; white-space: nowrap; }
+.dk-account .dk-filter__menu button:hover, .dk-account .dk-filter__menu a:hover { background: var(--surface-sunken); }
+.dk-account .dk-filter__menu li[data-highlight] a { position: relative; }
+.dk-account .dk-filter__menu li[data-highlight] a::after { content: "novo"; margin-left: var(--space-2); padding: 0 5px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 9px; line-height: 14px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+
+/* SectionHead */
+.dk-section { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); margin: var(--space-6) 0 var(--space-3); }
+.dk-section:first-child { margin-top: 0; }
+.dk-section h2 { margin: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+
+/* Choice */
+.dk-choice { display: inline-flex; height: 32px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden; }
+.dk-choice > label { position: relative; display: flex; }
+.dk-choice > label > input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.dk-choice > label > span { display: inline-flex; align-items: center; height: 100%; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-muted); background: var(--surface); white-space: nowrap; cursor: pointer; }
+.dk-choice > * + * { border-left: 1px solid var(--line-strong); }
+.dk-choice > label > input:checked + span { background: var(--ink); color: var(--on-ink); }
+
+/* Button */
+.dk-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; }
+.dk-btn--primary { background: var(--red); border-color: var(--red); color: var(--on-red); }
+.dk-btn--secondary { border-color: var(--line-strong); color: var(--ink); background: var(--surface); }
+.dk-btn--sm { height: 28px; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; }
+
+/* Field */
+.dk-field { display: flex; flex-direction: column; gap: var(--space-1); }
+.dk-field input { height: 32px; padding: 0 var(--space-2); border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-size: 13px; }
+.dk-field input::placeholder { color: var(--ink-muted); }
+.dk-field input[readonly] { color: var(--ink-muted); background: var(--surface-sunken); }
+.dk-field.is-error input { border-color: var(--red-ink); }
+.dk-field__error { font-size: 12px; line-height: 16px; color: var(--red-ink); }
+
+/* Tabs */
+.dk-tabs { display: flex; gap: var(--space-5); border-bottom: 1px solid var(--line); overflow-x: auto; }
+.dk-tab { position: relative; display: inline-flex; align-items: baseline; gap: 6px; padding: var(--space-2) 0 10px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
+.dk-tab[aria-selected="true"] { color: var(--ink); }
+.dk-tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--red); }
+
+/* Footer */
+.dk-footer { padding: var(--space-4) var(--space-4) var(--space-5); border-top: 1px solid var(--line); }
+.dk-footer__line { margin: 0; display: flex; align-items: center; gap: var(--space-2); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-footer .dk-wordmark { font-size: 13px; line-height: 16px; }
+
+/* --- New, proposed: dk-settings-row (a labelled row that edits in place, like Comprar's manual price row) --- */
+.dk-settings-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); padding: var(--space-3) 0; border-bottom: 1px solid var(--line); }
+.dk-settings-row:last-child { border-bottom: 0; }
+.dk-settings-row__label { flex: 0 0 168px; padding-top: 6px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink); }
+.dk-settings-row__field { flex: 1 1 auto; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); justify-content: flex-end; }
+.dk-settings-row__value { font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+.dk-settings-row__field .dk-field input { width: 200px; }
+.dk-settings-row--confirm { background: var(--surface-raised); border-radius: var(--radius-sm); padding: var(--space-3); border-bottom: 0; margin-bottom: var(--space-2); }
+.dk-settings-row--confirm .dk-settings-row__label { flex-basis: auto; color: var(--red-ink); }
+.dk-settings-row__warn { flex: 1 1 220px; font-size: 13px; line-height: 18px; color: var(--red-ink); }
+@media (max-width: 420px) { .dk-settings-row { flex-direction: column; align-items: stretch; } .dk-settings-row__label { flex-basis: auto; padding-top: 0; } .dk-settings-row__field { justify-content: flex-start; } .dk-settings-row__field .dk-field input { width: 100%; } .dk-settings-row--confirm { flex-direction: column; } }
+
+/* --- New, proposed: sidebar layout for option C --- */
+.dk-settings-shell { display: flex; gap: var(--space-6); align-items: flex-start; }
+.dk-settings-nav { flex: 0 0 152px; display: flex; flex-direction: column; gap: 2px; }
+.dk-settings-nav a { padding: 8px var(--space-2); border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: var(--ink-muted); }
+.dk-settings-nav a[aria-current="page"] { background: var(--surface-sunken); color: var(--ink); }
+.dk-settings-panel { flex: 1 1 auto; min-width: 0; }
+.dk-settings-list a { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 600; color: var(--ink); }
+.dk-settings-list a svg { width: 16px; height: 16px; color: var(--ink-muted); }
+</style>
+</head>
+<body>
+<main class="page">
+
+<section class="review">
+  <div class="dk-section"><h2>Configurações de conta · a decidir</h2></div>
+  <h1>O que hoje já é configurável, e o que seria novo</h1>
+  <p class="lead">Não existe uma tela única de conta hoje: privacidade do perfil já se edita em <code>/u/:nome</code>, e o resto (e-mail, senha, nome de usuário, exclusão) não tem UI nenhuma. A lista abaixo é o conteúdo que proponho para <b>Configurações</b>; marquei o que reaproveita algo que já existe e o que é novo.</p>
+  <ul class="lead">
+    <li><b>Perfil</b> — nome de exibição <span class="tag-new">novo</span> (hoje vem só do e-mail, sem edição), nome de usuário <span class="tag-new">novo</span> (hoje gerado uma vez; trocar muda o link do perfil), privacidade do perfil <span class="tag-old">já existe</span> (mesmo Choice de <code>/u/:nome</code>, reaproveitado, não duplicado).</li>
+    <li><b>Conta</b> — e-mail <span class="tag-new">novo</span> (sem changeset de troca hoje; exige confirmar dentro da tela), senha <span class="tag-new">tela nova</span> (a troca já existe no domínio, só falta a UI), token da API <span class="tag-old">já existe</span> no menu — mantenho lá, para não duplicar a ação.</li>
+    <li><b>Encerrar</b> — excluir conta <span class="tag-new">novo</span> (não existe função nem UI hoje); confirma no próprio controle, sem <code>confirm()</code>. Sair já existe no menu e não entra aqui, para não repetir a ação.</li>
+    <li><b>Fora da proposta:</b> avatar (o design system veta foto e iniciais no perfil), preferência padrão de plataforma ou mídia (hoje é por jogo, não por conta; nada pede isso ainda) e lista de sessões ativas (o modelo é de sessão única, Sair já cobre).</li>
+  </ul>
+</section>
+
+<section class="opt" id="acesso">
+  <div class="dk-section"><h2>Onde é acessada</h2></div>
+  <p class="lead">Um item novo, <b>Configurações</b>, entra no menu da conta logo depois de Perfil, antes de Conferir catálogo e Sair. O menu é o mesmo componente (<code>account_menu/1</code>) em toda tela.</p>
+  <div class="row row--desk">
+    <figure class="shot">
+      <div class="frame frame--short" data-theme="light">
+        <header class="dk-nav">
+          <span class="dk-wordmark">dockd<i>.</i></span>
+          <nav class="dk-nav__links"><a class="dk-nav__link">Início</a><a class="dk-nav__link">Biblioteca</a><a class="dk-nav__link">Comprar</a><a class="dk-nav__link">Descobrir</a></nav>
+          <form class="dk-search dk-nav__search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" placeholder="Buscar no catálogo"></form>
+          <details class="dk-account" open>
+            <summary>Dono <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></summary>
+            <ul class="dk-filter__menu">
+              <li class="dk-account__who">dono@dockd.local</li>
+              <li><a>Perfil</a></li>
+              <li data-highlight><a>Configurações</a></li>
+              <li><button type="button">Copiar token da API</button></li>
+              <li><a>Sair</a></li>
+            </ul>
+          </details>
+        </header>
+        <div class="frame__page">
+          <p class="lead" style="max-width:520px">O restante da tela por trás fica como está; o menu de conta abre sobre ela.</p>
+        </div>
+      </div>
+      <figcaption>Menu da conta aberto · Configurações depois de Perfil · desktop · claro</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="opt" id="a">
+  <div class="dk-section"><h2>Opção A · seções numa página só <span class="tag-rec">recomendado</span></h2></div>
+  <p class="lead">Perfil, Conta e Encerrar como três SectionHead na mesma rolagem, no padrão que a página do jogo e Comprar já usam. Sem clique extra para trocar de grupo; cada campo edita no próprio lugar, como o preço em Comprar.</p>
+  <div class="row row--desk">
+    <figure class="shot">
+      <div class="frame frame--desk" data-theme="light">
+        <header class="dk-nav">
+          <span class="dk-wordmark">dockd<i>.</i></span>
+          <nav class="dk-nav__links"><a class="dk-nav__link">Início</a><a class="dk-nav__link">Biblioteca</a><a class="dk-nav__link">Comprar</a><a class="dk-nav__link">Descobrir</a></nav>
+          <form class="dk-search dk-nav__search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" placeholder="Buscar no catálogo"></form>
+          <details class="dk-account">
+            <summary>Dono <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></summary>
+          </details>
+        </header>
+        <div class="frame__page">
+          <div class="dk-section"><h2>Perfil</h2></div>
+          <div class="dk-settings-row">
+            <div class="dk-settings-row__label">Nome de exibição</div>
+            <div class="dk-settings-row__field"><label class="dk-field"><input value="Dono"></label></div>
+          </div>
+          <div class="dk-settings-row">
+            <div class="dk-settings-row__label">Nome de usuário</div>
+            <div class="dk-settings-row__field"><label class="dk-field"><input value="dono"></label></div>
+          </div>
+          <div class="dk-settings-row">
+            <div class="dk-settings-row__label">Privacidade do perfil</div>
+            <div class="dk-settings-row__field">
+              <div class="dk-choice" role="radiogroup" aria-label="Quem vê o perfil">
+                <label><input type="radio" name="visibility-a" checked><span>Público</span></label>
+                <label><input type="radio" name="visibility-a"><span>Só amigos</span></label>
+              </div>
+            </div>
+          </div>
+          <div class="dk-section"><h2>Conta</h2></div>
+          <div class="dk-settings-row">
+            <div class="dk-settings-row__label">E-mail</div>
+            <div class="dk-settings-row__field"><span class="dk-settings-row__value">dono@dockd.local</span><button class="dk-btn dk-btn--secondary dk-btn--sm">Trocar e-mail</button></div>
+          </div>
+          <div class="dk-settings-row">
+            <div class="dk-settings-row__label">Senha</div>
+            <div class="dk-settings-row__field"><button class="dk-btn dk-btn--secondary dk-btn--sm">Trocar senha</button></div>
+          </div>
+          <div class="dk-section"><h2>Encerrar</h2></div>
+          <div class="dk-settings-row">
+            <div class="dk-settings-row__label">Excluir conta</div>
+            <div class="dk-settings-row__field"><button class="dk-btn dk-btn--secondary dk-btn--sm">Excluir conta</button></div>
+          </div>
+        </div>
+        <footer class="dk-footer"><p class="dk-footer__line"><span class="dk-wordmark">dockd<i>.</i></span><span>·</span><a>Sobre</a></p></footer>
+      </div>
+      <figcaption>Opção A · estado parado · desktop · claro</figcaption>
+    </figure>
+  </div>
+  <div class="row">
+    <figure class="shot">
+      <div class="frame frame--phone" data-theme="dark">
+        <header class="dk-nav">
+          <span class="dk-wordmark">dockd<i>.</i></span>
+          <button class="dk-nav__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></button>
+          <details class="dk-account"><summary>Dono <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></summary></details>
+        </header>
+        <div class="frame__page">
+          <div class="dk-section"><h2>Conta</h2></div>
+          <div class="dk-settings-row">
+            <div class="dk-settings-row__label">E-mail</div>
+            <div class="dk-settings-row__field"><span class="dk-settings-row__value">dono@dockd.local</span></div>
+          </div>
+          <div class="dk-settings-row--confirm">
+            <div class="dk-settings-row__label">Trocar e-mail</div>
+            <div class="dk-settings-row__field">
+              <label class="dk-field" style="flex:1 1 100%"><input placeholder="Novo e-mail"></label>
+              <label class="dk-field" style="flex:1 1 100%"><input type="password" placeholder="Senha atual"></label>
+              <button class="dk-btn dk-btn--secondary dk-btn--sm">Cancelar</button>
+              <button class="dk-btn dk-btn--primary dk-btn--sm">Confirmar troca</button>
+            </div>
+          </div>
+          <div class="dk-section"><h2>Encerrar</h2></div>
+          <div class="dk-settings-row--confirm">
+            <div class="dk-settings-row__label">Excluir conta</div>
+            <div class="dk-settings-row__field">
+              <span class="dk-settings-row__warn">Apaga biblioteca, compras e histórico para sempre.</span>
+              <button class="dk-btn dk-btn--secondary dk-btn--sm">Cancelar</button>
+              <button class="dk-btn dk-btn--primary dk-btn--sm">Excluir para sempre</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Opção A · trocando e-mail e confirmando exclusão, sem diálogo nativo · 375 · escuro</figcaption>
+    </figure>
+    <figure class="shot">
+      <div class="frame frame--phone" data-theme="light">
+        <header class="dk-nav">
+          <span class="dk-wordmark">dockd<i>.</i></span>
+          <button class="dk-nav__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></button>
+          <details class="dk-account"><summary>Dono <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></summary></details>
+        </header>
+        <div class="frame__page">
+          <div class="dk-section"><h2>Perfil</h2></div>
+          <div class="dk-settings-row">
+            <div class="dk-settings-row__label">Nome de exibição</div>
+            <div class="dk-settings-row__field"><label class="dk-field"><input value="Dono"></label></div>
+          </div>
+          <div class="dk-settings-row">
+            <div class="dk-settings-row__label">Nome de usuário</div>
+            <div class="dk-settings-row__field"><label class="dk-field"><input value="dono"></label></div>
+          </div>
+          <div class="dk-settings-row">
+            <div class="dk-settings-row__label">Privacidade do perfil</div>
+            <div class="dk-settings-row__field">
+              <div class="dk-choice" role="radiogroup" aria-label="Quem vê o perfil">
+                <label><input type="radio" name="visibility-a2" checked><span>Público</span></label>
+                <label><input type="radio" name="visibility-a2"><span>Só amigos</span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Opção A · seção Perfil rolada ao topo · 375 · claro</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="opt" id="b">
+  <div class="dk-section"><h2>Opção B · abas</h2></div>
+  <p class="lead">Perfil, Conta e Encerrar como abas, no componente Tabs que a Biblioteca já usa. Separa mais os grupos, mas cada troca de aba é um clique a mais do que rolar a página inteira.</p>
+  <div class="row row--desk">
+    <figure class="shot">
+      <div class="frame frame--desk" data-theme="light">
+        <header class="dk-nav">
+          <span class="dk-wordmark">dockd<i>.</i></span>
+          <nav class="dk-nav__links"><a class="dk-nav__link">Início</a><a class="dk-nav__link">Biblioteca</a><a class="dk-nav__link">Comprar</a><a class="dk-nav__link">Descobrir</a></nav>
+          <form class="dk-search dk-nav__search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" placeholder="Buscar no catálogo"></form>
+          <details class="dk-account"><summary>Dono <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></summary></details>
+        </header>
+        <div class="frame__page">
+          <nav class="dk-tabs">
+            <a class="dk-tab" aria-selected="true">Perfil</a>
+            <a class="dk-tab" aria-selected="false">Conta</a>
+            <a class="dk-tab" aria-selected="false">Encerrar</a>
+          </nav>
+          <div style="margin-top:var(--space-4)">
+            <div class="dk-settings-row">
+              <div class="dk-settings-row__label">Nome de exibição</div>
+              <div class="dk-settings-row__field"><label class="dk-field"><input value="Dono"></label></div>
+            </div>
+            <div class="dk-settings-row">
+              <div class="dk-settings-row__label">Nome de usuário</div>
+              <div class="dk-settings-row__field"><label class="dk-field"><input value="dono"></label></div>
+            </div>
+            <div class="dk-settings-row">
+              <div class="dk-settings-row__label">Privacidade do perfil</div>
+              <div class="dk-settings-row__field">
+                <div class="dk-choice" role="radiogroup" aria-label="Quem vê o perfil">
+                  <label><input type="radio" name="visibility-b" checked><span>Público</span></label>
+                  <label><input type="radio" name="visibility-b"><span>Só amigos</span></label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="dk-footer"><p class="dk-footer__line"><span class="dk-wordmark">dockd<i>.</i></span><span>·</span><a>Sobre</a></p></footer>
+      </div>
+      <figcaption>Opção B · aba Perfil ativa · desktop · claro</figcaption>
+    </figure>
+  </div>
+  <div class="row">
+    <figure class="shot">
+      <div class="frame frame--phone" data-theme="dark">
+        <header class="dk-nav">
+          <span class="dk-wordmark">dockd<i>.</i></span>
+          <button class="dk-nav__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></button>
+          <details class="dk-account"><summary>Dono <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></summary></details>
+        </header>
+        <div class="frame__page">
+          <nav class="dk-tabs">
+            <a class="dk-tab" aria-selected="false">Perfil</a>
+            <a class="dk-tab" aria-selected="true">Conta</a>
+            <a class="dk-tab" aria-selected="false">Encerrar</a>
+          </nav>
+          <div style="margin-top:var(--space-4)">
+            <div class="dk-settings-row">
+              <div class="dk-settings-row__label">E-mail</div>
+              <div class="dk-settings-row__field"><span class="dk-settings-row__value">dono@dockd.local</span><button class="dk-btn dk-btn--secondary dk-btn--sm">Trocar e-mail</button></div>
+            </div>
+            <div class="dk-settings-row">
+              <div class="dk-settings-row__label">Senha</div>
+              <div class="dk-settings-row__field"><button class="dk-btn dk-btn--secondary dk-btn--sm">Trocar senha</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Opção B · aba Conta, no celular a barra de abas rola de lado · 375 · escuro</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="opt" id="c">
+  <div class="dk-section"><h2>Opção C · lista lateral</h2></div>
+  <p class="lead">No desktop, uma coluna à esquerda como painel de sistema. No celular não cabe coluna: vira uma lista de três linhas, e cada uma abre uma subtela própria, com Voltar. É a opção com mais cliques no celular, por isso não é a recomendada.</p>
+  <div class="row row--desk">
+    <figure class="shot">
+      <div class="frame frame--desk" data-theme="dark">
+        <header class="dk-nav">
+          <span class="dk-wordmark">dockd<i>.</i></span>
+          <nav class="dk-nav__links"><a class="dk-nav__link">Início</a><a class="dk-nav__link">Biblioteca</a><a class="dk-nav__link">Comprar</a><a class="dk-nav__link">Descobrir</a></nav>
+          <form class="dk-search dk-nav__search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" placeholder="Buscar no catálogo"></form>
+          <details class="dk-account"><summary>Dono <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></summary></details>
+        </header>
+        <div class="frame__page" style="max-width:760px">
+          <div class="dk-settings-shell">
+            <nav class="dk-settings-nav">
+              <a aria-current="page">Perfil</a>
+              <a>Conta</a>
+              <a>Encerrar</a>
+            </nav>
+            <div class="dk-settings-panel">
+              <div class="dk-section"><h2>Perfil</h2></div>
+              <div class="dk-settings-row">
+                <div class="dk-settings-row__label">Nome de exibição</div>
+                <div class="dk-settings-row__field"><label class="dk-field"><input value="Dono"></label></div>
+              </div>
+              <div class="dk-settings-row">
+                <div class="dk-settings-row__label">Nome de usuário</div>
+                <div class="dk-settings-row__field"><label class="dk-field"><input value="dono"></label></div>
+              </div>
+              <div class="dk-settings-row">
+                <div class="dk-settings-row__label">Privacidade do perfil</div>
+                <div class="dk-settings-row__field">
+                  <div class="dk-choice" role="radiogroup" aria-label="Quem vê o perfil">
+                    <label><input type="radio" name="visibility-c" checked><span>Público</span></label>
+                    <label><input type="radio" name="visibility-c"><span>Só amigos</span></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="dk-footer"><p class="dk-footer__line"><span class="dk-wordmark">dockd<i>.</i></span><span>·</span><a>Sobre</a></p></footer>
+      </div>
+      <figcaption>Opção C · coluna Perfil, Conta, Encerrar · desktop · escuro</figcaption>
+    </figure>
+  </div>
+  <div class="row">
+    <figure class="shot">
+      <div class="frame frame--phone" data-theme="light">
+        <header class="dk-nav">
+          <span class="dk-wordmark">dockd<i>.</i></span>
+          <button class="dk-nav__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg></button>
+          <details class="dk-account"><summary>Dono <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg></summary></details>
+        </header>
+        <div class="frame__page">
+          <div class="dk-settings-list">
+            <a>Perfil <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg></a>
+            <a>Conta <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg></a>
+            <a>Encerrar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg></a>
+          </div>
+        </div>
+      </div>
+      <figcaption>Opção C · lista no celular, cada linha abre uma subtela · 375 · claro</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="opt" id="recomendacao">
+  <div class="dk-section"><h2>Minha recomendação</h2></div>
+  <p class="lead"><b>Opção A</b>, seções numa página só. É a que pede menos clique: no celular, que é onde a lista lateral (C) piora mais, A só pede rolar. As abas (B) protegem contra uma página comprida, mas Configurações tem só sete campos ao todo, pouco para justificar um clique a mais por grupo. A confirma dentro do próprio controle, sem <code>confirm()</code> nem página nova, tanto para trocar e-mail quanto para excluir a conta, como o `Desfazer` já faz em Comprar e no StatusMenu.</p>
+</section>
+
+</main>
+</body>
+</html>
