@@ -28,7 +28,7 @@ defmodule Dockd.IGDB do
       do:
         post(
           "games",
-          "search \"#{escape(title)}\"; fields id,name,alternative_names.name,cover.image_id,summary,platforms.id,platforms.name,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,#{@family_fields}; where platforms = (#{@switch_id},#{@switch_2_id}); limit 20;"
+          "search \"#{escape(title)}\"; fields id,name,slug,alternative_names.name,cover.image_id,summary,platforms.id,platforms.name,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,#{@family_fields}; where platforms = (#{@switch_id},#{@switch_2_id}); limit 20;"
         ),
       else: {:error, :not_configured}
   end

@@ -37,6 +37,54 @@ defmodule Dockd.IGDBSyncTest do
     assert Enum.all?(game.releases, & &1.digital_available)
   end
 
+  test "sync heals a wrong slug always, and a shortened title only when the rename is clear" do
+    external =
+      Map.merge(game_response(), %{
+        "id" => 43,
+        "name" => "Cadence of Hyrule: Crypt of the NecroDancer Featuring the Legend of Zelda",
+        "slug" => "cadence-of-hyrule-crypt-of-the-necrodancer-featuring-the-legend-of-zelda"
+      })
+
+    stub_igdb(external)
+
+    {:ok, game} =
+      Catalog.create_game(%{
+        title: "Cadence of Hyrule",
+        slug: "cadence-of-hyrule",
+        availability: :nintendo_exclusive,
+        igdb_id: 43
+      })
+
+    assert {:ok, _} = Catalog.sync_igdb()
+    game = Repo.get!(Game, game.id)
+    assert game.slug == "cadence-of-hyrule-crypt-of-the-necrodancer-featuring-the-legend-of-zelda"
+    assert game.title == external["name"]
+  end
+
+  test "sync heals a wrong slug but leaves an unclear title difference for review" do
+    external =
+      Map.merge(game_response(), %{
+        "id" => 44,
+        "name" => "1-2-Switch: Ambiguous Rename Edition",
+        "slug" => "1-2-switch-ambiguous-rename-edition"
+      })
+
+    stub_igdb(external)
+
+    {:ok, game} =
+      Catalog.create_game(%{
+        title: "Ambiguous Rename",
+        slug: "ambiguous-rename-wrong",
+        availability: :nintendo_exclusive,
+        igdb_id: 44
+      })
+
+    assert {:ok, _} = Catalog.sync_igdb()
+    game = Repo.get!(Game, game.id)
+    assert game.slug == "1-2-switch-ambiguous-rename-edition"
+    assert game.title == "Ambiguous Rename"
+  end
+
   test "sync is idempotent and does not duplicate releases" do
     stub_igdb(game_response())
 

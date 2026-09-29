@@ -174,6 +174,63 @@ defmodule Dockd.IGDBRequirementsTest do
     assert Repo.get!(Game, wrong.id).igdb_id == nil
   end
 
+  test "a match always adopts IGDB's slug, and the title only when the difference is clear" do
+    Req.Test.stub("igdb-requirements", fn conn ->
+      case conn.request_path do
+        "/oauth2/token" ->
+          Req.Test.json(conn, %{access_token: "token", expires_in: 3600})
+
+        "/v4/games" ->
+          body = conn.adapter |> elem(1) |> Map.get(:raw_body)
+
+          response =
+            cond do
+              String.contains?(body, "Sports Resort") ->
+                [
+                  candidate(20, "Nintendo Switch Sports Resort", 508)
+                  |> Map.merge(%{
+                    "slug" => "nintendo-switch-sports-resort",
+                    "alternative_names" => [%{"name" => "Sports Resort"}]
+                  })
+                ]
+
+              String.contains?(body, "Ambiguous Rename") ->
+                [
+                  candidate(21, "1-2-Switch: Ambiguous Rename Edition", 130)
+                  |> Map.merge(%{
+                    "slug" => "1-2-switch-ambiguous-rename-edition",
+                    "alternative_names" => [%{"name" => "Ambiguous Rename"}]
+                  })
+                ]
+
+              true ->
+                []
+            end
+
+          Req.Test.json(conn, response)
+      end
+    end)
+
+    {:ok, shortened} =
+      Catalog.create_game(%{title: "Sports Resort", availability: :switch2_exclusive})
+
+    {:ok, doubtful} =
+      Catalog.create_game(%{title: "Ambiguous Rename", availability: :multiplatform})
+
+    assert %{matched: matched} = Catalog.match_igdb()
+    assert length(matched) == 2
+
+    shortened = Repo.get!(Game, shortened.id)
+    assert shortened.igdb_id == 20
+    assert shortened.title == "Nintendo Switch Sports Resort"
+    assert shortened.slug == "nintendo-switch-sports-resort"
+
+    doubtful = Repo.get!(Game, doubtful.id)
+    assert doubtful.igdb_id == 21
+    assert doubtful.title == "Ambiguous Rename"
+    assert doubtful.slug == "1-2-switch-ambiguous-rename-edition"
+  end
+
   # The eShop step that follows has no search key here and says so in the log.
   @tag :capture_log
   test "scheduler runs matching before the initial synchronization" do

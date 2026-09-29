@@ -111,6 +111,8 @@ defmodule Dockd.Catalog do
         publisher: company(external, "publisher"),
         synced_at: DateTime.utc_now()
       })
+      |> put_canonical_slug(external)
+      |> put_clear_title(game.title, external)
 
     game =
       case game |> Game.changeset(attrs) |> Repo.update() do
@@ -353,6 +355,33 @@ defmodule Dockd.Catalog do
       rating_count: external["total_rating_count"],
       hypes: external["hypes"]
     }
+
+  # The catalog's canonical link to a game always follows IGDB's own slug, kept in sync
+  # on every refresh: a slug guessed locally at manual creation or match time (from a
+  # shortened title) never resolves to the game's real IGDB page.
+  defp put_canonical_slug(attrs, %{"slug" => slug}) when is_binary(slug) and slug != "",
+    do: Map.put(attrs, :slug, slug)
+
+  defp put_canonical_slug(attrs, _external), do: attrs
+
+  # A manually typed or matched title is corrected to IGDB's official name only when the
+  # difference is unambiguous (the local title shortened or missing the official prefix);
+  # anything else stays for the dono to decide, so a same-game rename never guesses wrong.
+  defp put_clear_title(attrs, local_title, %{"name" => official})
+       when is_binary(official) and is_binary(local_title) do
+    if clear_rename?(local_title, official), do: Map.put(attrs, :title, official), else: attrs
+  end
+
+  defp put_clear_title(attrs, _local_title, _external), do: attrs
+
+  @doc false
+  def clear_rename?(local_title, official_name) do
+    local = normalize_title(local_title)
+    official = normalize_title(official_name)
+
+    local != official and
+      (String.starts_with?(official, local <> " ") or String.ends_with?(official, " " <> local))
+  end
 
   defp cover_url(%{"cover" => %{"image_id" => id}}) when is_binary(id),
     do: "https://images.igdb.com/igdb/image/upload/t_cover_big/#{id}.jpg"
@@ -1056,7 +1085,12 @@ defmodule Dockd.Catalog do
 
   defp apply_matches(matches) do
     Enum.each(matches, fn item ->
-      Repo.update!(Game.changeset(item.game, %{igdb_id: item.candidate["id"]}))
+      attrs =
+        %{igdb_id: item.candidate["id"]}
+        |> put_canonical_slug(item.candidate)
+        |> put_clear_title(item.game.title, item.candidate)
+
+      Repo.update!(Game.changeset(item.game, attrs))
     end)
   end
 
