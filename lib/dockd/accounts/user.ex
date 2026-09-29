@@ -2,6 +2,7 @@ defmodule Dockd.Accounts.User do
   @moduledoc "An account. Each account is one library."
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -9,6 +10,8 @@ defmodule Dockd.Accounts.User do
     field :name, :string
     field :email, :string
     field :admin, :boolean, default: false
+    field :username, :string
+    field :profile_visibility, Ecto.Enum, values: [:public, :friends], default: :public
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
@@ -19,17 +22,75 @@ defmodule Dockd.Accounts.User do
 
   @doc """
   Changeset for an email and a password: a new account, or the owner row that
-  predates accounts. The name shown in the navigation comes from the email, since
-  there is no profile to edit.
+  predates accounts. The name shown in the navigation and the username in the profile
+  address (`/u/:username`) come from the email, so there is no field to fill.
 
-  Pass `validate_unique: false` to skip the database lookup on live validation.
+  Pass `validate_unique: false` to skip the database lookups on live validation.
   """
   def registration_changeset(user, attrs, opts \\ []) do
-    user
-    |> cast(attrs, [:email, :password])
-    |> validate_email(opts)
-    |> validate_password(opts)
-    |> put_name_from_email()
+    changeset =
+      user
+      |> cast(attrs, [:email, :password])
+      |> validate_email(opts)
+      |> validate_password(opts)
+      |> put_name_from_email()
+
+    if Keyword.get(opts, :validate_unique, true), do: put_username(changeset), else: changeset
+  end
+
+  @doc "Changeset for who sees the profile: everyone, or only friends."
+  def visibility_changeset(user, visibility),
+    do:
+      user
+      |> cast(%{profile_visibility: visibility}, [:profile_visibility])
+      |> validate_required([:profile_visibility])
+
+  @doc """
+  The username an email suggests: the part before the at sign, lowercase, without
+  accents or symbols, up to 30 characters; `conta` when nothing is left.
+  """
+  def username_base(email) do
+    email
+    |> String.split("@")
+    |> hd()
+    |> String.downcase()
+    |> :unicode.characters_to_nfd_binary()
+    |> String.replace(~r/[^a-z0-9]/, "")
+    |> String.slice(0, 30)
+    |> case do
+      "" -> "conta"
+      base -> base
+    end
+  end
+
+  defp put_username(%{data: %{username: nil}} = changeset) do
+    case get_change(changeset, :email) do
+      nil ->
+        changeset
+
+      email ->
+        changeset
+        |> put_change(:username, free_username(username_base(email)))
+        |> unique_constraint(:username)
+    end
+  end
+
+  defp put_username(changeset), do: changeset
+
+  # The base, or the base followed by the first number no account took.
+  defp free_username(base) do
+    taken =
+      Dockd.Repo.all(
+        from u in __MODULE__, where: like(u.username, ^"#{base}%"), select: u.username
+      )
+      |> MapSet.new(&String.downcase/1)
+
+    Stream.iterate(1, &(&1 + 1))
+    |> Stream.map(fn
+      1 -> base
+      n -> "#{base}#{n}"
+    end)
+    |> Enum.find(&(not MapSet.member?(taken, &1)))
   end
 
   @doc "Changeset for replacing the password."
