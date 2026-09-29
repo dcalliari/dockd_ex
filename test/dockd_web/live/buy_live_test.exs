@@ -345,6 +345,33 @@ defmodule DockdWeb.BuyLiveTest do
       refute has_element?(view, "#estimate-physical")
     end
 
+    test "a physical price can be registered even though the release only declares digital",
+         %{conn: conn} = ctx do
+      release = hd(Dockd.Catalog.get_game!(ctx.soon.id).releases)
+      refute release.physical_available
+
+      {:ok, view, _html} = live(conn, "/comprar")
+      view |> element("#media-#{ctx.soon.id}") |> render_click()
+      assert has_element?(view, "#price-#{ctx.soon.id}", "Sem preço")
+
+      view |> element("#price-#{ctx.soon.id}") |> render_click()
+      assert has_element?(view, ~s(#price-form-#{ctx.soon.id} input[value="physical"]))
+
+      view
+      |> form("#price-form-#{ctx.soon.id}", %{
+        "format" => "physical",
+        "price" => "349,90",
+        "source" => "Loja física"
+      })
+      |> render_submit()
+
+      assert [%{format: :physical, price_cents: 34_990}] =
+               Purchasing.list_price_observations(ctx.user, release.id)
+
+      refute has_element?(view, "#price-#{ctx.soon.id}", "Sem preço")
+      assert has_element?(view, "#price-#{ctx.soon.id}", "R$ 349,90")
+    end
+
     test "Agora sums the digital games to buy now, without leaving Quero or writing history",
          %{conn: conn} = ctx do
       events = length(Activity.list_events(ctx.user))

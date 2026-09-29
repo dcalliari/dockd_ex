@@ -1082,21 +1082,20 @@ defmodule DockdWeb.DockdComponents do
 
   @doc """
   The manual price record, opened by clicking a price in Comprar or on the game page: the
-  version and media when there is a choice, the price seen and where, and the prices
-  already seen for the same game underneath.
+  version (when there is a choice) and media, always Digital or Físico regardless of what
+  the release declares available, since a manual sighting is how Dockd learns a release is
+  sold physically in the first place; then the price seen and where, and the prices already
+  seen for the same game underneath.
   """
   attr :id, :string, required: true
   attr :form, :map, required: true
   attr :error, :string, default: nil
 
   def price_form(assigns) do
-    media =
-      assigns.form.releases |> Enum.flat_map(&Dockd.Catalog.Release.media/1) |> Enum.uniq()
-
     assigns =
       assign(assigns,
         release_options: Enum.map(assigns.form.releases, &{&1.id, release_label(&1)}),
-        media_options: Enum.map(media, &{Atom.to_string(&1), enum_label(&1)})
+        media_options: Enum.map([:digital, :physical], &{Atom.to_string(&1), enum_label(&1)})
       )
 
     ~H"""
