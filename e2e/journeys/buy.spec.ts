@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { signIn } from "./sign-in";
 
 // Comprei in the place of the button (design/maquetes/compra.html, caminho A): the queue
-// line shows the estimated total per media, Comprei asks the media when there are two,
+// line shows the total per media (every wish is digital until its media changes), Comprei asks the media when there are two,
 // the answer is the purchase at the price seen, and Desfazer brings the game back. Nothing
 // here may open a native browser dialog.
 
@@ -16,8 +16,8 @@ test("Comprei buys at the price seen and Desfazer undoes it, in place", async ({
   await signIn(page);
   await page.goto("/comprar");
 
-  await expect(page.locator("#estimate-digital")).toContainText("R$ 400,00");
-  await expect(page.locator("#estimate-digital")).toContainText("em 2 de 6");
+  await expect(page.locator("#estimate-digital")).toContainText("R$ 479,95");
+  await expect(page.locator("#estimate-digital")).toContainText("em 3 de 7");
   await expect(page.locator("#estimate-physical")).toHaveCount(0);
 
   const row = page.locator("[id^=queue-]").filter({ hasText: "Buyable Quest" });
@@ -26,20 +26,23 @@ test("Comprei buys at the price seen and Desfazer undoes it, in place", async ({
 
   await expect(row.locator(".dk-status--backlog")).toBeVisible();
   await expect(row.locator(".dk-price--paid")).toContainText("R$ 100,00");
-  await expect(page.locator("#estimate-digital")).toContainText("em 1 de 5");
+  await expect(page.locator("#estimate-digital")).toContainText("em 2 de 6");
   await expect(page.locator("#month-spending")).toContainText("R$ 100,00");
 
   await row.getByRole("button", { name: "Desfazer" }).click();
   await expect(row.getByRole("button", { name: "Comprei" })).toBeVisible();
   await expect(page.locator("#month-spending")).toHaveCount(0);
-  await expect(page.locator("#estimate-digital")).toContainText("em 2 de 6");
+  await expect(page.locator("#estimate-digital")).toContainText("em 3 de 7");
 });
 
 test("the price opens the manual record under the row and keeps it", async ({ page }) => {
   await signIn(page);
   await page.goto("/comprar");
 
+  // A physical price shows once the game is to be bought physical.
   const row = page.locator("[id^=queue-]").filter({ hasText: "Mystery Quest" });
+  await row.locator("button.dk-media", { hasText: "Digital" }).click();
+  await expect(page.locator("#estimate-physical")).toContainText("Sem preço");
   await row.locator("button.dk-price", { hasText: "Sem preço" }).click();
   const form = row.locator("form.dk-form");
   await form.locator(".dk-choice label", { hasText: "Físico" }).click();
@@ -48,7 +51,11 @@ test("the price opens the manual record under the row and keeps it", async ({ pa
   await form.getByRole("button", { name: "Registrar preço" }).click();
 
   await expect(row.locator("button.dk-price")).toContainText("R$ 249,90");
-  await expect(page.locator("#estimate-physical")).toContainText("em 1 de 6");
+  await expect(page.locator("#estimate-physical")).toContainText("R$ 249,90");
+  await expect(page.locator("#estimate-physical")).toContainText("em 1 de 1");
+
+  await row.locator("button.dk-media", { hasText: "Físico" }).click();
+  await expect(page.locator("#estimate-physical")).toHaveCount(0);
 });
 
 test.describe("on a phone", () => {

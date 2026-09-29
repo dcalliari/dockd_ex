@@ -112,6 +112,33 @@ store_listing =
 })
 |> Repo.insert!()
 
+# Sale Quest is in Quero and on sale in the eShop: Comprar opens with it in Promoções.
+sale_quest = create_game.("Sale Quest", Date.add(today, -35), %{})
+
+sale_listing =
+  %StoreListing{release_id: sale_quest.release.id}
+  |> StoreListing.changeset(%{
+    store: :eshop_br,
+    match: :auto,
+    external_id: "70010000000020",
+    title: "Sale Quest",
+    sales_status: "onsale",
+    checked_at: now
+  })
+  |> Repo.insert!()
+
+%StorePrice{listing_id: sale_listing.id}
+|> StorePrice.changeset(%{
+  regular_cents: 15_990,
+  discount_cents: 7_995,
+  discount_starts_at: DateTime.add(now, -1, :day),
+  discount_ends_at: DateTime.add(now, 5, :day),
+  sales_status: "onsale",
+  first_seen_at: now,
+  last_seen_at: now
+})
+|> Repo.insert!()
+
 # A game sold in three editions besides the standard one, out of the library like Store
 # Quest: Versões shows the two cheapest under Switch and Comprei opens them with prices.
 edition_quest = create_game.("Edition Quest", Date.add(today, -60), %{})
@@ -209,7 +236,8 @@ for {data, target} <- [
       {future_veto, 15_000},
       {buyable, 20_000},
       {expensive, 20_000},
-      {mystery, 10_000}
+      {mystery, 10_000},
+      {sale_quest, 8_000}
     ] do
   {:ok, _entry} =
     Library.create_entry(owner, %{
@@ -271,4 +299,4 @@ friendly = create_game.("Friendly Voyage", Date.add(today, -90), %{})
 :ok = Social.follow(friend, owner)
 :ok = Social.follow(fan, owner)
 
-IO.puts("Dockd E2E fixture loaded: #{length(owned_games)} owned games and 30 wishlist entries")
+IO.puts("Dockd E2E fixture loaded: #{length(owned_games)} owned games and 31 wishlist entries")

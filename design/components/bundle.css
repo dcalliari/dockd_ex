@@ -99,6 +99,10 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 
 /* MediaTag */
 .dk-media { display: inline-flex; align-items: center; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); white-space: nowrap; }
+/* MediaTag como controle em Comprar: um toque troca Digital e Físico, como o preço e a etiqueta de status. */
+button.dk-media { padding: 1px 4px; margin: -1px -4px; border-radius: var(--radius-sm); color: var(--ink); transition: background-color 120ms; }
+button.dk-media:hover { background: var(--surface-sunken); }
+.dk-row__meta button.dk-media { display: inline; }
 
 /* Button */
 .dk-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; transition: background-color 120ms, border-color 120ms, color 120ms; }
@@ -108,6 +112,8 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-btn--secondary:hover { background: var(--surface-raised); }
 .dk-btn--sm { height: 28px; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; }
 .dk-btn[disabled] { opacity: .45; cursor: default; }
+/* Botão que fica marcado (Agora), com o preenchimento ink da opção escolhida do Choice. */
+.dk-btn[aria-pressed="true"], .dk-btn[aria-pressed="true"]:hover { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
 .dk-link { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--red-ink); }
 .dk-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 
@@ -162,6 +168,7 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-row__title { font-size: 14px; line-height: 18px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dk-row__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dk-row__end { display: flex; align-items: center; gap: var(--space-3); justify-self: end; }
+.dk-row__acts { display: flex; align-items: center; gap: var(--space-2); }
 
 /* DateBlock */
 .dk-date { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: var(--thumb-height); height: var(--thumb-height); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--ink); font-stretch: 90%; }
@@ -252,6 +259,7 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
 .dk-totals span { white-space: nowrap; }
 .dk-totals b { color: var(--ink); font-size: 15px; font-weight: 600; margin-left: 6px; }
 .dk-totals small { margin-left: 6px; font-size: 12px; }
+.dk-totals .dk-totals__none { color: var(--ink-muted); font-weight: 400; }
 @media (max-width: 767px) { .dk-totals { justify-content: space-between; } }
 
 /* MatchRow: a versão que a sincronização não casou sozinha e os produtos da eShop que podem

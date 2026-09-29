@@ -4,8 +4,8 @@ defmodule DockdWeb.BuyLiveTest do
   import Phoenix.LiveViewTest
   import Dockd.DomainFixtures
 
+  alias Dockd.{Activity, Library, Purchasing}
   alias Dockd.Library.Shelf
-  alias Dockd.Purchasing
 
   setup :register_and_log_in_user
 
@@ -103,13 +103,15 @@ defmodule DockdWeb.BuyLiveTest do
     refute has_element?(view, "#queue-#{game.id} button", "Comprei")
   end
 
-  test "the line on top shows the month's spending and no estimate without prices",
+  test "the line on top shows the month's spending and a media without prices as Sem preço",
        %{conn: conn} do
     {:ok, view, _html} = live(conn, "/comprar")
 
     assert has_element?(view, "#month-spending", "R$ 10,00")
-    refute has_element?(view, "#estimate-digital")
+    assert has_element?(view, "#estimate-digital .dk-totals__none", "Sem preço")
+    assert has_element?(view, "#estimate-digital", "4 jogos")
     refute has_element?(view, "#estimate-physical")
+    refute has_element?(view, "#planned-total")
   end
 
   test "the estimate adds each media's prices and says how many games it covers",
@@ -228,7 +230,7 @@ defmodule DockdWeb.BuyLiveTest do
 
     assert has_element?(view, "#buy-#{ctx.available.id} .dk-status--backlog")
     assert has_element?(view, "#buy-#{ctx.available.id}", "pago em")
-    refute has_element?(view, "#estimate-digital")
+    assert has_element?(view, "#estimate-digital", "3 jogos")
 
     view |> element("#buy-#{ctx.available.id} button", "Desfazer") |> render_click()
 
@@ -275,5 +277,92 @@ defmodule DockdWeb.BuyLiveTest do
         observed_at: DateTime.utc_now(),
         source: "eShop"
       })
+  end
+
+  describe "planning by media (design/maquetes/planejador.html, caminho A)" do
+    setup %{user: user} do
+      now = DateTime.utc_now()
+
+      sales =
+        for {title, days, cents} <- [{"Sale Ends Later", 12, 5_999}, {"Sale Ends Soon", 5, 5_339}] do
+          game = game_fixture(%{title: title})
+
+          release =
+            release_fixture(game, %{
+              platform: :switch_2,
+              release_date: Date.add(Date.utc_today(), -200)
+            })
+
+          store_price_fixture(release, %{
+            regular_cents: cents * 2,
+            discount_cents: cents,
+            discount_starts_at: DateTime.add(now, -1, :day),
+            discount_ends_at: DateTime.add(now, days, :day)
+          })
+
+          {:ok, _} = entry_fixture(user, game, %{purchase_intent: :want})
+          game
+        end
+
+      %{later: Enum.at(sales, 0), soon: Enum.at(sales, 1)}
+    end
+
+    test "Promoções holds the digital wishes on sale, the sale that ends first on top",
+         %{conn: conn} = ctx do
+      {:ok, view, html} = live(conn, "/comprar")
+
+      document = LazyHTML.from_document(html)
+      ids = document |> LazyHTML.query("div[id^=queue-]") |> LazyHTML.attribute("id")
+
+      assert Enum.take(ids, 2) == ["queue-#{ctx.soon.id}", "queue-#{ctx.later.id}"]
+      assert has_element?(view, "#price-#{ctx.soon.id} b", "R$ 53,39")
+      assert has_element?(view, "#estimate-digital", "R$ 113,38")
+      assert has_element?(view, "#estimate-digital", "em 2 de 6")
+    end
+
+    test "the media tag swaps the media in one tap, and the price and totals follow",
+         %{conn: conn} = ctx do
+      {:ok, view, _html} = live(conn, "/comprar")
+
+      assert has_element?(view, "#media-#{ctx.soon.id}", "Digital")
+      assert has_element?(view, "#plan-#{ctx.soon.id}")
+
+      view |> element("#media-#{ctx.soon.id}") |> render_click()
+
+      assert Library.get_entry_for_game(ctx.user, ctx.soon.id).media_preference == :physical
+      assert has_element?(view, "#media-#{ctx.soon.id}", "Físico")
+      assert has_element?(view, "#price-#{ctx.soon.id}", "Sem preço")
+      refute has_element?(view, "#plan-#{ctx.soon.id}")
+      assert has_element?(view, "#estimate-digital", "em 1 de 5")
+      assert has_element?(view, "#estimate-physical .dk-totals__none", "Sem preço")
+      assert has_element?(view, "#estimate-physical", "1 jogo")
+
+      # It stays in Promoções until the screen is left.
+      assert has_element?(view, "#queue-#{ctx.soon.id}")
+
+      view |> element("#media-#{ctx.soon.id}") |> render_click()
+      assert Library.get_entry_for_game(ctx.user, ctx.soon.id).media_preference == :digital
+      refute has_element?(view, "#estimate-physical")
+    end
+
+    test "Agora sums the digital games to buy now, without leaving Quero or writing history",
+         %{conn: conn} = ctx do
+      events = length(Activity.list_events(ctx.user))
+      {:ok, view, _html} = live(conn, "/comprar")
+
+      refute has_element?(view, "#planned-total")
+      view |> element("#plan-#{ctx.soon.id}") |> render_click()
+      view |> element("#plan-#{ctx.later.id}") |> render_click()
+
+      assert has_element?(view, "#planned-total", "R$ 113,38")
+      assert has_element?(view, ~s(#plan-#{ctx.soon.id}[aria-pressed="true"]))
+      assert Shelf.item(ctx.user, ctx.soon).status == :quero
+      assert length(Activity.list_events(ctx.user)) == events
+
+      view |> element("#plan-#{ctx.later.id}") |> render_click()
+      assert has_element?(view, "#planned-total", "R$ 53,39")
+      assert has_element?(view, ~s(#plan-#{ctx.later.id}[aria-pressed="false"]))
+      assert Library.get_entry_for_game(ctx.user, ctx.later.id).purchase_intent == :want
+    end
   end
 end
