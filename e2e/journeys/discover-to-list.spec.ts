@@ -23,6 +23,7 @@ test("a new game goes from Descobrir to the Biblioteca as Quero and can be start
 
   await page.locator("#game-status .dk-status-menu__current").hover();
   await page.locator("#game-status button.dk-status--jogando").click();
+  await page.locator("#game-status button[phx-click=own_elsewhere]").click();
   await expect(page.locator("#game-history")).toContainText("Começou a jogar");
 
   await page.locator("#game-back").click();

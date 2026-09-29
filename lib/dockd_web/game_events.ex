@@ -23,7 +23,7 @@ defmodule DockdWeb.GameEvents do
   alias Dockd.Catalog.Release
   alias Dockd.Library.Shelf
 
-  @events ~w(set_status own close_status buy more_choices undo_purchase paid_form save_paid price_form save_price cancel)
+  @events ~w(set_status own own_elsewhere close_status buy more_choices undo_purchase paid_form save_paid price_form save_price cancel)
   @media %{"physical" => :physical, "digital" => :digital}
 
   @doc "Event names handled here."
@@ -131,9 +131,14 @@ defmodule DockdWeb.GameEvents do
     with {:ok, status} <- parse_status(status),
          {:ok, game} <- resolve_game(params) do
       case Library.set_status(user(socket), game, status) do
-        {:ok, _} -> {:noreply, socket |> init() |> reload.()}
-        {:error, :needs_ownership} -> {:noreply, socket |> ask_ownership(game) |> reload.()}
-        {:error, _} -> {:noreply, failed(socket)}
+        {:ok, _} ->
+          {:noreply, socket |> init() |> reload.()}
+
+        {:error, :needs_ownership} ->
+          {:noreply, socket |> ask_ownership(game, status) |> reload.()}
+
+        {:error, _} ->
+          {:noreply, failed(socket)}
       end
     else
       _ -> {:noreply, failed(socket)}
@@ -146,14 +151,30 @@ defmodule DockdWeb.GameEvents do
         socket,
         reload
       ) do
+    status = asking_status(socket)
+
     with {:ok, game} <- resolve_game(params),
          {:ok, _} <-
-           Library.set_status(user(socket), game, :backlog,
+           Library.set_status(user(socket), game, status,
              ownership: %{
                release_id: release_id,
                ownership_type: Map.get(@media, media, :digital)
              }
            ) do
+      {:noreply, socket |> init() |> reload.()}
+    else
+      _ -> {:noreply, failed(socket)}
+    end
+  end
+
+  # The "Joguei em outro lugar" escape in the ask panel: for a played status only, since
+  # Backlog means owning but never having started, so there is nowhere else to have played.
+  def handle_event("own_elsewhere", params, socket, reload) do
+    status = asking_status(socket)
+
+    with {:ok, game} <- resolve_game(params),
+         true <- status in [:jogando, :pausado, :zerado, :larguei],
+         {:ok, _} <- Library.set_status(user(socket), game, status, owned_elsewhere: true) do
       {:noreply, socket |> init() |> reload.()}
     else
       _ -> {:noreply, failed(socket)}
@@ -328,11 +349,16 @@ defmodule DockdWeb.GameEvents do
   defp standard_releases(releases),
     do: releases |> Enum.filter(&Release.standard?/1) |> Enum.sort_by(& &1.platform)
 
-  # Platform and media only: the exact edition comes with a purchase.
-  defp ask_ownership(socket, game) do
+  defp asking_status(%{assigns: %{asking: %{status: status}}}), do: status
+  defp asking_status(_socket), do: :backlog
+
+  # Platform and media only: the exact edition comes with a purchase. Jogando, Pausado,
+  # Zerado and Larguei also offer "Joguei em outro lugar" (owned_elsewhere); Backlog does
+  # not, since it means owning but never having started.
+  defp ask_ownership(socket, game, status) do
     game = Catalog.get_game!(game.id)
 
-    choices =
+    versions =
       for release <- standard_releases(game.releases),
           media <- [:physical, :digital],
           do: %{
@@ -341,7 +367,14 @@ defmodule DockdWeb.GameEvents do
             label: "#{release_label(release)} · #{enum_label(media)}"
           }
 
-    socket |> assign(:status_open, nil) |> assign(:asking, %{game: game, choices: choices})
+    elsewhere =
+      if status in [:jogando, :pausado, :zerado, :larguei],
+        do: [%{elsewhere: true, label: "Joguei em outro lugar"}],
+        else: []
+
+    socket
+    |> assign(:status_open, nil)
+    |> assign(:asking, %{game: game, status: status, choices: versions ++ elsewhere})
   end
 
   defp failed(socket),

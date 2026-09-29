@@ -67,25 +67,35 @@ defmodule Dockd.Library do
     multi |> Repo.transaction() |> result(:entry)
   end
 
+  @played_statuses [:jogando, :pausado, :zerado, :larguei]
+
   @doc """
-  Moves a game to one of the five visible statuses, or out of the library with `nil`.
+  Moves a game to one of the six visible statuses, or out of the library with `nil`.
 
   `nil` is the only way a game leaves the library, see `remove_game/2`.
 
-  `:backlog` needs at least one owned release; without it, returns `{:error, :needs_ownership}`
-  so the caller can ask which version and media, and calls again with
-  `ownership: %{release_id: id, ownership_type: :physical | :digital}` to record the
-  ownership and the status together. Every transition writes its event through
-  `update_entry/3`.
+  Every status but Quero needs posse: `:backlog`, `:jogando`, `:pausado`, `:zerado` and
+  `:larguei` all require at least one owned release, or the entry already marked
+  `owned_elsewhere`. Without either, this returns `{:error, :needs_ownership}` so the
+  caller can ask which version and media, then call again with one of:
+
+    * `ownership: %{release_id: id, ownership_type: :physical | :digital}`, to record the
+      ownership and the status together
+    * `owned_elsewhere: true`, for a game played somewhere the Dockd catalog does not
+      cover (only for `:jogando`, `:pausado`, `:zerado` and `:larguei`; Backlog means
+      owning but not having started, so there is nowhere else to have played it)
+
+  Every transition writes its event through `update_entry/3`.
   """
   def set_status(user, game, status, opts \\ [])
 
   def set_status(%User{} = user, %Game{} = game, nil, _opts), do: remove_game(user, game)
 
-  def set_status(%User{} = user, %Game{} = game, :backlog, ownership: attrs) do
+  def set_status(%User{} = user, %Game{} = game, status, ownership: attrs)
+      when status in [:backlog | @played_statuses] do
     Repo.transaction(fn ->
       with {:ok, _} <- own_release(user, game, attrs),
-           {:ok, entry} <- set_status(user, game, :backlog) do
+           {:ok, entry} <- set_status(user, game, status) do
         entry
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -93,12 +103,25 @@ defmodule Dockd.Library do
     end)
   end
 
+  def set_status(%User{} = user, %Game{} = game, status, owned_elsewhere: true)
+      when status in @played_statuses do
+    case status_attrs(status, true) do
+      {:error, reason} -> {:error, reason}
+      attrs -> upsert_entry(user, game, Map.put(attrs, :owned_elsewhere, true))
+    end
+  end
+
   def set_status(%User{} = user, %Game{} = game, status, []) when is_atom(status) do
-    case status_attrs(status, game.id in owned_game_ids(user)) do
+    case status_attrs(status, owned?(user, game)) do
       {:error, reason} -> {:error, reason}
       attrs -> upsert_entry(user, game, attrs)
     end
   end
+
+  defp owned?(user, game),
+    do:
+      game.id in owned_game_ids(user) or
+        match?(%{owned_elsewhere: true}, get_entry_for_game(user, game.id))
 
   defp own_release(user, game, %{release_id: release_id, ownership_type: type}) do
     if Repo.exists?(from r in Release, where: r.id == ^release_id and r.game_id == ^game.id),
@@ -112,24 +135,68 @@ defmodule Dockd.Library do
   end
 
   @doc "The statuses a game can move to from its shelf item: never its own, and never Quero once owned."
-  def status_options(%{status: status, ownerships: ownerships}) do
-    owned = if ownerships == [], do: [], else: [:quero]
+  def status_options(%{status: status, ownerships: ownerships} = item) do
+    owned =
+      if ownerships != [] or match?(%{owned_elsewhere: true}, Map.get(item, :entry)),
+        do: [:quero],
+        else: []
+
     Shelf.statuses() -- [status | owned]
   end
 
   defp status_attrs(:quero, false), do: %{purchase_intent: :want, play_state: :unplayed}
   defp status_attrs(:quero, true), do: {:error, :owned}
   defp status_attrs(:backlog, true), do: %{purchase_intent: :none, play_state: :unplayed}
-  defp status_attrs(:backlog, false), do: {:error, :needs_ownership}
-  defp status_attrs(:jogando, _), do: %{purchase_intent: :none, play_state: :playing}
-  defp status_attrs(:zerado, _), do: %{purchase_intent: :none, play_state: :finished}
-  defp status_attrs(:larguei, _), do: %{purchase_intent: :none, play_state: :abandoned}
+  defp status_attrs(:jogando, true), do: %{purchase_intent: :none, play_state: :playing}
+  defp status_attrs(:pausado, true), do: %{purchase_intent: :none, play_state: :paused}
+  defp status_attrs(:zerado, true), do: %{purchase_intent: :none, play_state: :finished}
+  defp status_attrs(:larguei, true), do: %{purchase_intent: :none, play_state: :abandoned}
+
+  defp status_attrs(status, false) when status in [:backlog | @played_statuses],
+    do: {:error, :needs_ownership}
 
   defp upsert_entry(user, game, attrs) do
     case get_entry_for_game(user, game.id) do
       nil -> create_entry(user, Map.put(attrs, :game_id, game.id))
       entry -> update_entry(user, entry, attrs)
     end
+  end
+
+  @doc """
+  Marks `owned_elsewhere` on every entry left over from before Jogando, Pausado, Zerado
+  and Larguei required posse: played states with no ownership and not already flagged.
+
+  Run once, from a migration, to fix data that predates that rule. It never guesses a
+  release or media, the one thing `own_release/3` would need: `owned_elsewhere` is the
+  same escape the status control now offers for a game played somewhere the catalog
+  does not cover.
+  """
+  def backfill_owned_elsewhere do
+    played =
+      Repo.all(
+        from e in Entry,
+          where: e.play_state in [:playing, :paused, :finished, :abandoned],
+          where: e.owned_elsewhere == false,
+          select: {e.id, e.user_id, e.game_id}
+      )
+
+    owned =
+      MapSet.new(
+        Repo.all(
+          from o in Ownership,
+            join: r in Release,
+            on: r.id == o.release_id,
+            select: {o.user_id, r.game_id}
+        )
+      )
+
+    ids =
+      for {id, user_id, game_id} <- played, not MapSet.member?(owned, {user_id, game_id}), do: id
+
+    {count, _} =
+      Repo.update_all(from(e in Entry, where: e.id in ^ids), set: [owned_elsewhere: true])
+
+    count
   end
 
   @doc """

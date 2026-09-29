@@ -22,7 +22,7 @@ custom classes must fully style the input
 
 - A interface segue `design/README.md` e emite **somente** as classes `dk-` de `design/components/bundle.css`, compiladas em `assets/css/app.css`. Sem DaisyUI, sem barra lateral, sem seletor de tema: o tema segue o sistema operacional.
 - Toda tela nasce de uma maquete aprovada em `design/maquetes/` antes de virar LiveView. Mudança de token ou regra acontece primeiro no artefato (`design/FONTE.md`) e depois é copiada para `design/`.
-- Um jogo tem um status derivado por `Dockd.Library.Shelf.status/2`: Quero, Backlog, Jogando, Zerado, Larguei. Nunca guarde status; nunca crie um sexto.
+- Um jogo tem um status derivado por `Dockd.Library.Shelf.status/2`: Quero, Backlog, Jogando, Pausado, Zerado, Larguei. Nunca guarde status. Jogando, Pausado, Zerado e Larguei exigem posse registrada (`Library.set_status/4` com `ownership:` ou `owned_elsewhere: true`), a mesma regra que já valia só para Backlog; por isso Quero desaparece assim que existe posse.
 - O status só muda pelo `status_menu/1`, igual em toda tela; clicar na etiqueta atual desmarca e é a única saída da biblioteca (`Library.set_status/4` com `nil`). Ação que aparece em mais de uma tela passa por `DockdWeb.GameEvents`, com o mesmo componente e texto (regra 6 de `design/README.md`).
 - Nunca diálogo nativo do navegador (`confirm`, `alert`, `prompt`, `data-confirm`): confirmação acontece na interface (regra 7 de `design/README.md`, garantida por `DockdWeb.NativeDialogTest`).
 - Componentes vivem em `DockdWeb.DockdComponents`; textos em pt-BR, no máximo seis palavras, sem título repetindo a navegação.

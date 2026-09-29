@@ -56,6 +56,7 @@ test("the game page tag leads to Entrar and back with the control open", async (
   const control = page.locator("#game-status.is-open");
   await expect(control.locator(".dk-status-menu__options")).toBeVisible();
   await control.locator("button.dk-status--jogando").click();
+  await page.locator("#game-status button[phx-click=own_elsewhere]").click();
   await expect(page.locator("#game-status .dk-status-menu__current .dk-status--jogando")).toBeVisible();
   await expect(page.locator("#game-status.is-open")).toHaveCount(0);
 });

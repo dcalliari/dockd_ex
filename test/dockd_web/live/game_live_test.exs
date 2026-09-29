@@ -154,7 +154,8 @@ defmodule DockdWeb.GameLiveTest do
     refute has_element?(view, "#game-igdb", "Dados de jogos por")
   end
 
-  test "sets Quero, then Jogando, through the status control", %{conn: conn} = ctx do
+  test "sets Quero, then Jogando asks for ownership, then Pausado does not ask again",
+       %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
 
     view |> element("button.dk-status--quero[phx-click=set_status]") |> render_click()
@@ -162,9 +163,41 @@ defmodule DockdWeb.GameLiveTest do
     assert has_element?(view, "#buy-button", "Comprei")
 
     view |> element("button.dk-status--jogando[phx-click=set_status]") |> render_click()
+    assert has_element?(view, "#game-status.is-open .dk-status-menu__ask", "Tem em qual versão?")
+
+    assert has_element?(
+             view,
+             "#game-status button[phx-click=own_elsewhere]",
+             "Joguei em outro lugar"
+           )
+
+    view
+    |> element(
+      "#game-status button[phx-value-release_id='#{ctx.release.id}'][phx-value-media=digital]"
+    )
+    |> render_click()
+
     assert Shelf.item(ctx.user, ctx.game).status == :jogando
     assert Library.get_entry_for_game(ctx.user, ctx.game.id).play_state == :playing
     assert has_element?(view, "#game-history", "Começou a jogar")
+
+    view |> element("button.dk-status--pausado[phx-click=set_status]") |> render_click()
+    refute has_element?(view, "#game-status.is-open .dk-status-menu__ask")
+    assert Shelf.item(ctx.user, ctx.game).status == :pausado
+  end
+
+  test "Jogando played somewhere else records owned_elsewhere, not a release",
+       %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+
+    view |> element("button.dk-status--jogando[phx-click=set_status]") |> render_click()
+    view |> element("#game-status button[phx-click=own_elsewhere]") |> render_click()
+
+    item = Shelf.item(ctx.user, ctx.game)
+    assert item.status == :jogando
+    assert item.ownerships == []
+    assert item.entry.owned_elsewhere
+    refute has_element?(view, "button.dk-status--quero[phx-click=set_status]")
   end
 
   test "Backlog without ownership asks the version and media in the control",

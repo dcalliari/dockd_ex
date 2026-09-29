@@ -62,6 +62,7 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-status--quero { background: var(--gold); color: var(--on-gold); }
 .dk-status--backlog { background: var(--ink); color: var(--on-ink); }
 .dk-status--jogando { background: var(--red); color: var(--on-red); }
+.dk-status--pausado { background: var(--surface); color: var(--red-ink); border-color: var(--red-ink); }
 .dk-status--zerado { background: var(--surface-sunken); color: var(--ink); opacity: .75; }
 .dk-status--larguei { background: var(--line-strong); color: var(--surface); opacity: .75; }
 .dk-poster--faded img { opacity: .55; }
@@ -89,6 +90,7 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-status-menu__ask > button { width: 100%; padding: 6px var(--space-3); font-size: 13px; line-height: 18px; font-weight: 500; text-align: left; }
 .dk-status-menu__ask > button:hover { background: var(--surface-sunken); }
 .dk-status-menu__ask > .dk-link { font-weight: 600; }
+.dk-status-menu__ask > .dk-link--muted { color: var(--ink-muted); font-weight: 500; }
 /* Sobre a capa o menu ocupa a largura do cartão, para as opções nunca passarem da borda. */
 .dk-card > .dk-status-menu { position: absolute; left: var(--space-2); right: var(--space-2); top: var(--space-2); z-index: 2; align-items: flex-start; pointer-events: none; }
 .dk-card > .dk-status-menu > * { pointer-events: auto; }

@@ -29,7 +29,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 - A página é `surface`; o texto é `ink`; o metadado é `ink-muted`. Não existe um terceiro nível de cinza: se algo não merece `ink-muted`, não merece estar na tela.
 - `red` é preenchimento em cinco lugares e só neles: o botão primário da tela, o chip Jogando, o indicador da aba e do destino ativos, o ponto do wordmark e o cartão de jogo de Switch 2 do ExclusiveMark. Como texto e contorno, use `red-ink`, que escurece no claro e clareia no escuro para manter contraste.
 - Texto sobre `red` é `on-red`; sobre `ink` é `on-ink`. Nunca `#fff` literal.
-- Os cinco status são preenchimentos: amarelo Quero, preto Backlog, vermelho Jogando, cinza claro Zerado, cinza escuro Larguei. Zerado e Larguei ficam a 75% e apagam a capa a 55%, como o Letterboxd faz com o que já foi visto. Ver StatusChip.
+- Os seis status são preenchimentos, exceto um: amarelo Quero, preto Backlog, vermelho Jogando, cinza claro Zerado, cinza escuro Larguei. Zerado e Larguei ficam a 75% e apagam a capa a 55%, como o Letterboxd faz com o que já foi visto. Pausado é o único sem preenchimento sólido, contorno e texto em `red-ink`, porque `red` continua reservado aos cinco usos já descritos. Ver StatusChip.
 - `warn` tem um único uso: preço desatualizado. Não há verde de sucesso nem azul de informação. Uma ação bem-sucedida se mostra no próprio controle mudando de estado, não em um aviso.
 - Cartão só quando delimita algo de verdade. Separe com espaço e com `line`.
 - Foco de teclado: `focus-ring` em 2px sólidos, afastados 2px, em todo controle e link de capa.

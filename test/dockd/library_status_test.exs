@@ -12,8 +12,12 @@ defmodule Dockd.LibraryStatusTest do
     %{user: user, game: game, release: release}
   end
 
-  test "nil takes the game out of the library", %{user: user, game: game} do
-    {:ok, _} = Library.set_status(user, game, :jogando)
+  test "nil takes the game out of the library", %{user: user, game: game} = ctx do
+    {:ok, _} =
+      Library.set_status(user, game, :jogando,
+        ownership: %{release_id: ctx.release.id, ownership_type: :digital}
+      )
+
     assert Shelf.item(user, game).status == :jogando
 
     assert {:ok, :ok} = Library.set_status(user, game, nil)
@@ -64,6 +68,52 @@ defmodule Dockd.LibraryStatusTest do
     assert [%{ownership_type: :physical}] = item.ownerships
   end
 
+  test "Jogando, Pausado, Zerado and Larguei also ask for ownership",
+       %{user: user, game: game} = ctx do
+    for status <- [:jogando, :pausado, :zerado, :larguei] do
+      assert {:error, :needs_ownership} = Library.set_status(user, game, status)
+    end
+
+    assert {:ok, _entry} =
+             Library.set_status(user, game, :pausado,
+               ownership: %{release_id: ctx.release.id, ownership_type: :digital}
+             )
+
+    item = Shelf.item(user, game)
+    assert item.status == :pausado
+    assert [%{ownership_type: :digital}] = item.ownerships
+
+    # Owning the release already covers every later transition.
+    assert {:ok, _} = Library.set_status(user, game, :zerado)
+    assert Shelf.item(user, game).status == :zerado
+  end
+
+  test "Joguei em outro lugar records owned_elsewhere instead of a release",
+       %{user: user, game: game} do
+    assert {:ok, _entry} = Library.set_status(user, game, :jogando, owned_elsewhere: true)
+
+    item = Shelf.item(user, game)
+    assert item.status == :jogando
+    assert item.ownerships == []
+    assert item.entry.owned_elsewhere
+
+    # Owned elsewhere counts as posse for every later transition, and for hiding Quero.
+    assert {:ok, _} = Library.set_status(user, game, :zerado)
+
+    assert Library.status_options(Shelf.item(user, game)) == [
+             :backlog,
+             :jogando,
+             :pausado,
+             :larguei
+           ]
+  end
+
+  test "Backlog has no Joguei em outro lugar escape", %{user: user, game: game} do
+    assert_raise FunctionClauseError, fn ->
+      Library.set_status(user, game, :backlog, owned_elsewhere: true)
+    end
+  end
+
   test "ownership only of a release of the same game", %{user: user, game: game} do
     other = release_fixture(game_fixture(%{title: "Other"}))
 
@@ -85,6 +135,7 @@ defmodule Dockd.LibraryStatusTest do
     assert Library.status_options(Shelf.item(user, game)) == [
              :backlog,
              :jogando,
+             :pausado,
              :zerado,
              :larguei
            ]
@@ -95,7 +146,13 @@ defmodule Dockd.LibraryStatusTest do
       )
 
     {:ok, _} = Library.set_status(user, game, :jogando)
-    assert Library.status_options(Shelf.item(user, game)) == [:backlog, :zerado, :larguei]
+
+    assert Library.status_options(Shelf.item(user, game)) == [
+             :backlog,
+             :pausado,
+             :zerado,
+             :larguei
+           ]
   end
 
   test "the first release is the one out first, undated last", %{game: game} = ctx do
@@ -151,7 +208,8 @@ defmodule Dockd.LibraryStatusTest do
     assert Library.set_edition(user, Ecto.UUID.generate(), edition.id) == {:error, :not_found}
   end
 
-  test "Agora plans a wanted game without a status change or an event", %{user: user, game: game} do
+  test "Agora plans a wanted game without a status change or an event",
+       %{user: user, game: game} = ctx do
     {:ok, _} = Library.set_status(user, game, :quero)
     events = Activity.list_events(user)
 
@@ -168,7 +226,44 @@ defmodule Dockd.LibraryStatusTest do
 
     assert Activity.list_events(user) == events
 
-    {:ok, _} = Library.set_status(user, game, :jogando)
+    {:ok, _} =
+      Library.set_status(user, game, :jogando,
+        ownership: %{release_id: ctx.release.id, ownership_type: :digital}
+      )
+
     assert Library.plan(user, game.id, true) == {:error, :not_found}
+  end
+
+  test "Pausado shares Jogando's tab and count", %{user: user, game: game} = ctx do
+    {:ok, _} =
+      Library.set_status(user, game, :pausado,
+        ownership: %{release_id: ctx.release.id, ownership_type: :digital}
+      )
+
+    items = Shelf.list(user)
+    assert [%{status: :pausado}] = Shelf.filter(items, %{"tab" => "jogando"})
+    assert Shelf.filter(items, %{"tab" => "pausado"}) == []
+    assert Shelf.counts(items)["jogando"] == 1
+  end
+
+  test "backfill_owned_elsewhere flags played entries left over without posse",
+       %{user: user, game: game} = ctx do
+    {:ok, _} =
+      Library.set_status(user, game, :backlog,
+        ownership: %{release_id: ctx.release.id, ownership_type: :digital}
+      )
+
+    {:ok, _} = Library.set_status(user, game, :jogando)
+
+    # Undo the posse this rule now requires, as an entry from before it existed would be.
+    Dockd.Repo.update_all(Dockd.Library.Entry, set: [owned_elsewhere: false])
+    Dockd.Repo.delete_all(Dockd.Library.Ownership)
+
+    untouched = game_fixture(%{title: "Untouched"})
+    {:ok, _} = Library.set_status(user, untouched, :quero)
+
+    assert Library.backfill_owned_elsewhere() == 1
+    assert Library.get_entry_for_game(user, game.id).owned_elsewhere
+    refute Library.get_entry_for_game(user, untouched.id).owned_elsewhere
   end
 end

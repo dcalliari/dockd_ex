@@ -15,12 +15,13 @@ defmodule DockdWeb.DockdComponents do
     quero: "Quero",
     backlog: "Backlog",
     jogando: "Jogando",
+    pausado: "Pausado",
     zerado: "Zerado",
     larguei: "Larguei"
   }
   @months ~w(jan fev mar abr mai jun jul ago set out nov dez)
 
-  @doc "The five statuses, in display order."
+  @doc "The six statuses, in display order."
   def statuses, do: @statuses
 
   @doc "Portuguese label of a status."
@@ -592,7 +593,9 @@ defmodule DockdWeb.DockdComponents do
   screen the first tap opens and the second clears (hook `StatusMenu`). `status` nil renders
   the add chip. `options` are the statuses offered (`Dockd.Library.status_options/1`); every
   button sends its event with the `values` pairs. `ask` swaps the options for the versions
-  the game can be owned in, after Backlog on a game without ownership.
+  the game can be owned in, after Backlog, Jogando, Pausado, Zerado or Larguei on a game
+  without ownership; a played status also offers "Joguei em outro lugar"
+  (`%{elsewhere: true, label:}`, sent as `own_elsewhere` instead of `own`).
   """
   attr :id, :string, required: true
   attr :status, :atom, default: nil
@@ -601,7 +604,10 @@ defmodule DockdWeb.DockdComponents do
   attr :size, :string, default: "sm", values: ~w(md sm)
   attr :since, :any, default: nil, doc: "when the status was set, shown on the game page"
   attr :open, :boolean, default: false, doc: "opened by the URL (`abrir`)"
-  attr :ask, :list, default: nil, doc: "`%{label, release_id, media}` choices to own"
+
+  attr :ask, :list,
+    default: nil,
+    doc: "`%{label, release_id, media}` choices to own, or `%{label, elsewhere: true}`"
 
   def status_menu(assigns) do
     assigns =
@@ -660,9 +666,10 @@ defmodule DockdWeb.DockdComponents do
         <button
           :for={choice <- @ask}
           type="button"
-          phx-click="own"
-          phx-value-release_id={choice.release_id}
-          phx-value-media={choice.media}
+          phx-click={if Map.get(choice, :elsewhere), do: "own_elsewhere", else: "own"}
+          phx-value-release_id={choice[:release_id]}
+          phx-value-media={choice[:media]}
+          class={Map.get(choice, :elsewhere) && "dk-link--muted"}
           {@phx_values}
         >
           {choice.label}

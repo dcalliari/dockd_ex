@@ -52,7 +52,7 @@ defmodule Dockd.SocialTest do
          %{ana: ana, bia: bia} do
       caio = account("caio@example.com")
       game = game_fixture(%{title: "Elden Ring"})
-      {:ok, _} = Library.set_status(bia, game, :jogando)
+      {:ok, _} = Library.set_status(bia, game, :jogando, owned_elsewhere: true)
 
       :ok = Social.follow(bia, ana)
       :ok = Social.follow(caio, ana)
@@ -142,9 +142,22 @@ defmodule Dockd.SocialTest do
         end)
 
       {:ok, _} = Library.set_status(ana, games.wanted.game, :quero)
-      {:ok, _} = Library.set_status(ana, games.playing.game, :jogando)
-      {:ok, _} = Library.set_status(ana, games.finished.game, :zerado)
-      {:ok, _} = Library.set_status(ana, games.dropped.game, :larguei)
+
+      {:ok, _} =
+        Library.set_status(ana, games.playing.game, :jogando,
+          ownership: %{release_id: games.playing.release.id, ownership_type: :digital}
+        )
+
+      {:ok, _} =
+        Library.set_status(ana, games.finished.game, :zerado,
+          ownership: %{release_id: games.finished.release.id, ownership_type: :physical}
+        )
+
+      {:ok, _} =
+        Library.set_status(ana, games.dropped.game, :larguei,
+          ownership: %{release_id: games.dropped.release.id, ownership_type: :digital}
+        )
+
       {:ok, _} = Library.set_status(ana, games.removed.game, :quero)
       {:ok, _} = Library.set_status(ana, games.removed.game, nil)
 
@@ -197,8 +210,16 @@ defmodule Dockd.SocialTest do
     test "Amigos jogando shows only what mutual follows play", %{ana: ana, games: games} do
       bia = account("bia@example.com")
       caio = account("caio@example.com")
-      {:ok, _} = Library.set_status(bia, games.wanted.game, :jogando)
-      {:ok, _} = Library.set_status(caio, games.owned.game, :jogando)
+
+      {:ok, _} =
+        Library.set_status(bia, games.wanted.game, :jogando,
+          ownership: %{release_id: games.wanted.release.id, ownership_type: :digital}
+        )
+
+      {:ok, _} =
+        Library.set_status(caio, games.owned.game, :jogando,
+          ownership: %{release_id: games.owned.release.id, ownership_type: :digital}
+        )
 
       :ok = Social.follow(ana, bia)
       :ok = Social.follow(bia, ana)

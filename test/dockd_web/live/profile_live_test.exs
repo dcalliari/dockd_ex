@@ -13,7 +13,11 @@ defmodule DockdWeb.ProfileLiveTest do
     release = release_fixture(playing, %{})
     release_fixture(wanted, %{})
 
-    {:ok, _} = Library.set_status(ana, playing, :jogando)
+    {:ok, _} =
+      Library.set_status(ana, playing, :jogando,
+        ownership: %{release_id: release.id, ownership_type: :physical}
+      )
+
     {:ok, _} = Library.set_status(ana, wanted, :quero)
     {:ok, _} = purchase_fixture(ana, release, %{price_cents: 7990})
 
@@ -154,7 +158,7 @@ defmodule DockdWeb.ProfileLiveTest do
 
     test "carries its own status on the covers, as in Descobrir",
          %{conn: conn, user: user} = ctx do
-      {:ok, _} = Library.set_status(user, ctx.playing, :zerado)
+      {:ok, _} = Library.set_status(user, ctx.playing, :zerado, owned_elsewhere: true)
       {:ok, view, _html} = live(conn, ~p"/u/ana")
 
       card = "#profile-jogando-#{ctx.playing.id}"
@@ -168,7 +172,11 @@ defmodule DockdWeb.ProfileLiveTest do
       :ok = Social.follow(user, ana)
       :ok = Social.follow(ana, user)
       :ok = Social.follow(bia, ana)
-      {:ok, _} = Library.set_status(bia, game_fixture(%{title: "Elden Ring"}), :jogando)
+
+      {:ok, _} =
+        Library.set_status(bia, game_fixture(%{title: "Elden Ring"}), :jogando,
+          owned_elsewhere: true
+        )
 
       {:ok, view, _html} = live(conn, ~p"/u/ana/seguidores")
 
@@ -198,8 +206,8 @@ defmodule DockdWeb.ProfileLiveTest do
       bia = AccountsFixtures.user_fixture(%{email: "bia@example.com"})
       caio = AccountsFixtures.user_fixture(%{email: "caio@example.com"})
       elden = game_fixture(%{title: "Elden Ring"})
-      {:ok, _} = Library.set_status(bia, elden, :jogando)
-      {:ok, _} = Library.set_status(caio, ctx.wanted, :jogando)
+      {:ok, _} = Library.set_status(bia, elden, :jogando, owned_elsewhere: true)
+      {:ok, _} = Library.set_status(caio, ctx.wanted, :jogando, owned_elsewhere: true)
       :ok = Social.follow(user, bia)
       :ok = Social.follow(bia, user)
       :ok = Social.follow(user, caio)
