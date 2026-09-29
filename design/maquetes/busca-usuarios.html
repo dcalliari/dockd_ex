@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Buscar jogo ou pessoa · dockd.</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
+<style>
+:root, [data-theme="light"]{--surface:#ffffff;--surface-raised:#f4f2f1;--surface-sunken:#ebe8e6;--line:#dedad8;--line-strong:#8f8886;--ink:#161414;--ink-muted:#6a6462;--on-ink:#ffffff;--red:#e60012;--red-hover:#cc0010;--on-red:#ffffff;--red-ink:#d4000f;--warn:#9a5b00;--poster-edge:#0000001f;--focus-ring:var(--red-ink);}
+[data-theme="dark"]{--surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink);}
+:root{--gold:#f2c200;--on-gold:#ffffff;--scrim:#000000a6;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--radius-sm:3px;--radius-md:6px;--radius-full:999px;--container-max:1120px;--nav-height:56px;--control-height:36px;--thumb-height:44px;--cover-ratio:3 / 4;--cover-min:140px;--font-sans:"Archivo", "Helvetica Neue", Arial, sans-serif;}
+.t-wordmark{font-family:var(--font-sans);font-size:22px;line-height:24px;font-weight:900;letter-spacing:-0.02em;}
+.t-display{font-family:var(--font-sans);font-size:32px;line-height:36px;font-weight:800;letter-spacing:-0.02em;}
+.t-heading{font-family:var(--font-sans);font-size:14px;line-height:18px;font-weight:700;}
+.t-control{font-family:var(--font-sans);font-size:14px;line-height:20px;font-weight:600;}
+.t-body{font-family:var(--font-sans);font-size:15px;line-height:22px;font-weight:400;}
+.t-meta{font-family:var(--font-sans);font-size:12px;line-height:16px;font-weight:400;}
+.t-label{font-family:var(--font-sans);font-size:11px;line-height:16px;font-weight:700;letter-spacing:0.08em;}
+.t-num{font-family:var(--font-sans);font-size:15px;line-height:20px;font-weight:600;}
+.t-num-lg{font-family:var(--font-sans);font-size:20px;line-height:24px;font-weight:800;letter-spacing:-0.02em;}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink); } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+body { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+img { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.t-wordmark { font-stretch: 125%; }
+.t-display { font-stretch: 110%; }
+.t-label, .t-num-lg { font-stretch: 90%; }
+.t-label { text-transform: uppercase; }
+.t-num, .t-num-lg { font-variant-numeric: tabular-nums; }
+
+/* Page shell for this comparison document (not itself a dk- component) */
+.doc { width: min(100%, 1180px); margin: 0 auto; padding: 0 var(--space-4) var(--space-7); }
+@media (min-width: 768px) { .doc { padding-inline: var(--space-5); } }
+.doc h1 { margin: var(--space-6) 0 var(--space-2); }
+.opt { margin-top: var(--space-7); padding-top: var(--space-6); border-top: 1px solid var(--line); }
+.opt:first-of-type { margin-top: var(--space-6); }
+.opt > h2 { margin: 0 0 var(--space-2); }
+.opt > p.lead { margin: 0 0 var(--space-4); max-width: 80ch; font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+.opt > p.lead b { color: var(--ink); }
+.tag-rec { display: inline-block; margin-left: var(--space-2); padding: 0 6px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 10px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px; }
+
+.row--desk { display: flex; flex-wrap: wrap; gap: var(--space-5); margin-bottom: var(--space-5); }
+.shot { margin: 0; min-width: 0; }
+.row--desk .shot { flex: 1 1 520px; }
+.shot figcaption { margin-top: var(--space-2); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+
+.frame { position: relative; overflow: auto; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
+.frame--desk { height: 620px; }
+.frame--phone { width: 375px; height: 700px; }
+.frame__page { padding: var(--space-5) var(--space-5) var(--space-6); }
+.frame--phone .frame__page { padding: var(--space-4) var(--space-4) var(--space-6); }
+.frame .dk-nav { position: sticky; top: 0; z-index: 3; }
+.frame--phone .dk-nav__links { display: none; }
+.frame--phone .dk-nav__search { width: auto; flex: 1; }
+@media (max-width: 420px) { .frame--phone { width: calc(100vw - 2 * var(--space-4)); } .row--desk .shot { flex-basis: 100%; } }
+
+/* Page */
+.page { width: min(100%, var(--container-max)); margin: 0 auto; padding: 0 var(--space-4) var(--space-7); }
+@media (min-width: 768px) { .page { padding-inline: var(--space-5); } }
+
+/* NavBar */
+.dk-nav { height: var(--nav-height); display: flex; align-items: center; gap: var(--space-5); padding: 0 var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
+.dk-wordmark { font-size: 22px; line-height: 24px; font-weight: 900; font-stretch: 125%; letter-spacing: -0.02em; color: var(--ink); }
+.dk-wordmark i { font-style: normal; color: var(--red); }
+.dk-nav__links { display: flex; gap: var(--space-4); }
+.dk-nav__link { padding: 4px 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-bottom: 2px solid transparent; }
+.dk-nav__link[aria-current="page"] { color: var(--ink); border-bottom-color: var(--red); }
+.dk-nav__search { margin-left: auto; width: 240px; }
+.dk-nav__acc { margin-left: var(--space-4); font-size: 14px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
+
+/* SearchField */
+.dk-search { position: relative; }
+.dk-search input { width: 100%; height: var(--control-height); padding: 0 var(--space-3) 0 36px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; }
+.dk-search input::placeholder { color: var(--ink-muted); }
+.dk-search svg { position: absolute; left: 12px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--ink-muted); pointer-events: none; }
+
+/* Tabs */
+.dk-tabs { display: flex; gap: var(--space-5); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; margin-top: var(--space-4); }
+.dk-tab { position: relative; display: inline-flex; align-items: baseline; gap: 6px; padding: var(--space-2) 0 10px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
+.dk-tab[aria-selected="true"] { color: var(--ink); }
+.dk-tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--red); }
+.dk-tab__count { font-size: 12px; line-height: 16px; font-weight: 400; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+
+/* Choice */
+.dk-choice { display: inline-flex; height: 28px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden; }
+.dk-choice > button, .dk-choice > label > span { display: inline-flex; align-items: center; height: 100%; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-muted); background: var(--surface); white-space: nowrap; cursor: pointer; }
+.dk-choice > * + * { border-left: 1px solid var(--line-strong); }
+.dk-choice > label { position: relative; display: flex; }
+.dk-choice > label > input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.dk-choice > label > input:checked + span { background: var(--ink); color: var(--on-ink); }
+.dk-choice-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); }
+
+/* SectionHead */
+.dk-section { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); margin: var(--space-6) 0 var(--space-3); }
+.dk-section:first-child { margin-top: 0; }
+.dk-section h2 { margin: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.dk-section h2 span { margin-left: 6px; font-weight: 400; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.dk-section a { font-size: 14px; line-height: 16px; font-weight: 600; color: var(--red-ink); }
+
+.dk-count { font-size: 12px; line-height: 16px; color: var(--ink-muted); font-variant-numeric: tabular-nums; margin: var(--space-4) 0 var(--space-3); }
+.dk-empty { margin: var(--space-4) 0; font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+
+/* Poster + grid */
+.dk-poster { position: relative; display: block; aspect-ratio: 3 / 4; width: 100%; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-sunken); }
+.dk-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dk-poster::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--poster-edge); pointer-events: none; }
+.dk-poster--sm { width: 33px; height: var(--thumb-height); border-radius: var(--radius-sm); }
+.dk-poster__veil { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--scrim); opacity: 0; }
+.dk-card--poster:hover .dk-poster__veil, .dk-card--poster:focus-within .dk-poster__veil { opacity: 1; }
+.dk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--space-4) var(--space-3); }
+@media (min-width: 480px) { .dk-grid { grid-template-columns: repeat(auto-fill, minmax(var(--cover-min), 1fr)); } }
+.dk-card { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.dk-card__title { font-size: 14px; line-height: 18px; font-weight: 700; }
+.dk-card__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-card__text { display: flex; flex-direction: column; gap: 2px; }
+
+/* Row / person */
+.dk-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }
+.dk-row > :first-child { justify-self: start; }
+.dk-row__title { display: block; font-size: 14px; line-height: 18px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-row__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-row__end { display: flex; align-items: center; gap: var(--space-3); justify-self: end; }
+
+/* Button */
+.dk-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; }
+.dk-btn--primary { background: var(--red); border-color: var(--red); color: var(--on-red); }
+.dk-btn--secondary { border-color: var(--line-strong); color: var(--ink); background: var(--surface); }
+.dk-btn--sm { height: 28px; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; }
+.dk-follow { min-width: 118px; }
+
+/* Friend mark */
+.dk-friend { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); white-space: nowrap; }
+.dk-row__title .dk-friend { margin-left: var(--space-1); }
+</style>
+</head>
+<body>
+<p style="margin:0;padding:8px 16px;background:#161414;color:#fff;font:600 13px/18px Archivo,sans-serif">Maquete para decisão: hoje a busca única do topo só encontra jogos do catálogo. Aqui, 3 formas de também achar uma pessoa pelo nome de usuário ou nome, sem criar um segundo campo de busca. Dados reais do laboratório: conta Dono (@dono), amiga mútua Amiga (@amiga, jogando Friendly Voyage) e a seguidora Fã (@fa), jogos Mario Kart World e Hollow Knight: Silksong.</p>
+
+<main class="doc">
+  <h1 class="t-display">Buscar jogo ou pessoa</h1>
+  <p class="lead" style="max-width:80ch;color:var(--ink-muted)">Pedido do dono: a busca só acha jogo; ele quer alternar para usuário também. As três formas abaixo reaproveitam componentes que já existem no Dockd (Tabs, SectionHead, Choice) e mantêm a regra da <a href="../README.md#busca-única-no-topo" style="color:var(--red-ink);text-decoration:underline">busca única no topo</a>: um só campo, `Buscar no catálogo`, na barra de toda tela. <b>Privacidade:</b> perfil Só amigos não aparece na lista de ninguém que não seja amigo, e a linha de resultado mostra só o que o perfil público já mostra (nome, contagens, o que joga agora) — nunca preço, compra ou histórico.</p>
+
+  <section class="opt">
+    <h2 class="t-heading">A · Abas Jogos · Usuários abaixo do campo</h2>
+    <p class="lead">Buscar em qualquer tela leva a Descobrir com o termo, como hoje. Ali, duas abas substituem a linha de contagem: <b>Jogos</b> e <b>Usuários</b>, cada uma com a contagem, reaproveitando o componente Tabs que já existe em Seguidores/Seguindo. A aba com resultado abre selecionada; sem pessoa nenhuma, só a aba Jogos aparece, igual a hoje. Um toque troca, sem recarregar. <b>Recomendação do agente<span class="tag-rec">recomendado</span></b>: zero componente novo, e a mesma Tab que a conta já usa no próprio perfil.</p>
+
+    <div class="row--desk">
+      <figure class="shot">
+        <div class="frame frame--desk" data-theme="light">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <nav class="dk-nav__links"><a class="dk-nav__link" href="#">Biblioteca</a><a class="dk-nav__link" href="#">Comprar</a><a class="dk-nav__link" href="#" aria-current="page">Descobrir</a></nav>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="ami" aria-label="Buscar no catálogo"></form>
+            <span class="dk-nav__acc">Dono</span>
+          </header>
+          <div class="frame__page">
+            <nav class="dk-tabs" aria-label="Tipo de resultado">
+              <a class="dk-tab" href="#" aria-selected="false">Jogos <span class="dk-tab__count">0</span></a>
+              <a class="dk-tab" href="#" aria-selected="true">Usuários <span class="dk-tab__count">1</span></a>
+            </nav>
+            <p class="dk-count">1 pessoa para "ami"</p>
+            <div class="dk-row" id="person-amiga">
+              <a class="dk-poster dk-poster--sm" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg" alt=""></a>
+              <div><a class="dk-row__title" href="#">Amiga <span class="dk-friend">Amigo</span></a><div class="dk-row__meta">Jogando Friendly Voyage</div></div>
+              <div class="dk-row__end"><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-follow">Seguindo</button></div>
+            </div>
+            <p class="t-meta" style="margin-top:var(--space-4);color:var(--ink-muted)">Perfil Só amigos: some desta lista para quem não é amigo, mesmo com o nome de usuário certo.</p>
+          </div>
+        </div>
+        <figcaption>Caminho A · Usuários selecionada · desktop · claro</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="frame frame--desk" data-theme="dark">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <nav class="dk-nav__links"><a class="dk-nav__link" href="#">Biblioteca</a><a class="dk-nav__link" href="#">Comprar</a><a class="dk-nav__link" href="#" aria-current="page">Descobrir</a></nav>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="mario" aria-label="Buscar no catálogo"></form>
+            <span class="dk-nav__acc">Dono</span>
+          </header>
+          <div class="frame__page">
+            <nav class="dk-tabs" aria-label="Tipo de resultado">
+              <a class="dk-tab" href="#" aria-selected="true">Jogos <span class="dk-tab__count">1</span></a>
+              <a class="dk-tab" href="#" aria-selected="false">Usuários <span class="dk-tab__count">0</span></a>
+            </nav>
+            <p class="dk-count">1 jogo para "mario"</p>
+            <div class="dk-grid">
+              <div class="dk-card dk-card--poster">
+                <a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob9s9.jpg" alt=""></a>
+                <span class="dk-card__text"><span class="dk-card__title">Mario Kart World</span><span class="dk-card__meta">Switch 2 · 2025</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Caminho A · Jogos selecionada · desktop · escuro</figcaption>
+      </figure>
+    </div>
+
+    <div class="row--desk">
+      <figure class="shot">
+        <div class="frame frame--phone" data-theme="light">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="ami" aria-label="Buscar no catálogo"></form>
+          </header>
+          <div class="frame__page">
+            <nav class="dk-tabs" aria-label="Tipo de resultado">
+              <a class="dk-tab" href="#" aria-selected="false">Jogos <span class="dk-tab__count">0</span></a>
+              <a class="dk-tab" href="#" aria-selected="true">Usuários <span class="dk-tab__count">1</span></a>
+            </nav>
+            <p class="dk-count">1 pessoa para "ami"</p>
+            <div class="dk-row" id="person-amiga-phone">
+              <a class="dk-poster dk-poster--sm" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg" alt=""></a>
+              <div><a class="dk-row__title" href="#">Amiga <span class="dk-friend">Amigo</span></a><div class="dk-row__meta">Jogando Friendly Voyage</div></div>
+              <div class="dk-row__end"><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-follow">Seguindo</button></div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Caminho A · Usuários · 375 · claro</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="frame frame--phone" data-theme="dark">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="fa" aria-label="Buscar no catálogo"></form>
+          </header>
+          <div class="frame__page">
+            <nav class="dk-tabs" aria-label="Tipo de resultado">
+              <a class="dk-tab" href="#" aria-selected="false">Jogos <span class="dk-tab__count">0</span></a>
+              <a class="dk-tab" href="#" aria-selected="true">Usuários <span class="dk-tab__count">1</span></a>
+            </nav>
+            <p class="dk-count">1 pessoa para "fa"</p>
+            <div class="dk-row" id="person-fa-phone">
+              <span class="dk-poster dk-poster--sm"></span>
+              <div><a class="dk-row__title" href="#">Fã</a><div class="dk-row__meta">Sem jogo agora</div></div>
+              <div class="dk-row__end"><button type="button" class="dk-btn dk-btn--primary dk-btn--sm dk-follow">Seguir de volta</button></div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Caminho A · pessoa sem "jogando agora" · 375 · escuro</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="opt">
+    <h2 class="t-heading">B · Resultados agrupados por tipo</h2>
+    <p class="lead">Sem toque nenhum: a mesma busca devolve as duas listas na mesma tela, uma SectionHead <b>Pessoas</b> e uma <b>Jogos</b>, na ordem Pessoas primeiro. Uma seção sem resultado nem aparece — hoje nenhuma busca real do laboratório bate em pessoa e jogo ao mesmo tempo, por isso as duas capturas abaixo mostram cada seção isolada, que é o caso de hoje. Menos clique, mas a tela cresce quando os dois tipos têm muitos resultados, e SectionHead começa a repetir um padrão que Descobrir hoje não usa para o próprio resultado de busca.</p>
+
+    <div class="row--desk">
+      <figure class="shot">
+        <div class="frame frame--desk" data-theme="light">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <nav class="dk-nav__links"><a class="dk-nav__link" href="#">Biblioteca</a><a class="dk-nav__link" href="#">Comprar</a><a class="dk-nav__link" href="#" aria-current="page">Descobrir</a></nav>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="ami" aria-label="Buscar no catálogo"></form>
+            <span class="dk-nav__acc">Dono</span>
+          </header>
+          <div class="frame__page">
+            <div class="dk-section"><h2>Pessoas<span>1</span></h2></div>
+            <div class="dk-row" id="person-amiga-b">
+              <a class="dk-poster dk-poster--sm" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg" alt=""></a>
+              <div><a class="dk-row__title" href="#">Amiga <span class="dk-friend">Amigo</span></a><div class="dk-row__meta">Jogando Friendly Voyage</div></div>
+              <div class="dk-row__end"><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-follow">Seguindo</button></div>
+            </div>
+            <p class="t-meta" style="margin-top:var(--space-3);color:var(--ink-muted)">Sem seção Jogos: nenhum título do catálogo bate com "ami".</p>
+          </div>
+        </div>
+        <figcaption>Caminho B · só Pessoas bateu · desktop · claro</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="frame frame--desk" data-theme="dark">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <nav class="dk-nav__links"><a class="dk-nav__link" href="#">Biblioteca</a><a class="dk-nav__link" href="#">Comprar</a><a class="dk-nav__link" href="#" aria-current="page">Descobrir</a></nav>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="kart" aria-label="Buscar no catálogo"></form>
+            <span class="dk-nav__acc">Dono</span>
+          </header>
+          <div class="frame__page">
+            <div class="dk-section"><h2>Jogos<span>1</span></h2></div>
+            <div class="dk-grid">
+              <div class="dk-card dk-card--poster">
+                <a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob9s9.jpg" alt=""></a>
+                <span class="dk-card__text"><span class="dk-card__title">Mario Kart World</span><span class="dk-card__meta">Switch 2 · 2025</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Caminho B · só Jogos bateu · desktop · escuro</figcaption>
+      </figure>
+    </div>
+
+    <div class="row--desk">
+      <figure class="shot">
+        <div class="frame frame--phone" data-theme="light">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="kart" aria-label="Buscar no catálogo"></form>
+          </header>
+          <div class="frame__page">
+            <div class="dk-section"><h2>Jogos<span>1</span></h2></div>
+            <div class="dk-grid">
+              <div class="dk-card dk-card--poster">
+                <a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cob9s9.jpg" alt=""></a>
+                <span class="dk-card__text"><span class="dk-card__title">Mario Kart World</span><span class="dk-card__meta">Switch 2 · 2025</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Caminho B · só Jogos · 375 · claro</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="frame frame--phone" data-theme="dark">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="ami" aria-label="Buscar no catálogo"></form>
+          </header>
+          <div class="frame__page">
+            <div class="dk-section"><h2>Pessoas<span>1</span></h2></div>
+            <div class="dk-row" id="person-amiga-phone-b">
+              <a class="dk-poster dk-poster--sm" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg" alt=""></a>
+              <div><a class="dk-row__title" href="#">Amiga <span class="dk-friend">Amigo</span></a><div class="dk-row__meta">Jogando Friendly Voyage</div></div>
+              <div class="dk-row__end"><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-follow">Seguindo</button></div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Caminho B · só Pessoas · 375 · escuro</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="opt">
+    <h2 class="t-heading">C · Choice fixo ao lado da busca</h2>
+    <p class="lead">Um Choice pequeno, <b>Jogos · Usuários</b>, do lado do campo (no celular, logo abaixo dele), com o mesmo componente da Escolha de privacidade do perfil. Ele fica marcado entre buscas: quem já escolheu Usuários não escolhe de novo na próxima busca. Custa um controle a mais sempre visível, mesmo quando a pessoa só busca jogo, e é um estado que a tela guarda sem aparecer na URL nem no histórico.</p>
+
+    <div class="row--desk">
+      <figure class="shot">
+        <div class="frame frame--desk" data-theme="light">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <nav class="dk-nav__links"><a class="dk-nav__link" href="#">Biblioteca</a><a class="dk-nav__link" href="#">Comprar</a><a class="dk-nav__link" href="#" aria-current="page">Descobrir</a></nav>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="ami" aria-label="Buscar no catálogo"></form>
+            <span class="dk-nav__acc">Dono</span>
+          </header>
+          <div class="frame__page">
+            <div class="dk-choice-row">
+              <p class="dk-count" style="margin:0">1 pessoa para "ami"</p>
+              <div class="dk-choice" role="radiogroup" aria-label="Buscar em">
+                <label><input type="radio" name="modo-a"><span>Jogos</span></label>
+                <label><input type="radio" name="modo-a" checked><span>Usuários</span></label>
+              </div>
+            </div>
+            <div class="dk-row" id="person-amiga-c" style="margin-top:var(--space-3)">
+              <a class="dk-poster dk-poster--sm" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg" alt=""></a>
+              <div><a class="dk-row__title" href="#">Amiga <span class="dk-friend">Amigo</span></a><div class="dk-row__meta">Jogando Friendly Voyage</div></div>
+              <div class="dk-row__end"><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-follow">Seguindo</button></div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Caminho C · modo Usuários marcado · desktop · claro</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="frame frame--desk" data-theme="dark">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <nav class="dk-nav__links"><a class="dk-nav__link" href="#">Biblioteca</a><a class="dk-nav__link" href="#">Comprar</a><a class="dk-nav__link" href="#" aria-current="page">Descobrir</a></nav>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="silksong" aria-label="Buscar no catálogo"></form>
+            <span class="dk-nav__acc">Dono</span>
+          </header>
+          <div class="frame__page">
+            <div class="dk-choice-row">
+              <p class="dk-count" style="margin:0">1 jogo para "silksong"</p>
+              <div class="dk-choice" role="radiogroup" aria-label="Buscar em">
+                <label><input type="radio" name="modo-b" checked><span>Jogos</span></label>
+                <label><input type="radio" name="modo-b"><span>Usuários</span></label>
+              </div>
+            </div>
+            <div class="dk-grid" style="margin-top:var(--space-3)">
+              <div class="dk-card dk-card--poster">
+                <a class="dk-poster" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/cobebu.jpg" alt=""></a>
+                <span class="dk-card__text"><span class="dk-card__title">Hollow Knight: Silksong</span><span class="dk-card__meta">Switch · Switch 2 · 2025</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Caminho C · modo Jogos marcado · desktop · escuro</figcaption>
+      </figure>
+    </div>
+
+    <div class="row--desk">
+      <figure class="shot">
+        <div class="frame frame--phone" data-theme="light">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="ami" aria-label="Buscar no catálogo"></form>
+          </header>
+          <div class="frame__page">
+            <div class="dk-choice-row" style="flex-wrap:wrap">
+              <div class="dk-choice" role="radiogroup" aria-label="Buscar em">
+                <label><input type="radio" name="modo-c"><span>Jogos</span></label>
+                <label><input type="radio" name="modo-c" checked><span>Usuários</span></label>
+              </div>
+              <p class="dk-count" style="margin:0">1 pessoa</p>
+            </div>
+            <div class="dk-row" id="person-amiga-c-phone" style="margin-top:var(--space-3)">
+              <a class="dk-poster dk-poster--sm" href="#"><img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg" alt=""></a>
+              <div><a class="dk-row__title" href="#">Amiga <span class="dk-friend">Amigo</span></a><div class="dk-row__meta">Jogando Friendly Voyage</div></div>
+              <div class="dk-row__end"><button type="button" class="dk-btn dk-btn--secondary dk-btn--sm dk-follow">Seguindo</button></div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Caminho C · 375 · claro</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="frame frame--phone" data-theme="dark">
+          <header class="dk-nav">
+            <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+            <form class="dk-search dk-nav__search" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input type="search" value="fa" aria-label="Buscar no catálogo"></form>
+          </header>
+          <div class="frame__page">
+            <div class="dk-choice-row" style="flex-wrap:wrap">
+              <div class="dk-choice" role="radiogroup" aria-label="Buscar em">
+                <label><input type="radio" name="modo-d"><span>Jogos</span></label>
+                <label><input type="radio" name="modo-d" checked><span>Usuários</span></label>
+              </div>
+              <p class="dk-count" style="margin:0">1 pessoa</p>
+            </div>
+            <div class="dk-row" id="person-fa-c-phone" style="margin-top:var(--space-3)">
+              <span class="dk-poster dk-poster--sm"></span>
+              <div><a class="dk-row__title" href="#">Fã</a><div class="dk-row__meta">Sem jogo agora</div></div>
+              <div class="dk-row__end"><button type="button" class="dk-btn dk-btn--primary dk-btn--sm dk-follow">Seguir de volta</button></div>
+            </div>
+          </div>
+        </div>
+        <figcaption>Caminho C · pessoa sem "jogando agora" · 375 · escuro</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="opt">
+    <h2 class="t-heading">Recomendação do agente</h2>
+    <p class="lead">Caminho A, as Abas: reaproveita o componente Tabs que a conta já vê em Seguidores/Seguindo, não acrescenta controle novo na barra de busca, e resolve com um toque só quando os dois tipos têm resultado. Pendente de decisão do dono antes da etapa 2 (implementação, testes e privacidade).</p>
+  </section>
+</main>
+</body>
+</html>
