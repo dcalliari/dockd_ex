@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Escolher edição em Comprar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
+<style>
+:root, [data-theme="light"]{--surface:#ffffff;--surface-raised:#f4f2f1;--surface-sunken:#ebe8e6;--line:#dedad8;--line-strong:#8f8886;--ink:#161414;--ink-muted:#6a6462;--on-ink:#ffffff;--red:#e60012;--red-hover:#cc0010;--on-red:#ffffff;--red-ink:#d4000f;--warn:#9a5b00;--poster-edge:#0000001f;--focus-ring:var(--red-ink);}
+[data-theme="dark"]{--surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink);}
+:root{--gold:#f2c200;--on-gold:#ffffff;--scrim:#000000a6;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--radius-sm:3px;--radius-md:6px;--radius-full:999px;--container-max:1120px;--nav-height:56px;--control-height:36px;--thumb-height:44px;--font-sans:"Archivo", "Helvetica Neue", Arial, sans-serif;}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--warn:#f0b350;--poster-edge:#ffffff1a;--focus-ring:var(--red-ink); } }
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+body { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+img { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.t-display { font-family: var(--font-sans); font-size: 32px; line-height: 36px; font-weight: 800; letter-spacing: -0.02em; font-stretch: 110%; }
+
+.dk-poster { position: relative; display: block; aspect-ratio: 3 / 4; width: 100%; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-sunken); }
+.dk-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dk-poster--sm { width: 33px; height: var(--thumb-height); border-radius: var(--radius-sm); }
+
+.dk-media { display: inline-flex; align-items: center; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); white-space: nowrap; }
+button.dk-media { padding: 1px 4px; margin: -1px -4px; border-radius: var(--radius-sm); color: var(--ink); transition: background-color 120ms; vertical-align: baseline; }
+button.dk-media:hover { background: var(--surface-sunken); }
+
+.dk-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--control-height); padding: 0 var(--space-4); border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; transition: background-color 120ms, border-color 120ms, color 120ms; }
+.dk-btn--secondary { border-color: var(--line-strong); color: var(--ink); background: var(--surface); }
+.dk-btn--secondary:hover { background: var(--surface-raised); }
+.dk-btn--sm { height: 28px; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; }
+.dk-link { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--red-ink); }
+
+.dk-nav { height: var(--nav-height); display: flex; align-items: center; gap: var(--space-5); padding: 0 var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
+.dk-wordmark { font-size: 22px; line-height: 24px; font-weight: 900; font-stretch: 125%; letter-spacing: -0.02em; color: var(--ink); }
+.dk-wordmark i { font-style: normal; color: var(--red); }
+.dk-nav__links { display: flex; gap: var(--space-4); }
+.dk-nav__link { padding: 4px 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-muted); border-bottom: 2px solid transparent; }
+.dk-nav__link[aria-current="page"] { color: var(--ink); border-bottom-color: var(--red); }
+
+.dk-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }
+.dk-row > :first-child { justify-self: start; }
+.dk-row__title { font-size: 14px; line-height: 18px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-row__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-row__end { display: flex; align-items: center; gap: var(--space-3); justify-self: end; }
+.dk-row__acts { display: flex; align-items: center; gap: var(--space-2); }
+
+.dk-price { display: inline-flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.dk-price b { font-size: 15px; line-height: 20px; font-weight: 600; }
+.dk-price small { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-price--none b { font-weight: 400; color: var(--ink-muted); }
+
+.dk-choice { display: inline-flex; height: 28px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden; }
+.dk-choice > label > span { display: inline-flex; align-items: center; height: 100%; padding: 0 var(--space-3); font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-muted); background: var(--surface); white-space: nowrap; cursor: pointer; transition: background-color 120ms, color 120ms; }
+.dk-choice > * + * { border-left: 1px solid var(--line-strong); }
+.dk-choice > label { position: relative; display: flex; }
+.dk-choice > label > input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.dk-choice > label > span:hover { color: var(--ink); background: var(--surface-raised); }
+.dk-choice > label > input:checked + span { background: var(--ink); color: var(--on-ink); }
+
+.dk-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); padding: var(--space-3) 0 var(--space-4) 56px; border-bottom: 1px solid var(--line); }
+.dk-form__field { display: flex; flex-direction: column; gap: var(--space-1); }
+.dk-form__field > span:first-child { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+
+/* EditionTag (caminho A): etiqueta própria, como a MediaTag */
+.dk-edition { display: inline-flex; align-items: center; gap: 3px; padding: 1px 4px; margin: -1px -4px; border-radius: var(--radius-sm); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; color: var(--ink); background: transparent; transition: background-color 120ms; }
+.dk-edition:hover { background: var(--surface-sunken); }
+.dk-edition svg { width: 8px; height: 8px; }
+
+/* Caminho C: opção dentro do painel de preço, uma edição por linha */
+.dk-edition-list { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3) 0 var(--space-3) 56px; border-bottom: 1px solid var(--line); }
+.dk-edition-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.dk-edition-row label { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; line-height: 18px; }
+.dk-edition-row input[type=radio] { width: 16px; height: 16px; accent-color: var(--red); }
+.dk-edition-row.is-selected { font-weight: 700; }
+
+.page { width: min(100%, 1600px); margin: 0 auto; padding: var(--space-5) var(--space-4) var(--space-7); }
+.opt { margin-bottom: var(--space-7); }
+.opt > p.lead, .opt > ul.lead { margin: 0 0 var(--space-4); max-width: 80ch; font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+.opt > p.lead b, .opt > ul.lead b { color: var(--ink); }
+.opt > ul.lead { padding-left: 20px; }
+.dk-section { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--line); margin-bottom: var(--space-3); }
+.dk-section h2 { margin: 0; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.row { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-bottom: var(--space-5); }
+.shot { margin: 0; min-width: 0; }
+.shot figcaption { margin-top: var(--space-2); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.frame { position: relative; overflow: auto; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; }
+.frame--desk { width: 640px; height: 460px; }
+.frame__page { padding: var(--space-5); }
+.frame .dk-nav { position: sticky; top: 0; z-index: 3; }
+.tag-rec { display: inline-block; margin-left: var(--space-2); padding: 0 6px; border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 10px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px; }
+</style>
+</head>
+<body>
+<main class="page">
+
+<section class="opt" id="resumo">
+  <div class="dk-section"><h2>Escolher edição em Comprar · dados reais do lab · 29/09/2026</h2></div>
+  <p class="lead">Hoje o preço e o total de Comprar seguem sempre a edição <b>mais barata</b> entre as versões não vetadas (`Purchasing.current_game_price/3`). Outer Wilds tem a edição padrão (R$ 99,99, R$ 59,99 em promoção) e a <b>Archaeologist Edition</b> (R$ 149,99, R$ 74,99 em promoção): a mais barata sempre vence, então a linha mostra a padrão e não há como pedir a Archaeologist. Splintered Fate mostra o mesmo problema com mais de duas edições. As três opções abaixo deixam a conta <b>escolher</b> a edição que quer comprar; a escolha vale só para o que Comprar mostra e soma, como a mídia hoje, sem virar posse nem compra.</p>
+</section>
+
+<section class="opt" id="a">
+  <div class="dk-section"><h2>Caminho A · EditionTag ao lado da mídia <span class="tag-rec">recomendado</span></h2></div>
+  <p class="lead">Uma etiqueta nova, como a MediaTag: <b>Padrão</b> por padrão, ou o nome curto da edição escolhida. Um toque abre um Choice embaixo da linha com as edições e o preço de cada uma; escolher fecha e já mostra o preço e o total daquela edição. Aparece só quando o jogo tem mais de uma edição à venda.</p>
+  <div class="row">
+    <figure class="shot"><div class="frame frame--desk" data-theme="light" data-screen="a" data-open="outer"></div><figcaption>Caminho A · Outer Wilds aberto · claro</figcaption></figure>
+    <figure class="shot"><div class="frame frame--desk" data-theme="dark" data-screen="a"></div><figcaption>Caminho A · fechado, Archaeologist já escolhida · escuro</figcaption></figure>
+  </div>
+</section>
+
+<section class="opt" id="b">
+  <div class="dk-section"><h2>Caminho B · o nome da edição é o controle</h2></div>
+  <p class="lead">Sem etiqueta nova: o nome da edição que hoje só aparece como texto (`edition_suffix`) vira o controle, como o preço e o status já são. Com a padrão escolhida, a meta ganha "· Edição padrão" tocável, para o controle existir mesmo sem uma edição mais cara à frente. Um toque abre o mesmo Choice do caminho A embaixo da linha.</p>
+  <div class="row">
+    <figure class="shot"><div class="frame frame--desk" data-theme="light" data-screen="b" data-open="outer"></div><figcaption>Caminho B · Outer Wilds aberto · claro</figcaption></figure>
+    <figure class="shot"><div class="frame frame--desk" data-theme="dark" data-screen="b"></div><figcaption>Caminho B · fechado, Splintered Fate com 3 edições · escuro</figcaption></figure>
+  </div>
+</section>
+
+<section class="opt" id="c">
+  <div class="dk-section"><h2>Caminho C · dentro do registro de preço</h2></div>
+  <p class="lead">Reaproveita o painel que já abre ao tocar no preço (`price_form`): a edição vira mais um campo ali, uma linha por versão com o preço da eShop, acima de Preço visto e Onde. Escolher a edição já troca o preço mostrado na linha; registrar um preço manual continua no mesmo painel, para a mesma edição. Menos elemento novo na tela, mas mistura duas decisões — qual edição e que preço visto registrar — no mesmo lugar.</p>
+  <div class="row">
+    <figure class="shot"><div class="frame frame--desk" data-theme="light" data-screen="c" data-open="outer"></div><figcaption>Caminho C · Outer Wilds aberto · claro</figcaption></figure>
+    <figure class="shot"><div class="frame frame--desk" data-theme="dark" data-screen="c"></div><figcaption>Caminho C · fechado · escuro</figcaption></figure>
+  </div>
+</section>
+
+<section class="opt" id="recomendacao">
+  <div class="dk-section"><h2>Recomendação</h2></div>
+  <p class="lead">Caminho A. Seguir o padrão que a MediaTag já criou (etiqueta que é o controle, Choice embaixo da linha) custa uma etiqueta nova mas fica sempre visível e sempre no mesmo lugar, com ou sem edição mais barata à frente — o caminho B esconde o controle atrás de um texto que hoje nem sempre aparece, e o caminho C mistura duas decisões (qual versão, que preço) que a conta pode querer fazer em momentos diferentes.</p>
+</section>
+
+</main>
+<template id="nav">
+  <header class="dk-nav">
+    <a class="dk-wordmark" href="#">dockd<i>.</i></a>
+    <nav class="dk-nav__links" aria-label="Principal"><a class="dk-nav__link" href="#">Início</a><a class="dk-nav__link" href="#">Biblioteca</a><a class="dk-nav__link" href="#" aria-current="page">Comprar</a><a class="dk-nav__link" href="#">Descobrir</a></nav>
+  </header>
+</template>
+<script>
+var COVER = 'https://images.igdb.com/igdb/image/upload/t_cover_big/';
+var SEEN = 'visto em 29/09/2026 · eShop';
+
+// Dados reais do lab, lidos só com SELECT (games/releases/store_prices): Outer Wilds tem a
+// edição padrão e a Archaeologist Edition, ambas digitais; Splintered Fate tem três edições
+// à venda além da padrão, para testar a escolha com mais de duas opções.
+var GAMES = {
+  outer: {
+    title: 'Outer Wilds', cover: 'co65ac', plats: 'Switch',
+    editions: [
+      { id: 'std', name: 'Padrão', full: 'Edição padrão', price: 5999, regular: 9999 },
+      { id: 'arch', name: 'Archaeologist', full: 'Archaeologist Edition', price: 7499, regular: 14999 }
+    ]
+  },
+  splinter: {
+    title: 'Teenage Mutant Ninja Turtles: Splintered Fate', cover: 'cocvbz', plats: 'Switch 2',
+    editions: [
+      { id: 'std', name: 'Padrão', full: 'Edição padrão', price: 12999, regular: 12999 },
+      { id: 'gold', name: 'Ouro', full: 'Edição Ouro', price: 18999, regular: 18999 },
+      { id: 'platina', name: 'Platina', full: 'Edição Platina', price: 24999, regular: 24999 },
+      { id: 'metal', name: 'Cabeça de Metal', full: 'Edição Cabeça de Metal', price: 31999, regular: 31999 }
+    ]
+  }
+};
+var CHOSEN = { outer: 'std', splinter: 'std' };
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+function money(c) {
+  var s = (Math.abs(c) / 100).toFixed(2).split('.');
+  return 'R$ ' + s[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + s[1];
+}
+function poster(g) { return '<a class="dk-poster dk-poster--sm" href="#"><img src="' + COVER + g.cover + '.jpg" alt=""></a>'; }
+function edition(g, id) { for (var i = 0; i < g.editions.length; i++) if (g.editions[i].id === id) return g.editions[i]; }
+function chevron() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>'; }
+
+function priceHtml(ed) {
+  return '<button type="button" class="dk-price"><b>' + money(ed.price) + '</b><small>' + SEEN + '</small></button>';
+}
+
+function choiceHtml(gid, g) {
+  return '<div class="dk-form"><div class="dk-form__field"><span>Edição</span><div class="dk-choice">' +
+    g.editions.map(function (ed) {
+      return '<label><input type="radio" name="ed-' + gid + '" value="' + ed.id + '"' + (CHOSEN[gid] === ed.id ? ' checked' : '') + ' data-pick="' + gid + ':' + ed.id + '"><span>' + esc(ed.name) + ' · ' + money(ed.price) + '</span></label>';
+    }).join('') + '</div></div><button type="button" class="dk-link" data-close="' + gid + '">Cancelar</button></div>';
+}
+
+function editionListHtml(gid, g) {
+  return '<div class="dk-edition-list">' + g.editions.map(function (ed) {
+    var sel = CHOSEN[gid] === ed.id;
+    return '<div class="dk-edition-row' + (sel ? ' is-selected' : '') + '"><label><input type="radio" name="edp-' + gid + '" value="' + ed.id + '"' + (sel ? ' checked' : '') + ' data-pick="' + gid + ':' + ed.id + '"><span>' + esc(ed.full) + '</span></label><span>' + money(ed.price) + '</span></div>';
+  }).join('') +
+  '<div class="dk-form" style="padding-left:0;border-bottom:0"><div class="dk-form__field"><span>Preço visto</span><span class="dk-media" style="color:var(--ink-muted)">opcional, mesmo painel</span></div></div></div>';
+}
+
+function rowA(gid, g, open) {
+  var ed = edition(g, CHOSEN[gid]);
+  var tag = '<button type="button" class="dk-edition" data-toggle="' + gid + '">' + esc(ed.name) + chevron() + '</button>';
+  var meta = g.plats + ' · <button type="button" class="dk-media">Digital</button> · ' + tag;
+  return '<div class="dk-row">' + poster(g) + '<div><a class="dk-row__title" href="#">' + esc(g.title) + '</a><div class="dk-row__meta">' + meta + '</div></div><div class="dk-row__end">' + priceHtml(ed) + '</div></div>' +
+    (open ? choiceHtml(gid, g) : '');
+}
+
+function rowB(gid, g, open) {
+  var ed = edition(g, CHOSEN[gid]);
+  var tag = '<button type="button" class="dk-media" data-toggle="' + gid + '">' + esc(ed.full) + '</button>';
+  var meta = g.plats + ' · Digital · ' + tag;
+  return '<div class="dk-row">' + poster(g) + '<div><a class="dk-row__title" href="#">' + esc(g.title) + '</a><div class="dk-row__meta">' + meta + '</div></div><div class="dk-row__end">' + priceHtml(ed) + '</div></div>' +
+    (open ? choiceHtml(gid, g) : '');
+}
+
+function rowC(gid, g, open) {
+  var ed = edition(g, CHOSEN[gid]);
+  var meta = g.plats + ' · <button type="button" class="dk-media">Digital</button>' + (ed.id !== 'std' ? ' · ' + esc(ed.name) : '');
+  return '<div class="dk-row">' + poster(g) + '<div><a class="dk-row__title" href="#">' + esc(g.title) + '</a><div class="dk-row__meta">' + meta + '</div></div><div class="dk-row__end"><button type="button" class="dk-price" data-toggle="' + gid + '"><b>' + money(ed.price) + '</b><small>' + SEEN + '</small></button></div></div>' +
+    (open ? editionListHtml(gid, g) : '');
+}
+
+var RENDER = { a: rowA, b: rowB, c: rowC };
+
+document.querySelectorAll('.frame').forEach(function (frame) {
+  var screen = frame.dataset.screen;
+  var openId = frame.dataset.open || null;
+  frame.appendChild(document.getElementById('nav').content.cloneNode(true));
+  var page = document.createElement('div');
+  page.className = 'frame__page';
+  frame.appendChild(page);
+
+  function draw() {
+    var ids = screen === 'a' || screen === 'c' ? ['outer', 'splinter'] : ['splinter', 'outer'];
+    page.innerHTML = ids.map(function (id) { return RENDER[screen](id, GAMES[id], id === openId); }).join('');
+  }
+  draw();
+
+  page.addEventListener('click', function (e) {
+    var t;
+    if ((t = e.target.closest('[data-toggle]'))) { openId = openId === t.dataset.toggle ? null : t.dataset.toggle; }
+    else if ((t = e.target.closest('[data-pick]'))) { var p = t.dataset.pick.split(':'); CHOSEN[p[0]] = p[1]; openId = null; }
+    else if ((t = e.target.closest('[data-close]'))) { openId = null; }
+    else return;
+    e.preventDefault();
+    draw();
+  });
+});
+</script>
+</body>
+</html>
