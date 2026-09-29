@@ -17,10 +17,53 @@ defmodule Dockd.Social do
 
   @playing [:playing, :paused]
   @wanting ~w(want planned preordered)
+  @search_limit 30
 
   @doc "The account whose profile lives at `/u/:username`. Raises when there is none."
   def get_profile!(username) when is_binary(username),
     do: Repo.get_by!(User, username: username)
+
+  @doc """
+  Accounts whose username or name match `query`, for the Usuários tab of the search bar
+  (`Dockd.Catalog.search/1` is the Jogos tab). Each result carries what `person_row/1`
+  shows, the same fields as the followers and followed lists, and a profile in `:friends`
+  visibility that `viewer` cannot see stays out, exactly like `visible?/2` on `/u/:username`.
+  """
+  def search_users(query, viewer) when is_binary(query) do
+    case String.trim(query) do
+      "" ->
+        []
+
+      term ->
+        pattern = "%" <> escape_like(term) <> "%"
+
+        users =
+          Repo.all(
+            from u in User,
+              where: ilike(u.username, ^pattern) or ilike(u.name, ^pattern),
+              order_by: [asc: u.username],
+              limit: @search_limit
+          )
+
+        ids = Enum.map(users, & &1.id)
+        relations = relations(viewer, ids)
+        playing = playing_map(ids)
+        finished = finished_map(ids)
+
+        users
+        |> Enum.map(fn user ->
+          %{
+            user: user,
+            playing: playing[user.id],
+            finished: Map.get(finished, user.id, 0),
+            relation: relations[user.id]
+          }
+        end)
+        |> Enum.filter(&visible?(&1.user, &1.relation))
+    end
+  end
+
+  defp escape_like(term), do: String.replace(term, ~r/[\\%_]/, fn c -> "\\" <> c end)
 
   @doc "`user` follows `target`. Following twice keeps one follow."
   def follow(%User{id: id}, %User{id: id}), do: {:error, :self}
@@ -122,26 +165,8 @@ defmodule Dockd.Social do
       |> Repo.all()
 
     ids = Enum.map(users, & &1.id)
-
-    playing =
-      Repo.all(
-        from e in Entry,
-          where: e.user_id in ^ids and e.play_state in ^@playing,
-          order_by: [desc: e.updated_at],
-          preload: :game
-      )
-      |> Enum.uniq_by(& &1.user_id)
-      |> Map.new(&{&1.user_id, &1.game})
-
-    finished =
-      Repo.all(
-        from e in Entry,
-          where: e.user_id in ^ids and e.play_state == :finished,
-          group_by: e.user_id,
-          select: {e.user_id, count(e.id)}
-      )
-      |> Map.new()
-
+    playing = playing_map(ids)
+    finished = finished_map(ids)
     relations = relations(viewer, ids)
 
     Enum.map(users, fn user ->
@@ -302,4 +327,27 @@ defmodule Dockd.Social do
   # :backlogged stays out: a purchase writes it, and the profile never shows purchases.
   defp change(%Event{type: :added}), do: {:backlog, "Entrou na biblioteca"}
   defp change(_event), do: nil
+
+  # The game each account of `ids` plays most recently, for the PersonRow thumbnail.
+  defp playing_map(ids) do
+    Repo.all(
+      from e in Entry,
+        where: e.user_id in ^ids and e.play_state in ^@playing,
+        order_by: [desc: e.updated_at],
+        preload: :game
+    )
+    |> Enum.uniq_by(& &1.user_id)
+    |> Map.new(&{&1.user_id, &1.game})
+  end
+
+  # How many games each account of `ids` finished, for the PersonRow meta.
+  defp finished_map(ids) do
+    Repo.all(
+      from e in Entry,
+        where: e.user_id in ^ids and e.play_state == :finished,
+        group_by: e.user_id,
+        select: {e.user_id, count(e.id)}
+    )
+    |> Map.new()
+  end
 end

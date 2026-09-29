@@ -85,6 +85,52 @@ defmodule Dockd.SocialTest do
     end
   end
 
+  describe "search_users" do
+    test "matches the username or the name, minding neither case nor position" do
+      ana = account("Ana.Maria@example.com")
+
+      assert [%{user: found}] = Social.search_users("ana", nil)
+      assert found.id == ana.id
+      assert [%{user: found}] = Social.search_users("MARIA", nil)
+      assert found.id == ana.id
+      assert [%{user: found}] = Social.search_users("naMar", nil)
+      assert found.id == ana.id
+      assert Social.search_users("", nil) == []
+      assert Social.search_users("ninguem", nil) == []
+    end
+
+    test "carries what the account plays now, how many it finished and its relation" do
+      ana = account("ana@example.com")
+      bia = account("bia@example.com")
+      game = game_fixture(%{title: "Elden Ring"})
+      {:ok, _} = Library.set_status(ana, game, :jogando)
+      :ok = Social.follow(bia, ana)
+      :ok = Social.follow(ana, bia)
+
+      assert [%{user: found, playing: playing, relation: :friends}] =
+               Social.search_users("ana", bia)
+
+      assert found.id == ana.id
+      assert playing.id == game.id
+    end
+
+    test "hides a Só amigos profile from anyone who is not a friend nor the owner" do
+      ana = account("ana@example.com")
+      bia = account("bia@example.com")
+      {:ok, ana} = Social.set_visibility(ana, "friends")
+
+      assert Social.search_users("ana", nil) == []
+      assert Social.search_users("ana", bia) == []
+      assert [%{user: found}] = Social.search_users("ana", ana)
+      assert found.id == ana.id
+
+      :ok = Social.follow(bia, ana)
+      :ok = Social.follow(ana, bia)
+      assert [%{user: found}] = Social.search_users("ana", bia)
+      assert found.id == ana.id
+    end
+  end
+
   describe "the profile" do
     setup do
       ana = account("ana@example.com")

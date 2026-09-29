@@ -7,7 +7,7 @@ defmodule DockdWeb.DiscoverLive do
   """
   use DockdWeb, :live_view
 
-  alias Dockd.{Catalog, Library}
+  alias Dockd.{Catalog, Library, Social}
   alias Dockd.Library.Shelf
   alias DockdWeb.{GameEvents, UserAuth}
 
@@ -38,21 +38,61 @@ defmodule DockdWeb.DiscoverLive do
     q = params |> Map.get("q", "") |> String.trim()
     list = List.keyfind(@lists, params["lista"], 0, hd(@lists))
 
-    {:noreply, socket |> assign(q: q, list: list) |> GameEvents.init(params["abrir"]) |> search()}
+    {:noreply,
+     socket
+     |> assign(q: q, list: list)
+     |> GameEvents.init(params["abrir"])
+     |> search()
+     |> assign_tab(params["tipo"])}
   end
 
   @impl true
   def handle_event("search", %{"q" => q}, socket),
     do: {:noreply, push_patch(socket, to: ~p"/descobrir?#{%{q: String.trim(q)}}")}
 
+  def handle_event("follow", %{"username" => username}, socket) do
+    :ok = Social.follow(socket.assigns.user, Social.get_profile!(username))
+    {:noreply, search(socket)}
+  end
+
+  def handle_event("unfollow", %{"username" => username}, socket) do
+    :ok = Social.unfollow(socket.assigns.user, Social.get_profile!(username))
+    {:noreply, search(socket)}
+  end
+
   def handle_event(event, params, socket) when event in @game_events,
     do: GameEvents.handle_event(event, params, socket, &search/1)
 
-  defp search(%{assigns: %{q: "", list: {_, list, _}}} = socket),
-    do: assign(socket, results: with_status(Catalog.showcase(list), socket), source: :showcase)
+  defp search(%{assigns: %{q: "", list: {_, list, _}}} = socket) do
+    assign(socket,
+      results: with_status(Catalog.showcase(list), socket),
+      source: :showcase,
+      people: []
+    )
+  end
 
-  defp search(%{assigns: %{q: q}} = socket),
-    do: assign(socket, results: with_status(Catalog.search(q), socket), source: :search)
+  defp search(%{assigns: %{q: q, user: user}} = socket) do
+    assign(socket,
+      results: with_status(Catalog.search(q), socket),
+      source: :search,
+      people: Social.search_users(q, user)
+    )
+  end
+
+  # The Usuários tab defaults to selected when Jogos has nothing and Usuários does; a
+  # `tipo` in the URL always wins, so a switch survives a new search.
+  defp assign_tab(%{assigns: %{q: ""}} = socket, _tipo), do: assign(socket, tab: :jogos)
+
+  defp assign_tab(%{assigns: %{results: results, people: people}} = socket, tipo) do
+    tab =
+      case tipo do
+        "usuarios" -> :usuarios
+        "jogos" -> :jogos
+        _ -> if results == [] and people != [], do: :usuarios, else: :jogos
+      end
+
+    assign(socket, tab: tab)
+  end
 
   # Each result carries its game's shelf item fields, so the status control reads it like
   # a Biblioteca card.
@@ -94,6 +134,9 @@ defmodule DockdWeb.DiscoverLive do
   defp count_label(1), do: "1 jogo"
   defp count_label(n), do: "#{n} jogos"
 
+  defp people_count_label(1), do: "1 pessoa"
+  defp people_count_label(n), do: "#{n} pessoas"
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -110,51 +153,81 @@ defmodule DockdWeb.DiscoverLive do
         id="discover-list"
         title={elem(@list, 2)}
       />
-      <p
-        :if={@q != ""}
-        id="discover-count"
-        class="dk-count"
-        style="margin: var(--space-4) 0 var(--space-3)"
-      >
-        {count_label(length(@results))} para “{@q}”
-      </p>
 
-      <div :if={@results != []} id="discover-results" class="dk-grid">
-        <div
-          :for={result <- @results}
-          id={result_id(result)}
-          class="dk-card"
-          data-status={result.status}
+      <.tabs :if={@q != ""} id="discover-tabs">
+        <:tab
+          label="Jogos"
+          count={length(@results)}
+          selected={@tab == :jogos}
+          patch={~p"/descobrir?#{%{q: @q, tipo: "jogos"}}"}
+        />
+        <:tab
+          label="Usuários"
+          count={length(@people)}
+          selected={@tab == :usuarios}
+          patch={~p"/descobrir?#{%{q: @q, tipo: "usuarios"}}"}
+        />
+      </.tabs>
+
+      <%= if @tab == :jogos do %>
+        <p
+          :if={@q != ""}
+          id="discover-count"
+          class="dk-count"
+          style="margin: var(--space-4) 0 var(--space-3)"
         >
-          <.poster
-            title={result.title}
-            cover_url={result.cover_url}
-            availability={result.game.availability}
-            navigate={~p"/jogos/#{result.game.id}"}
-          />
-          <.status_link :if={!@user} back={back_path(assigns, result)} />
-          <.status_menu
-            :if={@user}
-            id={"status-#{result_id(result)}"}
-            status={result.status}
-            options={Library.status_options(result)}
-            values={%{game_id: result.game.id}}
-            open={@status_open == result_id(result)}
-            ask={GameEvents.ask(@asking, result)}
-          />
-          <span class="dk-card__text">
-            <span class="dk-card__title">{result.title}</span>
-            <span class="dk-card__meta">{result_meta(result)}</span>
-          </span>
-        </div>
-      </div>
+          {count_label(length(@results))} para “{@q}”
+        </p>
 
-      <.empty_state :if={@q != "" and @results == []} id="discover-empty">
-        Nenhum jogo com “{@q}” para Switch ou Switch 2.
-      </.empty_state>
-      <.empty_state :if={@q == "" and @results == []} id="discover-hint">
-        Busque um jogo pelo título na barra acima.
-      </.empty_state>
+        <div :if={@results != []} id="discover-results" class="dk-grid">
+          <div
+            :for={result <- @results}
+            id={result_id(result)}
+            class="dk-card"
+            data-status={result.status}
+          >
+            <.poster
+              title={result.title}
+              cover_url={result.cover_url}
+              availability={result.game.availability}
+              navigate={~p"/jogos/#{result.game.id}"}
+            />
+            <.status_link :if={!@user} back={back_path(assigns, result)} />
+            <.status_menu
+              :if={@user}
+              id={"status-#{result_id(result)}"}
+              status={result.status}
+              options={Library.status_options(result)}
+              values={%{game_id: result.game.id}}
+              open={@status_open == result_id(result)}
+              ask={GameEvents.ask(@asking, result)}
+            />
+            <span class="dk-card__text">
+              <span class="dk-card__title">{result.title}</span>
+              <span class="dk-card__meta">{result_meta(result)}</span>
+            </span>
+          </div>
+        </div>
+
+        <.empty_state :if={@q != "" and @results == []} id="discover-empty">
+          Nenhum jogo com “{@q}” para Switch ou Switch 2.
+        </.empty_state>
+        <.empty_state :if={@q == "" and @results == []} id="discover-hint">
+          Busque um jogo pelo título na barra acima.
+        </.empty_state>
+      <% else %>
+        <p id="discover-people-count" class="dk-count" style="margin: var(--space-4) 0 var(--space-3)">
+          {people_count_label(length(@people))} para “{@q}”
+        </p>
+
+        <div :if={@people != []} id="discover-people">
+          <.person_row :for={person <- @people} person={person} />
+        </div>
+
+        <.empty_state :if={@people == []} id="discover-people-empty">
+          Ninguém com “{@q}”.
+        </.empty_state>
+      <% end %>
     </Layouts.app>
     """
   end

@@ -4,7 +4,7 @@ defmodule DockdWeb.DiscoverLiveTest do
   import Phoenix.LiveViewTest
   import Dockd.DomainFixtures
 
-  alias Dockd.Library
+  alias Dockd.{AccountsFixtures, Library, Social}
 
   setup :register_and_log_in_user
 
@@ -84,5 +84,59 @@ defmodule DockdWeb.DiscoverLiveTest do
   test "the navigation search of other screens lands here", %{conn: conn} do
     conn = get(conn, "/descobrir", q: "else")
     assert html_response(conn, 200) =~ "Something else"
+  end
+
+  describe "searching for a person" do
+    test "the query with no game match selects the Usuários tab", %{conn: conn} do
+      ana = AccountsFixtures.user_fixture(%{email: "anafinder@example.com"})
+
+      {:ok, view, _html} = live(conn, "/descobrir?q=anafinder")
+
+      assert has_element?(view, "#discover-tabs .dk-tab[aria-selected=true]", "Usuários")
+      assert has_element?(view, "#discover-people #person-#{ana.username}")
+      refute has_element?(view, "#discover-results")
+    end
+
+    test "switching to Jogos and back to Usuários keeps each list", %{conn: conn} = ctx do
+      fan = AccountsFixtures.user_fixture(%{email: "candidatefan@example.com"})
+
+      {:ok, view, _html} = live(conn, "/descobrir?q=candidate")
+      assert has_element?(view, "#discover-tabs .dk-tab[aria-selected=true]", "Jogos")
+      assert has_element?(view, "#result-#{ctx.candidate.id}")
+
+      view |> element("#discover-tabs .dk-tab", "Usuários") |> render_click()
+      assert_patch(view, "/descobrir?q=candidate&tipo=usuarios")
+      refute has_element?(view, "#discover-results")
+      assert has_element?(view, "#discover-people #person-#{fan.username}")
+
+      view |> element("#discover-tabs .dk-tab", "Jogos") |> render_click()
+      assert_patch(view, "/descobrir?q=candidate&tipo=jogos")
+      assert has_element?(view, "#result-#{ctx.candidate.id}")
+    end
+
+    test "follows a person straight from the search results", %{conn: conn} = ctx do
+      ana = AccountsFixtures.user_fixture(%{email: "ana@example.com"})
+
+      {:ok, view, _html} = live(conn, "/descobrir?q=ana&tipo=usuarios")
+
+      view |> element("#follow-ana", "Seguir") |> render_click()
+      assert has_element?(view, "#follow-ana", "Seguindo")
+      assert Social.relation(ctx.user, ana) == :following
+    end
+
+    test "a Só amigos profile stays out of a stranger's search", %{conn: conn} do
+      ana = AccountsFixtures.user_fixture(%{email: "ana@example.com"})
+      {:ok, _} = Social.set_visibility(ana, :friends)
+
+      {:ok, view, _html} = live(conn, "/descobrir?q=ana&tipo=usuarios")
+
+      refute has_element?(view, "#person-ana")
+      assert has_element?(view, "#discover-people-empty")
+    end
+
+    test "an empty query shows no tabs, like today", %{conn: conn} do
+      {:ok, view, _html} = live(conn, "/descobrir")
+      refute has_element?(view, "#discover-tabs")
+    end
   end
 end
