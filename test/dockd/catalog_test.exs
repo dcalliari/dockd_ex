@@ -92,6 +92,25 @@ defmodule Dockd.CatalogTest do
     end
   end
 
+  describe "Release.igdb_launched?/2" do
+    test "a date known only by year, quarter or month is launched once the period is over" do
+      year = [%{"date" => 1_767_225_600, "date_format" => 2}]
+      assert Release.igdb_launched?(year, ~D[2026-09-28]) == false
+      assert Release.igdb_launched?(year, ~D[2026-12-31]) == true
+    end
+
+    test "a day date is launched on the day" do
+      day = [%{"date" => 1_793_836_800, "date_format" => 0}]
+      assert Release.igdb_launched?(day, ~D[2026-11-04]) == false
+      assert Release.igdb_launched?(day, ~D[2026-11-05]) == true
+    end
+
+    test "TBD or no date is never launched by the date alone" do
+      assert Release.igdb_launched?([], ~D[2026-09-28]) == false
+      assert Release.igdb_launched?([%{"date" => 1_767_225_600, "date_format" => 7}]) == false
+    end
+  end
+
   test "release key card is castable" do
     changeset =
       Release.changeset(%Release{game_id: Ecto.UUID.generate()}, %{

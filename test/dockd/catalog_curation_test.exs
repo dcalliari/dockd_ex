@@ -72,7 +72,7 @@ defmodule Dockd.CatalogCurationTest do
                     "id" => 41_829,
                     "name" => "The Legend of Zelda: Breath of the Wild - Expansion Pass",
                     "game_type" => 3,
-                    "total_rating_count" => 20
+                    "total_rating_count" => 60
                   })
   @three_d_world Map.merge(@base, %{
                    "id" => 138_227,
@@ -84,12 +84,37 @@ defmodule Dockd.CatalogCurationTest do
                     "id" => 250_006,
                     "name" => "Cuphead & The Delicious Last Course",
                     "game_type" => 3,
-                    "total_rating_count" => 11
+                    "total_rating_count" => 60
                   })
   @randomizer Map.merge(@base, %{
                 "id" => 331_139,
                 "name" => "The Legend of Zelda: Skyward Sword HD Randomizer",
                 "game_type" => 5
+              })
+  # Rated by almost nobody, but Nintendo publishes it.
+  @nintendo_own Map.merge(@base, %{
+                  "id" => 250_007,
+                  "name" => "Pikmin 4",
+                  "total_rating_count" => 8,
+                  "involved_companies" => [
+                    %{"publisher" => true, "company" => %{"name" => "Nintendo of America"}}
+                  ]
+                })
+  # Nobody has rated it yet because it has not come out, but IGDB shows plenty of hype.
+  @hyped_upcoming Map.merge(@base, %{
+                    "id" => 250_008,
+                    "name" => "Some Very Awaited Game",
+                    "total_rating_count" => 0,
+                    "hypes" => 40,
+                    "release_dates" => [%{"platform" => 130, "date" => 2_000_000_000}]
+                  })
+  # Out for years, still hyped in IGDB's count, but rated by almost nobody: hype alone
+  # never readmits a game that already had its shot.
+  @hyped_flop Map.merge(@base, %{
+                "id" => 250_009,
+                "name" => "Some Hyped Then Ignored Game",
+                "total_rating_count" => 8,
+                "hypes" => 40
               })
 
   @pool [
@@ -105,7 +130,10 @@ defmodule Dockd.CatalogCurationTest do
     @expansion_pass,
     @three_d_world,
     @cuphead_bundle,
-    @randomizer
+    @randomizer,
+    @nintendo_own,
+    @hyped_upcoming,
+    @hyped_flop
   ]
 
   # What IGDB lists inside the collections, and the original Skyward Sword.
@@ -220,6 +248,12 @@ defmodule Dockd.CatalogCurationTest do
       assert by_name[@cancelled["name"]] == {:exclude, :status}
       assert by_name[@expansion_pass["name"]] == {:exclude, :bundle_without_game}
       assert by_name[@cuphead_bundle["name"]] == {:exclude, :edition_of_other}
+      # Rated by almost nobody, but Nintendo publishes it.
+      assert by_name[@nintendo_own["name"]] == :admit
+      # Not out yet, so the low rating count does not count against its hype.
+      assert by_name[@hyped_upcoming["name"]] == :admit
+      # Out for years and still barely rated: hype no longer excuses it.
+      assert by_name[@hyped_flop["name"]] == {:exclude, :unpopular}
       # Mods are another game type: IGDB never answers them.
       refute Map.has_key?(by_name, @randomizer["name"])
     end
@@ -235,8 +269,8 @@ defmodule Dockd.CatalogCurationTest do
   describe "curate/1" do
     test "imports what it admits, an edition through its game, and resumes" do
       assert {:ok, report} = Catalog.curate()
-      assert report.admitted == 5
-      assert report.imported == 4
+      assert report.admitted == 7
+      assert report.imported == 6
       assert report.failed == []
       assert report.excluded.publisher == %{count: 2, sample: ["Hole io", @cozy["name"]]}
 
@@ -249,9 +283,9 @@ defmodule Dockd.CatalogCurationTest do
       assert game_id == totk.id
       assert %{rating_count: 928, alternative_names: ["Zelda: TotK"]} = totk
 
-      assert Repo.aggregate(Game, :count) == 4
+      assert Repo.aggregate(Game, :count) == 6
       assert {:ok, %{imported: 0}} = Catalog.curate()
-      assert Repo.aggregate(Game, :count) == 4
+      assert Repo.aggregate(Game, :count) == 6
     end
 
     test "prunes what nobody follows outside the criterion, never a library's game" do

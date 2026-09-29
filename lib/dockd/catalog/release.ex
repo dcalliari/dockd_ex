@@ -67,6 +67,53 @@ defmodule Dockd.Catalog.Release do
   defp out_by?(%{release_date: date, release_date_precision: precision}, today),
     do: Date.compare(period_end(date, precision), today) != :gt
 
+  @doc """
+  Whether any of IGDB's raw `release_dates` (the `date`, `date_format`/`category` shape,
+  not yet a `%Release{}`) already puts the game out by `today`. For the catalog criterion,
+  which decides an entry before it is imported and has no eShop sales status to ask
+  `launch/3` about; the same period-end care as `launch/3`, never a bare date compare.
+  """
+  def igdb_launched?(release_dates, today \\ Date.utc_today())
+  def igdb_launched?([], _today), do: false
+
+  def igdb_launched?(release_dates, today),
+    do: Enum.any?(release_dates, &igdb_date_launched?(&1, today))
+
+  defp igdb_date_launched?(raw, today) do
+    case igdb_date(raw) do
+      {nil, _precision} ->
+        false
+
+      {date, precision} ->
+        out_by?(%{release_date: date, release_date_precision: precision}, today)
+    end
+  end
+
+  defp igdb_date(%{"date" => date} = raw) when is_integer(date) do
+    case igdb_precision(raw) do
+      :tbd -> {nil, :tbd}
+      precision -> {date |> DateTime.from_unix!() |> DateTime.to_date(), precision}
+    end
+  end
+
+  defp igdb_date(_), do: {nil, :tbd}
+
+  defp igdb_precision(%{"category" => category}) when not is_nil(category),
+    do: igdb_precision_from(category)
+
+  defp igdb_precision(%{"date_format" => format}), do: igdb_precision_from(format)
+  defp igdb_precision(_), do: :day
+
+  defp igdb_precision_from(value) when value in [0, "0", "day", "YYYYMMMMDD"], do: :day
+  defp igdb_precision_from(value) when value in [1, "1", "month", "YYYYMMMM"], do: :month
+  defp igdb_precision_from(value) when value in [2, "2", "year", "YYYY"], do: :year
+
+  defp igdb_precision_from(value) when value in [3, 4, 5, 6, "3", "4", "5", "6", "quarter"],
+    do: :quarter
+
+  defp igdb_precision_from(value) when value in [7, "7", "tbd", "TBD"], do: :tbd
+  defp igdb_precision_from(_), do: :day
+
   defp period_end(date, :year), do: Date.new!(date.year, 12, 31)
   defp period_end(date, :month), do: Date.end_of_month(date)
 

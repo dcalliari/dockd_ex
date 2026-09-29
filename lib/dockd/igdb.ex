@@ -44,7 +44,7 @@ defmodule Dockd.IGDB do
       "platforms = (#{@switch_id},#{@switch_2_id}) & version_parent = null & game_type = (#{Enum.join(game_types, ",")})"
 
     pages(
-      "fields id,name,alternative_names.name,cover.image_id,platforms.id,game_type,game_status,parent_game,version_parent,total_rating_count,aggregated_rating_count,hypes,involved_companies.company.name,involved_companies.publisher; where #{where}"
+      "fields id,name,alternative_names.name,cover.image_id,platforms.id,game_type,game_status,parent_game,version_parent,total_rating_count,aggregated_rating_count,hypes,involved_companies.company.name,involved_companies.publisher,release_dates.date,release_dates.date_format,release_dates.category,release_dates.region,release_dates.platform; where #{where}"
     )
   end
 

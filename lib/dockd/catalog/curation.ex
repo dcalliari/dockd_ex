@@ -10,17 +10,21 @@ defmodule Dockd.Catalog.Curation do
     * not from a publisher in `excluded_publishers`, by IGDB or by the eShop;
     * popular by any of: the rating count of the entry, or of the game it remasters,
       expands or ports, at least `min_rating_count`; the critics' count at least
-      `min_critic_count`; hypes at least `min_hypes`; the eShop Brasil popularity rank
-      at most `max_eshop_rank`;
+      `min_critic_count`; not yet out on Switch and hyped at least `min_hypes`; the
+      eShop Brasil popularity rank at most `max_eshop_rank`; published by Nintendo, by
+      IGDB or by the eShop (`Nintendo`, `Nintendo of America`, `Nintendo of Europe` and
+      other spellings of the same company);
     * a collection (game_type 3) holds games: one holding only add-ons is a pass or a
       DLC pack, and one holding a single game sold on Switch is an edition of it.
 
   DLC, expansions, packs, updates, seasons, episodes, mods and forks are other game
   types and never enter. `survey/1` decides every entry and says why it left each one
-  out; `Dockd.Catalog.curate/1` imports what it admits.
+  out; `Dockd.Catalog.curate/1` imports what it admits. A game already in a library
+  stays regardless of the criterion (`Dockd.Catalog.curate/1`'s pruning, not this
+  module, spares it).
   """
   require Logger
-  alias Dockd.Catalog.IgdbFamily
+  alias Dockd.Catalog.{IgdbFamily, Release}
   alias Dockd.{Eshop, IGDB}
   alias Dockd.Pricing.EshopMatch
 
@@ -104,16 +108,44 @@ defmodule Dockd.Catalog.Curation do
     }
   end
 
-  defp popular?(entry, context, criteria) do
+  @doc "Every reason `popular?/3` would admit this entry by, for the simulation report."
+  def popularity_reasons(entry, context, criteria) do
     signals = signals(entry, context)
 
-    signals.rating_count >= criteria.min_rating_count or
-      signals.critic_count >= criteria.min_critic_count or
-      signals.hypes >= criteria.min_hypes or
-      (signals.eshop_rank != nil and signals.eshop_rank <= criteria.max_eshop_rank)
+    [
+      rating: signals.rating_count >= criteria.min_rating_count,
+      critic: signals.critic_count >= criteria.min_critic_count,
+      hype: not released?(entry) and signals.hypes >= criteria.min_hypes,
+      eshop_rank: signals.eshop_rank != nil and signals.eshop_rank <= criteria.max_eshop_rank,
+      nintendo: nintendo_published?(entry, context)
+    ]
+    |> Enum.filter(&elem(&1, 1))
+    |> Enum.map(&elem(&1, 0))
   end
 
-  defp excluded_publisher?(entry, context) do
+  defp popular?(entry, context, criteria), do: popularity_reasons(entry, context, criteria) != []
+
+  # Not yet out on Switch: unpublished games have no rating history to judge by yet, so
+  # the criterion reads their hype instead. Ignores a release elsewhere (PC, other
+  # consoles) the way it reads the rating count, entry-scoped, not company-scoped.
+  defp released?(entry) do
+    platform_ids = entry["platforms"] |> List.wrap() |> Enum.map(& &1["id"])
+
+    entry["release_dates"]
+    |> List.wrap()
+    |> Enum.filter(&(&1["platform"] in platform_ids))
+    |> Release.igdb_launched?()
+  end
+
+  defp excluded_publisher?(entry, context), do: publisher?(entry, context, context.excluded)
+
+  defp nintendo_published?(entry, context),
+    do: publisher?(entry, context, &(&1 |> company_key() |> String.starts_with?("nintendo")))
+
+  defp publisher?(entry, context, %MapSet{} = keys),
+    do: publisher?(entry, context, &MapSet.member?(keys, company_key(&1)))
+
+  defp publisher?(entry, context, matches?) do
     {_rank, store_publisher} = Map.get(context.ranks, entry["id"], {nil, nil})
 
     (entry["involved_companies"] || [])
@@ -121,7 +153,7 @@ defmodule Dockd.Catalog.Curation do
     |> Enum.map(&get_in(&1, ["company", "name"]))
     |> Kernel.++([store_publisher])
     |> Enum.filter(&is_binary/1)
-    |> Enum.any?(&MapSet.member?(context.excluded, company_key(&1)))
+    |> Enum.any?(matches?)
   end
 
   # "REDDEER.GAMES" at the eShop is "RedDeer.Games" at IGDB.

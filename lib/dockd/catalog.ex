@@ -363,7 +363,7 @@ defmodule Dockd.Catalog do
     do:
       companies
       |> Enum.find_value(fn c ->
-        if c[role] and get_in(c, ["company", "name"]), do: get_in(c, ["company", "name"])
+        if c[role] && get_in(c, ["company", "name"]), do: get_in(c, ["company", "name"])
       end)
 
   defp company(_, _), do: nil
