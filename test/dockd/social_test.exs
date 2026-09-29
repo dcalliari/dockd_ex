@@ -103,7 +103,7 @@ defmodule Dockd.SocialTest do
       ana = account("ana@example.com")
       bia = account("bia@example.com")
       game = game_fixture(%{title: "Elden Ring"})
-      {:ok, _} = Library.set_status(ana, game, :jogando)
+      {:ok, _} = Library.set_status(ana, game, :jogando, owned_elsewhere: true)
       :ok = Social.follow(bia, ana)
       :ok = Social.follow(ana, bia)
 
