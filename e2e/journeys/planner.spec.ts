@@ -24,17 +24,19 @@ test("media, Agora and the totals by media change in place", async ({ page }) =>
   await expect(page.locator("div[id^=queue-]").first()).toContainText("Sale Quest");
   await expect(sale.locator(".dk-price s")).toContainText("R$ 159,90");
   await expect(sale.locator(".dk-price b")).toContainText("R$ 79,95");
-  await expect(page.locator("#planned-total")).toHaveCount(0);
+  await expect(page.locator("#planned-totals")).toHaveCount(0);
 
   await sale.getByRole("button", { name: "Agora" }).click();
   await expensive.getByRole("button", { name: "Agora" }).click();
-  await expect(page.locator("#planned-total")).toContainText("R$ 379,95");
+  await expect(page.locator("#planned-total-digital")).toContainText("R$ 379,95");
+  await expect(page.locator("#planned-total-physical")).toHaveCount(0);
   await expect(sale.getByRole("button", { name: "Agora" })).toHaveAttribute("aria-pressed", "true");
 
   await expensive.locator("button.dk-media", { hasText: "Digital" }).click();
   await expect(expensive.locator("button.dk-media")).toHaveText("Físico");
   await expect(expensive.getByRole("button", { name: "Agora" })).toHaveCount(0);
-  await expect(page.locator("#planned-total")).toContainText("R$ 79,95");
+  await expect(page.locator("#planned-total-digital")).toContainText("R$ 79,95");
+  await expect(page.locator("#planned-total-physical")).toHaveCount(0);
   await expect(page.locator("#estimate-digital")).toContainText("R$ 179,95");
   await expect(page.locator("#estimate-physical")).toContainText("Sem preço");
   await expect(page.locator("#estimate-physical")).toContainText("1 jogo");
@@ -42,17 +44,19 @@ test("media, Agora and the totals by media change in place", async ({ page }) =>
   // Still Quero after a reload: Agora is a plan, not a status.
   await page.reload();
   await connected(page);
-  await expect(page.locator("#planned-total")).toContainText("R$ 79,95");
+  await expect(page.locator("#planned-total-digital")).toContainText("R$ 79,95");
   await expect(sale.locator(".dk-status--backlog")).toHaveCount(0);
 
-  // Back to Digital it is not marked: Agora is only for digital games.
+  // Back to Digital its price, and its Agora mark, reappear: switching media never
+  // unmarks a plan, it only moves which subtotal it counts toward.
   await expensive.locator("button.dk-media", { hasText: "Físico" }).click();
   await expect(page.locator("#estimate-physical")).toHaveCount(0);
-  await expect(expensive.getByRole("button", { name: "Agora" })).toHaveAttribute("aria-pressed", "false");
-  await expect(page.locator("#planned-total")).toContainText("R$ 79,95");
+  await expect(expensive.getByRole("button", { name: "Agora" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#planned-total-digital")).toContainText("R$ 379,95");
 
   await sale.getByRole("button", { name: "Agora" }).click();
-  await expect(page.locator("#planned-total")).toHaveCount(0);
+  await expensive.getByRole("button", { name: "Agora" }).click();
+  await expect(page.locator("#planned-totals")).toHaveCount(0);
 });
 
 for (const scheme of ["light", "dark"] as const) {
@@ -66,10 +70,10 @@ for (const scheme of ["light", "dark"] as const) {
       await connected(page);
       const sale = page.locator("[id^=queue-]").filter({ hasText: "Sale Quest" });
       await sale.getByRole("button", { name: "Agora" }).click();
-      await expect(page.locator("#planned-total")).toContainText("R$ 79,95");
+      await expect(page.locator("#planned-total-digital")).toContainText("R$ 79,95");
       if (shots) await page.screenshot({ path: `${shots}/comprar-1280-${scheme}.png`, fullPage: true, animations: "disabled" });
       await sale.getByRole("button", { name: "Agora" }).click();
-      await expect(page.locator("#planned-total")).toHaveCount(0);
+      await expect(page.locator("#planned-totals")).toHaveCount(0);
     });
   });
 
@@ -82,11 +86,11 @@ for (const scheme of ["light", "dark"] as const) {
       await connected(page);
       const sale = page.locator("[id^=queue-]").filter({ hasText: "Sale Quest" });
       await sale.getByRole("button", { name: "Agora" }).tap();
-      await expect(page.locator("#planned-total")).toContainText("R$ 79,95");
+      await expect(page.locator("#planned-total-digital")).toContainText("R$ 79,95");
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
       if (shots) await page.screenshot({ path: `${shots}/comprar-375-${scheme}.png`, fullPage: true, animations: "disabled" });
       await sale.getByRole("button", { name: "Agora" }).tap();
-      await expect(page.locator("#planned-total")).toHaveCount(0);
+      await expect(page.locator("#planned-totals")).toHaveCount(0);
     });
   });
 }

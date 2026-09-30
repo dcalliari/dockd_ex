@@ -20,10 +20,18 @@ test("Início shows what friends play and the menu leads to the profile", async 
   await expect(page.locator("#profile-head h1")).toHaveText("E2e");
   await expect(page.locator("#profile-visibility")).toBeVisible();
   await expect(page.locator("#follow-button")).toHaveCount(0);
-  await expect(page.locator("#profile-zerado-strip .dk-card")).toHaveCount(1);
-  await expect(page.locator("#profile-quero")).toBeVisible();
   await expect(page.getByText("R$")).toHaveCount(0);
   if (shots) await page.screenshot({ path: `${shots}/perfil-1280.png`, fullPage: true });
+
+  // Zerados and Quero moved off the personal card in the profile redesign (915c059);
+  // they still show fully on their own routes.
+  await page.goto("/u/e2e/zerados");
+  await expect(page.locator("#profile-zerado-grid .dk-card")).toHaveCount(1);
+  await expect(page.getByText("R$")).toHaveCount(0);
+
+  await page.goto("/u/e2e/quero");
+  await expect(page.locator("#profile-quero")).toBeVisible();
+  await expect(page.getByText("R$")).toHaveCount(0);
 });
 
 test("followers show the friend, and following back makes a friend", async ({ page }) => {
@@ -54,7 +62,7 @@ test("a friend's profile carries the label and Seguindo", async ({ page }) => {
 
   await expect(page.locator("#profile-head .dk-friend")).toHaveText("Amigo");
   await expect(page.locator("#follow-button")).toContainText("Seguindo");
-  const card = page.locator("#profile-jogando-strip .dk-card").filter({ hasText: "Friendly Voyage" });
+  const card = page.locator("#profile-playing-now .dk-card").filter({ hasText: "Friendly Voyage" });
   await expect(card.locator(".dk-status--add")).toBeVisible();
   if (shots) await page.screenshot({ path: `${shots}/perfil-amiga-1280.png`, fullPage: true });
 });
