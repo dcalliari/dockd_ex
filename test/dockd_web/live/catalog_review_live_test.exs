@@ -66,6 +66,26 @@ defmodule DockdWeb.CatalogReviewLiveTest do
     refute has_element?(view, "#account-catalog-review")
   end
 
+  test "a review link without a candidate is neither counted nor shown", %{conn: conn, game: game} do
+    orphan =
+      Repo.insert!(%GameLink{
+        igdb_id: 999_999_991,
+        game_id: game.id,
+        kind: :expanded,
+        match: :review
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/conferir")
+
+    refute has_element?(view, "#same-game-head")
+    assert has_element?(view, "#eshop-review-head", "1")
+    assert has_element?(view, "#account-catalog-review small", "1")
+    assert Catalog.review_link_count() == 0
+
+    assert Catalog.remove_orphaned_review_links() == 1
+    refute Repo.get(GameLink, orphan.id)
+  end
+
   test "the old address still opens the queue", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, ~p"/eshop")
     assert has_element?(view, ctx.row)

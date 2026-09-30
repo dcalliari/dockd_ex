@@ -649,7 +649,11 @@ defmodule Dockd.Catalog do
       {games, failed} = import_admitted(admitted)
       {in_use, unused} = games |> outside_criterion() |> Enum.split_with(&in_use?/1)
       prune? = Keyword.get(opts, :prune, false) and eshop == :ok
-      if prune?, do: Enum.each(unused, &Repo.delete!/1)
+
+      if prune? do
+        Enum.each(unused, &Repo.delete!/1)
+        remove_orphaned_review_links()
+      end
 
       {:ok,
        %{
@@ -1022,9 +1026,31 @@ defmodule Dockd.Catalog do
     end)
   end
 
-  @doc "How many links wait for review."
-  def review_link_count,
-    do: Repo.aggregate(from(l in GameLink, where: l.match == :review), :count)
+  @doc "How many resolvable links wait for review."
+  def review_link_count do
+    Repo.aggregate(
+      from(l in GameLink,
+        join: c in Game,
+        on: c.igdb_id == l.igdb_id,
+        where: l.match == :review
+      ),
+      :count
+    )
+  end
+
+  @doc "Deletes review links whose candidate game is no longer in the catalog."
+  def remove_orphaned_review_links do
+    orphaned =
+      from(l in GameLink,
+        left_join: c in Game,
+        on: c.igdb_id == l.igdb_id,
+        where: l.match == :review and is_nil(c.id),
+        select: l.id
+      )
+
+    {count, _} = Repo.delete_all(from(l in GameLink, where: l.id in subquery(orphaned)))
+    count
+  end
 
   @doc "A game link."
   def get_game_link!(id), do: Repo.get!(GameLink, id)
