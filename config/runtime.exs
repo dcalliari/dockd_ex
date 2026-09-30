@@ -67,7 +67,7 @@ if config_env() == :prod do
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :dockd, Dockd.Repo,
-    # ssl: true,
+    ssl: System.get_env("ECTO_SSL") in ~w(true 1),
     url: database_url,
     pool_size: env_integer.("POOL_SIZE", 10),
     # For machines with several cores, consider starting multiple pools of `pool_size`
