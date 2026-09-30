@@ -34,7 +34,7 @@ defmodule Dockd.IGDBSyncTest do
              {:switch_2, ~D[2025-01-01]}
            ]
 
-    assert Enum.all?(game.releases, & &1.physical_available)
+    refute Enum.any?(game.releases, & &1.physical_available)
     assert Enum.all?(game.releases, & &1.digital_available)
   end
 
@@ -86,7 +86,7 @@ defmodule Dockd.IGDBSyncTest do
     assert game.title == "Ambiguous Rename"
   end
 
-  test "sync marks existing standard releases as physical" do
+  test "sync never invents physical availability for an existing release" do
     stub_igdb(game_response())
 
     {:ok, game} =
@@ -101,7 +101,7 @@ defmodule Dockd.IGDBSyncTest do
 
     assert {:ok, _} = Catalog.sync_igdb()
 
-    assert %{physical_available: true, digital_available: true} =
+    assert %{physical_available: false, digital_available: true} =
              Repo.get!(Dockd.Catalog.Release, release.id)
   end
 

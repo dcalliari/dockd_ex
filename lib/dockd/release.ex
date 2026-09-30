@@ -81,6 +81,15 @@ defmodule Dockd.Release do
     with_repo(fn -> Dockd.Catalog.sync_igdb() end)
   end
 
+  @doc ~S"""
+  Confirms physical_available for every release with a physical ownership or a
+  physical price observation recorded before the flag was evidence-based. Additive
+  only, safe to repeat: `bin/dockd eval 'Dockd.Release.backfill_physical_available()'`.
+  """
+  def backfill_physical_available do
+    with_repo(fn -> Dockd.Catalog.backfill_physical_available() end)
+  end
+
   @reasons [
     status: "cancelado, boato ou fora do ar",
     no_cover: "sem capa",

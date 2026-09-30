@@ -51,6 +51,38 @@ defmodule Dockd.Catalog do
     |> Repo.insert()
   end
 
+  @doc """
+  Marks a release as physically available once evidence exists: a physical price
+  observation or a physical ownership record. Idempotent, and never turns the flag
+  back off, since evidence does not expire.
+  """
+  def confirm_physical_available(release_id) do
+    Repo.update_all(
+      from(r in Release, where: r.id == ^release_id and r.physical_available == false),
+      set: [physical_available: true]
+    )
+  end
+
+  @doc """
+  Applies `confirm_physical_available/1` to every release with evidence recorded
+  before the flag became evidence-based: a physical ownership or a physical price
+  observation. Only turns the flag on, never off, and repeating it changes nothing
+  once every release with evidence already has it set. Returns how many it changed.
+  """
+  def backfill_physical_available do
+    release_ids =
+      (Repo.all(from o in Ownership, where: o.ownership_type == :physical, select: o.release_id) ++
+         Repo.all(from p in PriceObservation, where: p.format == :physical, select: p.release_id))
+      |> Enum.uniq()
+
+    Enum.reduce(release_ids, 0, fn release_id, changed ->
+      case confirm_physical_available(release_id) do
+        {1, _} -> changed + 1
+        _ -> changed
+      end
+    end)
+  end
+
   def update_release(%Release{} = release, attrs) do
     release |> Release.changeset(attrs) |> Repo.update()
   end
@@ -149,7 +181,6 @@ defmodule Dockd.Catalog do
     attrs = %{
       release_date: date,
       release_date_precision: precision,
-      physical_available: true,
       digital_available: true
     }
 
@@ -248,7 +279,6 @@ defmodule Dockd.Catalog do
         edition: "Edição padrão",
         release_date: date,
         release_date_precision: precision,
-        physical_available: true,
         digital_available: true
       }
     end)

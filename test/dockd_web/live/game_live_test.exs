@@ -4,7 +4,7 @@ defmodule DockdWeb.GameLiveTest do
   import Phoenix.LiveViewTest
   import Dockd.DomainFixtures
 
-  alias Dockd.{Library, Purchasing}
+  alias Dockd.{Catalog, Library, Purchasing}
   alias Dockd.Library.Shelf
 
   setup :register_and_log_in_user
@@ -220,6 +220,30 @@ defmodule DockdWeb.GameLiveTest do
     assert has_element?(view, "#release-#{ctx.release.id}", "Tem")
     refute has_element?(view, "#game-status.is-open")
     refute has_element?(view, "button.dk-status--quero[phx-click=set_status]")
+  end
+
+  test "registering physical ownership confirms it, even though the catalog never said so (Smash Bros. bug)",
+       %{conn: conn} = ctx do
+    refute ctx.release.physical_available
+    {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+
+    view |> element("button.dk-status--backlog[phx-click=set_status]") |> render_click()
+
+    view
+    |> element(
+      "#game-status button[phx-value-release_id='#{ctx.release.id}'][phx-value-media=physical]"
+    )
+    |> render_click()
+
+    assert Catalog.get_release!(ctx.game.id, ctx.release.id).physical_available
+  end
+
+  test "a release the catalog never saw sold physically stays without the Físico label",
+       %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, ~p"/jogos/#{ctx.game.id}")
+
+    refute has_element?(view, "#release-#{ctx.release.id} .dk-row__meta", "Físico")
+    assert has_element?(view, "#release-#{ctx.release.id} .dk-row__meta", "Digital")
   end
 
   test "Cancelar closes the version question and saves nothing", %{conn: conn} = ctx do

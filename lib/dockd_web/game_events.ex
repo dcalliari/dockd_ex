@@ -66,12 +66,16 @@ defmodule DockdWeb.GameEvents do
 
   @doc """
   What Comprei can buy for a game: one choice per platform's standard release and media
-  it is sold in, then the store editions on sale, cheapest first, each with the price
-  the purchase records. The label names only what differs between the standard choices;
-  `name` and `meta` describe any choice in the options under the row.
+  it is sold in, always including the media Comprar's MediaTag already has the account
+  on (the release's physical_available/digital_available only says what the catalog has
+  seen sold, never a reason to keep the account from registering the other one), then
+  the store editions on sale, cheapest first, each with the price the purchase records.
+  The label names only what differs between the standard choices; `name` and `meta`
+  describe any choice in the options under the row.
   """
-  def purchase_choices(user, %{releases: releases}) do
-    standard = standard_choices(releases)
+  def purchase_choices(user, %{id: game_id, releases: releases}) do
+    preferred = user |> Library.get_entry_for_game(game_id) |> Library.media()
+    standard = standard_choices(releases, preferred)
 
     editions =
       releases
@@ -108,9 +112,14 @@ defmodule DockdWeb.GameEvents do
     standard ++ Enum.sort_by(editions, & &1.price.price_cents)
   end
 
-  defp standard_choices(releases) do
+  # The account's chosen media (Comprar's MediaTag) always joins whatever the release
+  # itself is known to sell in, so Comprei can never foreclose the media the account
+  # says it wants, whatever the catalog does or does not know about the release.
+  defp standard_choices(releases, preferred) do
     pairs =
-      for r <- standard_releases(releases), m <- Release.media(r), do: {r, m}
+      for r <- standard_releases(releases),
+          m <- Enum.uniq([preferred | Release.media(r)]),
+          do: {r, m}
 
     many_releases? = pairs |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> length() > 1
     many_media? = pairs |> Enum.map(&elem(&1, 1)) |> Enum.uniq() |> length() > 1

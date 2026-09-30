@@ -4,7 +4,7 @@ defmodule DockdWeb.BuyLiveTest do
   import Phoenix.LiveViewTest
   import Dockd.DomainFixtures
 
-  alias Dockd.{Activity, Library, Purchasing}
+  alias Dockd.{Activity, Catalog, Library, Purchasing}
   alias Dockd.Library.Shelf
 
   setup :register_and_log_in_user
@@ -289,6 +289,22 @@ defmodule DockdWeb.BuyLiveTest do
     assert Shelf.item(ctx.user, ctx.available).status == :quero
     assert Purchasing.list_purchases(ctx.user, ctx.available_release.id) == []
     assert has_element?(view, "#buy-#{ctx.available.id}-button")
+  end
+
+  test "Comprei buys in the media the account chose, even though the catalog only saw it sold digitally (Smash Bros. bug)",
+       %{conn: conn} = ctx do
+    refute ctx.available_release.physical_available
+    {:ok, view, _html} = live(conn, "/comprar")
+
+    view
+    |> element("#media-#{ctx.available.id}[phx-value-media=physical]")
+    |> render_click()
+
+    view |> element("#buy-#{ctx.available.id}-button") |> render_click()
+    view |> element("#buy-#{ctx.available.id} .dk-choice button", "Físico") |> render_click()
+
+    assert [%{format: :physical}] = Purchasing.list_purchases(ctx.user, ctx.available_release.id)
+    assert Catalog.get_release!(ctx.available.id, ctx.available_release.id).physical_available
   end
 
   test "the paid value opens in place and takes a correction", %{conn: conn} = ctx do

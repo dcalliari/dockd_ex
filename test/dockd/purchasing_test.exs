@@ -1,6 +1,6 @@
 defmodule Dockd.PurchasingTest do
   use Dockd.DataCase
-  alias Dockd.{Activity, Library, Purchasing}
+  alias Dockd.{Activity, Catalog, Library, Purchasing}
   alias Dockd.Library.Shelf
   import Dockd.DomainFixtures
 
@@ -23,6 +23,46 @@ defmodule Dockd.PurchasingTest do
     assert purchase.price_cents == nil
     assert purchase.retailer == nil
     assert Shelf.item(user, game).status == :backlog
+  end
+
+  test "a physical purchase confirms the release as physically available, even without prior evidence",
+       %{user: user, release: release} do
+    refute release.physical_available
+
+    assert {:ok, _purchase} =
+             Purchasing.create_purchase(user, %{
+               release_id: release.id,
+               format: :physical,
+               purchased_at: DateTime.utc_now()
+             })
+
+    assert Catalog.get_release!(release.game_id, release.id).physical_available
+  end
+
+  test "a digital purchase never confirms physical availability",
+       %{user: user, release: release} do
+    assert {:ok, _purchase} =
+             Purchasing.create_purchase(user, %{
+               release_id: release.id,
+               format: :digital,
+               purchased_at: DateTime.utc_now()
+             })
+
+    refute Catalog.get_release!(release.game_id, release.id).physical_available
+  end
+
+  test "a physical price observation confirms the release as physically available",
+       %{user: user, release: release} do
+    assert {:ok, _observation} =
+             Purchasing.create_price_observation(user, %{
+               release_id: release.id,
+               format: :physical,
+               price_cents: 29_990,
+               observed_at: DateTime.utc_now(),
+               source: "Amazon"
+             })
+
+    assert Catalog.get_release!(release.game_id, release.id).physical_available
   end
 
   test "undo brings back Quero and leaves no trace of the purchase",

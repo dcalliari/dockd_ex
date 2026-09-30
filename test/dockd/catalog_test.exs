@@ -56,6 +56,64 @@ defmodule Dockd.CatalogTest do
     assert {:error, {:in_use, [:ownership]}} = Catalog.delete_release(release)
   end
 
+  describe "confirm_physical_available/1" do
+    test "turns the flag on once, and repeating it changes nothing" do
+      {:ok, game} = Catalog.create_game(%{title: "Owned game", availability: :nintendo_exclusive})
+      {:ok, release} = Catalog.create_release(game.id, %{platform: :switch})
+
+      assert {1, _} = Catalog.confirm_physical_available(release.id)
+      assert Catalog.get_release!(game.id, release.id).physical_available
+
+      assert {0, _} = Catalog.confirm_physical_available(release.id)
+    end
+
+    test "never turns a digital-only release physical without evidence" do
+      {:ok, game} = Catalog.create_game(%{title: "Indie", availability: :nintendo_exclusive})
+      {:ok, release} = Catalog.create_release(game.id, %{platform: :switch})
+
+      refute release.physical_available
+    end
+  end
+
+  describe "backfill_physical_available/0" do
+    test "confirms every release with a prior physical ownership or price observation" do
+      {:ok, game} =
+        Catalog.create_game(%{title: "Backfill game", availability: :nintendo_exclusive})
+
+      {:ok, owned} = Catalog.create_release(game.id, %{platform: :switch})
+      {:ok, priced} = Catalog.create_release(game.id, %{platform: :switch_2})
+      {:ok, untouched} = Catalog.create_release(game.id, %{platform: :switch, edition: "Deluxe"})
+      {:ok, user} = Dockd.DomainFixtures.user_fixture()
+
+      # Inserted directly, as if recorded before physical_available was evidence-based,
+      # so the backfill (not the live create_ownership/create_price_observation) is what
+      # confirms them.
+      Dockd.Repo.insert!(%Dockd.Library.Ownership{
+        user_id: user.id,
+        release_id: owned.id,
+        ownership_type: :physical,
+        acquired_at: DateTime.utc_now()
+      })
+
+      Dockd.Repo.insert!(%Dockd.Purchasing.PriceObservation{
+        user_id: user.id,
+        release_id: priced.id,
+        format: :physical,
+        price_cents: 29_990,
+        observed_at: DateTime.utc_now(),
+        source: "Amazon"
+      })
+
+      assert Catalog.backfill_physical_available() == 2
+
+      assert Catalog.get_release!(game.id, owned.id).physical_available
+      assert Catalog.get_release!(game.id, priced.id).physical_available
+      refute Catalog.get_release!(game.id, untouched.id).physical_available
+
+      assert Catalog.backfill_physical_available() == 0
+    end
+  end
+
   describe "Release.launch/3" do
     test "a date known by year, quarter or month is out only once the period is over" do
       year = %Release{release_date: ~D[2026-01-01], release_date_precision: :year}

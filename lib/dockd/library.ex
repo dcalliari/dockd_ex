@@ -125,14 +125,18 @@ defmodule Dockd.Library do
         match?(%{owned_elsewhere: true}, get_entry_for_game(user, game.id))
 
   defp own_release(user, game, %{release_id: release_id, ownership_type: type}) do
-    if Repo.exists?(from r in Release, where: r.id == ^release_id and r.game_id == ^game.id),
-      do:
-        create_ownership(user, %{
-          release_id: release_id,
-          ownership_type: type,
-          acquired_at: DateTime.utc_now()
-        }),
-      else: {:error, :not_found}
+    with true <-
+           Repo.exists?(from r in Release, where: r.id == ^release_id and r.game_id == ^game.id) ||
+             {:error, :not_found},
+         {:ok, ownership} <-
+           create_ownership(user, %{
+             release_id: release_id,
+             ownership_type: type,
+             acquired_at: DateTime.utc_now()
+           }) do
+      if type == :physical, do: Dockd.Catalog.confirm_physical_available(release_id)
+      {:ok, ownership}
+    end
   end
 
   @doc "The statuses a game can move to from its shelf item: never its own, and never Quero once owned."

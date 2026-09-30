@@ -72,6 +72,12 @@ defmodule Dockd.Purchasing do
         purchase_id: purchase.id
       })
     end)
+    |> Ecto.Multi.run(:physical_availability, fn _repo, _changes ->
+      if attrs[:format] == :physical,
+        do: Dockd.Catalog.confirm_physical_available(attrs[:release_id])
+
+      {:ok, nil}
+    end)
     |> Ecto.Multi.run(:entry, fn repo, %{release: release, purchase: purchase} ->
       close_entry_after_purchase(repo, user_id, release.game_id, purchase.id)
     end)
@@ -235,9 +241,15 @@ defmodule Dockd.Purchasing do
   def create_price_observation(%User{id: id}, attrs) do
     attrs = normalize_attrs(attrs)
 
-    %PriceObservation{user_id: id}
-    |> price_changeset(Map.put(attrs, :user_id, id))
-    |> Repo.insert()
+    with {:ok, observation} <-
+           %PriceObservation{user_id: id}
+           |> price_changeset(Map.put(attrs, :user_id, id))
+           |> Repo.insert() do
+      if attrs[:format] == :physical,
+        do: Dockd.Catalog.confirm_physical_available(attrs[:release_id])
+
+      {:ok, observation}
+    end
   end
 
   @doc """
