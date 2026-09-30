@@ -149,6 +149,7 @@ defmodule Dockd.Catalog do
     attrs = %{
       release_date: date,
       release_date_precision: precision,
+      physical_available: true,
       digital_available: true
     }
 
@@ -247,6 +248,7 @@ defmodule Dockd.Catalog do
         edition: "Edição padrão",
         release_date: date,
         release_date_precision: precision,
+        physical_available: true,
         digital_available: true
       }
     end)

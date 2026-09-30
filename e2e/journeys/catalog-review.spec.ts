@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { baseURL } from "../base-url";
 import { signIn } from "./sign-in";
 
 // Conferir catálogo (design/maquetes/edicoes.html): Calamity Warriors and its Definitive
@@ -19,7 +20,7 @@ test("the account menu leads to the queue, where a choice prices the version in 
   await page.locator("#account-menu summary").click();
   await expect(page.locator("#account-catalog-review small")).toHaveText("2");
   await page.locator("#account-catalog-review").click();
-  await expect(page).toHaveURL("http://localhost:4460/conferir");
+  await expect(page).toHaveURL(`${baseURL}/conferir`);
 
   const row = page.locator(".dk-match").filter({ hasText: "Review Quest" }).first();
   const version = row.locator(":scope > .dk-row .dk-row__meta");

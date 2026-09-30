@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { baseURL } from "../base-url";
 import { fillEntrar, owner } from "./sign-in";
 
 test("a visitor explores the catalog and each game without an account", async ({ page }) => {
@@ -10,7 +11,7 @@ test("a visitor explores the catalog and each game without an account", async ({
   await expect(page.locator(".dk-bottomnav")).toHaveCount(0);
 
   await page.locator("#showcase-recentes").getByRole("link", { name: "Ver todos" }).click();
-  await expect(page).toHaveURL("http://localhost:4460/descobrir?lista=recentes");
+  await expect(page).toHaveURL(`${baseURL}/descobrir?lista=recentes`);
   await expect(page.locator("#discover-list")).toContainText("Chegaram agora");
   const discoverNavBottom = (await page.locator(".dk-nav").boundingBox())!.y + (await page.locator(".dk-nav").boundingBox())!.height;
   expect((await page.locator("#discover-list").boundingBox())!.y).toBeGreaterThanOrEqual(discoverNavBottom + 16);
@@ -24,7 +25,7 @@ test("a visitor explores the catalog and each game without an account", async ({
   await expect(page.locator("#game-history")).toHaveCount(0);
 
   await page.locator("#game-back").click();
-  await expect(page).toHaveURL("http://localhost:4460/descobrir");
+  await expect(page).toHaveURL(`${baseURL}/descobrir`);
 });
 
 test("the tag leads to Entrar and back to the same card with its menu open", async ({ page }) => {

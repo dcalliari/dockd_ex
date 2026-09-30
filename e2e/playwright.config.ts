@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { baseURL } from "./base-url";
 
 export default defineConfig({
   testDir: ".",
@@ -9,7 +10,7 @@ export default defineConfig({
   workers: 1,
   reporter: process.env.CI ? [["line"], ["html", { outputFolder: "playwright-report", open: "never" }]] : "list",
   use: {
-    baseURL: "http://localhost:4460",
+    baseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",

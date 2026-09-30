@@ -72,6 +72,15 @@ defmodule Dockd.Release do
     end)
   end
 
+  @doc ~S"""
+  Runs the IGDB catalog synchronization now, including existing releases:
+  `bin/dockd eval 'Dockd.Release.sync_catalog()'`. It is safe to repeat.
+  """
+  def sync_catalog do
+    {:ok, _} = Application.ensure_all_started(:req)
+    with_repo(fn -> Dockd.Catalog.sync_igdb() end)
+  end
+
   @reasons [
     status: "cancelado, boato ou fora do ar",
     no_cover: "sem capa",

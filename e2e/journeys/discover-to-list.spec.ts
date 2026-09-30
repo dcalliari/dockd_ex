@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { baseURL } from "../base-url";
 import { signIn } from "./sign-in";
 
 test("a new game goes from Descobrir to the Biblioteca as Quero and can be started", async ({ page }) => {
@@ -27,6 +28,6 @@ test("a new game goes from Descobrir to the Biblioteca as Quero and can be start
   await expect(page.locator("#game-history")).toContainText("Começou a jogar");
 
   await page.locator("#game-back").click();
-  await expect(page).toHaveURL("http://localhost:4460/biblioteca");
+  await expect(page).toHaveURL(`${baseURL}/biblioteca`);
   await expect(page.locator("#library-grid .dk-card").filter({ hasText: "Discovery Candidate" }).locator(".dk-status--jogando")).toBeVisible();
 });
