@@ -54,7 +54,6 @@ defmodule DockdWeb.Router do
 
         live "/biblioteca", LibraryLive, :index
         live "/comprar", BuyLive, :index
-        live "/configuracoes", SettingsLive, :edit
       end
     end
 
@@ -72,6 +71,22 @@ defmodule DockdWeb.Router do
       end
     end
 
+    scope "/" do
+      pipe_through :require_authenticated_user
+
+      live_session :authenticated,
+        on_mount: [
+          {DockdWeb.UserAuth, :mount_current_scope},
+          DockdWeb.AccountMenu,
+          {DockdWeb.UserAuth, :require_authenticated}
+        ] do
+        live "/configuracoes", SettingsLive, :show
+      end
+
+      get "/configuracoes/exportar", SettingsController, :export
+    end
+
+    get "/configuracoes/email/:token", SettingsController, :confirm_email
     post "/entrar", UserSessionController, :create
     delete "/sair", UserSessionController, :delete
   end

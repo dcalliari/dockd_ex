@@ -32,6 +32,20 @@ defmodule Dockd.Accounts do
   def change_user_registration(user, attrs \\ %{}, opts \\ []),
     do: User.registration_changeset(user, attrs, opts)
 
+  @doc "Changeset for the account's public identity."
+  def change_user_profile(user, attrs \\ %{}, opts \\ []),
+    do: User.profile_changeset(user, attrs, opts)
+
+  @doc "Updates the account's public identity."
+  def update_user_profile(user, attrs), do: user |> User.profile_changeset(attrs) |> Repo.update()
+
+  @doc "Changeset for an email change before its confirmation email is sent."
+  def change_user_email(user, attrs \\ %{}, opts \\ []),
+    do: User.email_changeset(user, attrs, opts)
+
+  @doc "Changeset for a password change before verifying the current password."
+  def change_user_password(user, attrs \\ %{}), do: User.password_changeset(user, attrs)
+
   @doc """
   Gives the owner, the oldest user and the one that predates accounts, an email and a
   password, so the library it already has becomes a normal account.
@@ -64,45 +78,44 @@ defmodule Dockd.Accounts do
     |> update_user_and_delete_all_tokens()
   end
 
-  @doc "Changeset for the display name form."
-  def change_user_name(user, attrs \\ %{}), do: User.name_changeset(user, attrs)
-
-  @doc "Updates the display name."
-  def update_user_name(user, attrs), do: user |> User.name_changeset(attrs) |> Repo.update()
-
-  @doc "Changeset for the username form."
-  def change_user_username(user, attrs \\ %{}, opts \\ []),
-    do: User.username_changeset(user, attrs, opts)
-
-  @doc "Updates the username, which is also the profile address."
-  def update_user_username(user, attrs),
-    do: user |> User.username_changeset(attrs) |> Repo.update()
-
-  @doc "Changeset for the password form."
-  def change_user_password(user, attrs \\ %{}), do: User.password_changeset(user, attrs)
-
-  @doc "Changeset for the email form."
-  def change_user_email(user, attrs \\ %{}), do: User.email_changeset(user, attrs)
-
-  @doc """
-  Changes the email after checking the current password. Expires every token of the
-  user, like a password change: whoever is signed in elsewhere signs in again with the
-  new email.
-  """
-  def update_user_email(user, current_password, attrs) do
+  @doc "Updates a password after checking the current one, keeping this browser session alive."
+  def update_user_password_with_current(user, current_password, attrs, current_token) do
     if User.valid_password?(user, current_password) do
       user
-      |> User.email_changeset(attrs)
-      |> update_user_and_delete_all_tokens()
+      |> User.password_changeset(attrs)
+      |> update_user_and_delete_all_tokens(current_token)
     else
-      {:error, :invalid_password}
+      {:error, :current_password}
     end
   end
 
-  @doc "Deletes the account and everything in it: library, purchases, prices and history."
-  def delete_user(%User{} = user), do: Repo.delete(user)
-
   ## Session
+
+  @doc "Lists active browser sessions, newest first."
+  def list_user_sessions(%User{id: user_id}) do
+    Repo.all(
+      from token in UserToken,
+        where: token.user_id == ^user_id and token.context == "session",
+        order_by: [desc: token.inserted_at]
+    )
+  end
+
+  @doc "Ends every browser session except the current raw session token."
+  def delete_other_user_sessions(%User{id: user_id}, current_token)
+      when is_binary(current_token) do
+    tokens =
+      Repo.all(
+        from token in UserToken,
+          where:
+            token.user_id == ^user_id and token.context == "session" and
+              token.token != ^current_token
+      )
+
+    Repo.delete_all(from token in UserToken, where: token.id in ^Enum.map(tokens, & &1.id))
+    tokens
+  end
+
+  def delete_other_user_sessions(%User{}, _current_token), do: []
 
   @doc "Generates a session token."
   def generate_user_session_token(user) do
@@ -121,6 +134,52 @@ defmodule Dockd.Accounts do
   def delete_user_session_token(token) do
     Repo.delete_all(from(UserToken, where: [token: ^token, context: "session"]))
     :ok
+  end
+
+  ## Email change and magic link
+
+  @doc "Sends a confirmation link to a new email without changing the account yet."
+  def deliver_user_email_change_instructions(%User{} = user, attrs, url_fun)
+      when is_function(url_fun, 1) do
+    changeset = User.email_changeset(user, attrs)
+
+    with true <- magic_link_enabled?(),
+         true <- changeset.valid?,
+         email <- Ecto.Changeset.get_field(changeset, :email),
+         {encoded_token, user_token} <- UserToken.build_email_change_token(user, email),
+         {_, _} <-
+           Repo.delete_all(
+             from token in UserToken,
+               where: token.user_id == ^user.id and like(token.context, "change:%")
+           ),
+         {:ok, _} <- Repo.insert(user_token) do
+      UserNotifier.deliver_email_change_instructions(user, email, url_fun.(encoded_token))
+    else
+      false when not changeset.valid? -> {:error, changeset}
+      false -> {:error, :magic_link_disabled}
+      {:error, _} = error -> error
+    end
+  end
+
+  @doc "Confirms a new email with its one-time token."
+  def update_user_email_by_token(token) do
+    with {:ok, query} <- UserToken.verify_email_change_token_query(token),
+         {user, user_token} <- Repo.one(query) do
+      Repo.transact(fn -> apply_confirmed_email(user, user_token) end)
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp apply_confirmed_email(user, user_token) do
+    with {:ok, user} <-
+           user
+           |> User.email_changeset(%{email: user_token.sent_to})
+           |> Ecto.Changeset.put_change(:confirmed_at, DateTime.utc_now(:second))
+           |> Repo.update(),
+         {:ok, _} <- Repo.delete(user_token) do
+      {:ok, user}
+    end
   end
 
   ## Magic link
@@ -180,6 +239,76 @@ defmodule Dockd.Accounts do
     end
   end
 
+  ## Data
+
+  @doc "Returns the account's personal data in a JSON-ready map, without credentials."
+  def export_user_data(%User{} = user) do
+    alias Dockd.Activity.Event
+    alias Dockd.Library.{Entry, Ownership, ReleaseVeto}
+    alias Dockd.Purchasing.{PriceObservation, Purchase}
+    alias Dockd.Social.Follow
+
+    %{
+      exported_at: DateTime.utc_now(:second) |> DateTime.to_iso8601(),
+      profile:
+        export_record(user, [
+          :id,
+          :name,
+          :username,
+          :email,
+          :profile_visibility,
+          :confirmed_at,
+          :inserted_at
+        ]),
+      entries: export_records(Entry, user.id),
+      ownerships: export_records(Ownership, user.id),
+      purchases: export_records(Purchase, user.id),
+      price_observations: export_records(PriceObservation, user.id),
+      vetoes: export_records(ReleaseVeto, user.id),
+      events: export_records(Event, user.id),
+      follows: export_follow_records(user.id, Follow)
+    }
+  end
+
+  @doc "Deletes the account and returns the tokens whose LiveViews must disconnect."
+  def delete_user(%User{} = user) do
+    Repo.transact(fn ->
+      tokens = Repo.all_by(UserToken, user_id: user.id)
+
+      with {:ok, _} <- Repo.delete(user) do
+        {:ok, tokens}
+      end
+    end)
+  end
+
+  defp export_records(schema, user_id) do
+    schema
+    |> Repo.all_by(user_id: user_id)
+    |> Enum.map(&export_record(&1, schema.__schema__(:fields)))
+  end
+
+  defp export_follow_records(user_id, follow_schema) do
+    Repo.all(
+      from follow in follow_schema,
+        where: follow.follower_id == ^user_id or follow.followed_id == ^user_id
+    )
+    |> Enum.map(&export_record(&1, follow_schema.__schema__(:fields)))
+  end
+
+  defp export_record(record, fields) do
+    Map.new(fields, fn field -> {field, export_value(Map.get(record, field))} end)
+  end
+
+  defp export_value(%DateTime{} = value), do: DateTime.to_iso8601(value)
+  defp export_value(%NaiveDateTime{} = value), do: NaiveDateTime.to_iso8601(value)
+  defp export_value(value) when is_atom(value), do: Atom.to_string(value)
+
+  defp export_value(value) when is_map(value),
+    do: Map.new(value, fn {key, value} -> {key, export_value(value)} end)
+
+  defp export_value(value) when is_list(value), do: Enum.map(value, &export_value/1)
+  defp export_value(value), do: value
+
   ## API
 
   @doc "Creates the user's API token, replacing the previous one. Returns the token in clear."
@@ -201,10 +330,13 @@ defmodule Dockd.Accounts do
     end
   end
 
-  defp update_user_and_delete_all_tokens(changeset) do
+  defp update_user_and_delete_all_tokens(changeset, current_token \\ nil) do
     Repo.transact(fn ->
       with {:ok, user} <- Repo.update(changeset) do
-        tokens_to_expire = Repo.all_by(UserToken, user_id: user.id)
+        tokens_to_expire =
+          Repo.all_by(UserToken, user_id: user.id)
+          |> Enum.reject(&(&1.context == "session" and &1.token == current_token))
+
         Repo.delete_all(from(t in UserToken, where: t.id in ^Enum.map(tokens_to_expire, & &1.id)))
         {:ok, {user, tokens_to_expire}}
       end

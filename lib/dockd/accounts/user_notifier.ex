@@ -15,6 +15,17 @@ defmodule Dockd.Accounts.UserNotifier do
     """)
   end
 
+  @doc "Sends the one-time confirmation link to the new email address."
+  def deliver_email_change_instructions(user, new_email, url) do
+    deliver(new_email, "Confirmar e-mail no Dockd", """
+    #{user.name}, abra o link abaixo para trocar o e-mail da sua conta. Ele vale por 15 minutos e uma vez só.
+
+    #{url}
+
+    Se não foi você que pediu, ignore este e-mail.
+    """)
+  end
+
   defp deliver(recipient, subject, body) do
     email =
       new()

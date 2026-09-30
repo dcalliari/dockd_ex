@@ -33,6 +33,79 @@ defmodule Dockd.AccountsTest do
     end
   end
 
+  describe "account settings" do
+    test "updates the display name and username with inline-safe validations" do
+      user = user_fixture()
+
+      assert {:ok, updated} =
+               Accounts.update_user_profile(user, %{name: "Calliari", username: "calliari"})
+
+      assert updated.name == "Calliari"
+      assert updated.username == "calliari"
+
+      {:error, changeset} = Accounts.update_user_profile(updated, %{username: "?"})
+
+      assert %{username: errors} = errors_on(changeset)
+      assert Enum.sort(errors) == ["Use de 3 a 30 caracteres", "Use letras e números"]
+    end
+
+    test "confirms the new email before changing it" do
+      user = user_fixture()
+
+      token =
+        extract_user_token(fn url ->
+          Accounts.deliver_user_email_change_instructions(user, %{email: "novo@example.com"}, url)
+        end)
+
+      assert Accounts.get_user!(user.id).email == user.email
+      assert {:ok, updated} = Accounts.update_user_email_by_token(token)
+      assert updated.email == "novo@example.com"
+      assert updated.confirmed_at
+      assert {:error, :not_found} = Accounts.update_user_email_by_token(token)
+    end
+
+    test "requires the current password and keeps only this session" do
+      user = user_fixture()
+      current = Accounts.generate_user_session_token(user)
+      other = Accounts.generate_user_session_token(user)
+      {:ok, api_token} = Accounts.create_api_token(user)
+
+      assert {:error, :current_password} =
+               Accounts.update_user_password_with_current(
+                 user,
+                 "errada",
+                 %{password: "outra senha longa"},
+                 current
+               )
+
+      assert {:ok, {_updated, expired}} =
+               Accounts.update_user_password_with_current(
+                 user,
+                 valid_user_password(),
+                 %{password: "outra senha longa"},
+                 current
+               )
+
+      assert length(expired) == 2
+      assert Accounts.get_user_by_session_token(current)
+      refute Accounts.get_user_by_session_token(other)
+      refute Accounts.get_user_by_api_token(api_token)
+      assert Accounts.get_user_by_email_and_password(user.email, "outra senha longa")
+    end
+
+    test "lists and ends the other active sessions" do
+      user = user_fixture()
+      current = Accounts.generate_user_session_token(user)
+      other = Accounts.generate_user_session_token(user)
+
+      assert length(Accounts.list_user_sessions(user)) == 2
+      assert [expired] = Accounts.delete_other_user_sessions(user, current)
+      assert expired.token == other
+      assert Accounts.get_user_by_session_token(current)
+      refute Accounts.get_user_by_session_token(other)
+    end
+  end
+
   describe "get_user_by_email_and_password/2" do
     test "returns the user only with the right password" do
       %{id: id} = user = user_fixture()
@@ -167,6 +240,26 @@ defmodule Dockd.AccountsTest do
       assert {:error, :not_found} = Accounts.login_user_by_magic_link(token)
       assert {:error, :not_found} = Accounts.login_user_by_magic_link("não é token")
       refute Accounts.get_user_by_magic_link_token(token)
+    end
+  end
+
+  describe "account data" do
+    test "exports personal records without credential hashes" do
+      user = user_fixture()
+      data = Accounts.export_user_data(user)
+
+      assert data.profile.email == user.email
+      assert data.entries == []
+      refute Map.has_key?(data.profile, :hashed_password)
+    end
+
+    test "deletes the account and its sessions" do
+      user = user_fixture()
+      token = Accounts.generate_user_session_token(user)
+
+      assert {:ok, [expired]} = Accounts.delete_user(user)
+      assert expired.token == token
+      assert_raise Ecto.NoResultsError, fn -> Accounts.get_user!(user.id) end
     end
   end
 

@@ -52,6 +52,10 @@ defmodule Dockd.Accounts.UserToken do
   @doc "Builds an API token. It does not expire; a new one replaces it."
   def build_api_token(user), do: build_hashed_token(user, "api", nil)
 
+  @doc "Builds a one-time token that confirms a new email for this account."
+  def build_email_change_token(user, email),
+    do: build_hashed_token(user, "change:#{user.email}", email)
+
   defp build_hashed_token(user, context, sent_to) do
     token = :crypto.strong_rand_bytes(@rand_size)
     hashed_token = :crypto.hash(@hash_algorithm, token)
@@ -68,6 +72,21 @@ defmodule Dockd.Accounts.UserToken do
           join: user in assoc(token, :user),
           where: token.inserted_at > ago(^@magic_link_validity_in_minutes, "minute"),
           where: token.sent_to == user.email,
+          select: {user, token}
+
+      {:ok, query}
+    end
+  end
+
+  @doc "Query for an email change token tied to the account's email at issue time."
+  def verify_email_change_token_query(token) do
+    with {:ok, hashed_token} <- decode_and_hash(token) do
+      query =
+        from token in UserToken,
+          join: user in assoc(token, :user),
+          where: token.token == ^hashed_token and like(token.context, "change:%"),
+          where: token.inserted_at > ago(^@magic_link_validity_in_minutes, "minute"),
+          where: token.context == fragment("concat('change:', ?)", user.email),
           select: {user, token}
 
       {:ok, query}

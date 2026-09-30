@@ -456,25 +456,6 @@ defmodule DockdWeb.DockdComponents do
     """
   end
 
-  @doc """
-  SettingsRow: a labelled row that edits in place, in Configurações
-  (design/maquetes/configuracoes.html, opção A). `confirm` styles the row as the inline
-  confirmation that replaces a native dialog, for trocar e-mail and excluir conta.
-  """
-  attr :id, :string, default: nil
-  attr :label, :string, required: true
-  attr :confirm, :boolean, default: false
-  slot :inner_block, required: true
-
-  def settings_row(assigns) do
-    ~H"""
-    <div id={@id} class={["dk-settings-row", @confirm && "dk-settings-row--confirm"]}>
-      <div class="dk-settings-row__label">{@label}</div>
-      <div class="dk-settings-row__field">{render_slot(@inner_block)}</div>
-    </div>
-    """
-  end
-
   # ---------------------------------------------------------------------------
   # Content
 

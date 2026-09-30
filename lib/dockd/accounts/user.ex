@@ -38,52 +38,37 @@ defmodule Dockd.Accounts.User do
     if Keyword.get(opts, :validate_unique, true), do: put_username(changeset), else: changeset
   end
 
+  @doc "Changeset for the editable identity shown in the profile and its address."
+  def profile_changeset(user, attrs, opts \\ []) do
+    changeset =
+      user
+      |> cast(attrs, [:name, :username])
+      |> update_change(:name, &trim/1)
+      |> update_change(:username, fn value -> value |> trim() |> downcase() end)
+      |> validate_required([:name, :username], message: "Informe este campo")
+      |> validate_length(:name, max: 60, message: "Nome longo demais")
+      |> validate_length(:username, min: 3, max: 30, message: "Use de 3 a 30 caracteres")
+      |> validate_format(:username, ~r/^[a-z0-9]+$/, message: "Use letras e números")
+
+    if Keyword.get(opts, :validate_unique, true) do
+      changeset
+      |> unsafe_validate_unique(:username, Dockd.Repo, message: "Usuário já existe")
+      |> unique_constraint(:username, message: "Usuário já existe")
+    else
+      changeset
+    end
+  end
+
+  @doc "Changeset for a new email awaiting confirmation."
+  def email_changeset(user, attrs, opts \\ []),
+    do: user |> cast(attrs, [:email]) |> validate_email(opts)
+
   @doc "Changeset for who sees the profile: everyone, or only friends."
   def visibility_changeset(user, visibility),
     do:
       user
       |> cast(%{profile_visibility: visibility}, [:profile_visibility])
       |> validate_required([:profile_visibility])
-
-  @doc "Changeset for the display name, shown in the navigation."
-  def name_changeset(user, attrs) do
-    user
-    |> cast(attrs, [:name])
-    |> update_change(:name, &trim/1)
-    |> validate_required([:name], message: "Informe o nome")
-    |> validate_length(:name, max: 60, message: "Nome longo demais")
-  end
-
-  @doc """
-  Changeset for the username, which is also the profile address (`/u/:username`).
-
-  Pass `validate_unique: false` to skip the database lookup on live validation.
-  """
-  def username_changeset(user, attrs, opts \\ []) do
-    changeset =
-      user
-      |> cast(attrs, [:username])
-      |> update_change(:username, &trim/1)
-      |> validate_required([:username], message: "Informe o nome de usuário")
-      |> validate_format(:username, ~r/^[a-z0-9]+$/, message: "Só letras minúsculas e números")
-      |> validate_length(:username, max: 30, message: "Nome de usuário longo demais")
-
-    if Keyword.get(opts, :validate_unique, true) do
-      changeset
-      |> unsafe_validate_unique(:username, Dockd.Repo, message: "Nome de usuário já existe")
-      |> unique_constraint(:username, message: "Nome de usuário já existe")
-    else
-      changeset
-    end
-  end
-
-  @doc """
-  Changeset for the email. The current password is checked separately, by
-  `Dockd.Accounts.update_user_email/3`, before this changeset applies.
-  """
-  def email_changeset(user, attrs, opts \\ []) do
-    user |> cast(attrs, [:email]) |> validate_email(opts)
-  end
 
   @doc """
   The username an email suggests: the part before the at sign, lowercase, without
@@ -140,6 +125,9 @@ defmodule Dockd.Accounts.User do
   # `cast/3` turns an empty string into `nil` before this runs.
   defp trim(nil), do: nil
   defp trim(string), do: String.trim(string)
+
+  defp downcase(nil), do: nil
+  defp downcase(string), do: String.downcase(string)
 
   defp validate_email(changeset, opts) do
     changeset =

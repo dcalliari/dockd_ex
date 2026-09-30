@@ -4,158 +4,209 @@ defmodule DockdWeb.SettingsLiveTest do
   import Phoenix.LiveViewTest
   import Dockd.AccountsFixtures
 
-  setup :register_and_log_in_user
+  alias Dockd.Accounts
 
-  test "shows the account fields and the entry point in the account menu", %{
-    conn: conn,
-    user: user
-  } do
-    {:ok, view, _html} = live(conn, ~p"/")
-    assert has_element?(view, "#account-settings", "Configurações")
+  describe "settings" do
+    setup :register_and_log_in_user
 
-    {:ok, view, html} = live(conn, ~p"/configuracoes")
+    test "opens from the account menu and shows the current identity", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, home, _html} = live(conn, ~p"/")
+      assert has_element?(home, "#account-settings[href='/configuracoes']", "Configurações")
 
-    assert html =~ "Perfil"
-    assert html =~ "Conta"
-    assert html =~ "Encerrar"
-    assert has_element?(view, "#settings-name-form input[value=#{inspect(user.name)}]")
-    assert has_element?(view, "#settings-username-form input[value=#{inspect(user.username)}]")
-    assert html =~ user.email
-  end
+      {:ok, view, html} = live(conn, ~p"/configuracoes")
 
-  test "changes the display name on blur, with no save button", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/configuracoes")
-
-    view
-    |> form("#settings-name-form", user: %{name: "Novo Nome"})
-    |> render_change()
-
-    assert has_element?(view, "#settings-name-form input[value=\"Novo Nome\"]")
-  end
-
-  test "rejects an empty display name", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/configuracoes")
-
-    html =
-      view
-      |> form("#settings-name-form", user: %{name: ""})
-      |> render_change()
-
-    assert html =~ "Informe o nome"
-  end
-
-  test "changes the username, which changes the profile address", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/configuracoes")
-
-    view
-    |> form("#settings-username-form", user: %{username: "novousuario"})
-    |> render_change()
-
-    assert has_element?(view, "#settings-username-form input[value=\"novousuario\"]")
-  end
-
-  test "rejects a username already taken", %{conn: conn} do
-    other = user_fixture()
-
-    {:ok, view, _html} = live(conn, ~p"/configuracoes")
-
-    html =
-      view
-      |> form("#settings-username-form", user: %{username: other.username})
-      |> render_change()
-
-    assert html =~ "já existe"
-  end
-
-  test "reuses the same Choice as the public profile to set privacy", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/configuracoes")
-
-    view
-    |> form("#settings-visibility", visibility: "friends")
-    |> render_change()
-
-    assert Dockd.Accounts.get_user!(user.id).profile_visibility == :friends
-  end
-
-  test "opens Trocar e-mail in place and confirms with the current password", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/configuracoes")
-
-    refute has_element?(view, "#settings-email-form")
-
-    view |> element("#settings-email-edit") |> render_click()
-    assert has_element?(view, "#settings-email-form")
-
-    assert {:error, {:redirect, %{to: "/entrar"}}} =
-             view
-             |> form("#settings-email-form",
-               user: %{email: "novo@example.com", current_password: valid_user_password()}
+      assert has_element?(
+               view,
+               "#settings-profile-link[href='/u/#{user.username}']",
+               "Ver perfil"
              )
-             |> render_submit()
-  end
 
-  test "rejects the wrong current password when changing email, in place, no dialog", %{
-    conn: conn
-  } do
-    {:ok, view, _html} = live(conn, ~p"/configuracoes")
+      assert has_element?(view, "#settings-profile-form input[value=#{inspect(user.name)}]")
 
-    view |> element("#settings-email-edit") |> render_click()
+      assert has_element?(
+               view,
+               "#settings-profile-form input[value=#{inspect(user.username)}]"
+             )
 
-    html =
+      assert html =~ user.email
+    end
+
+    test "updates the public identity on submit, with a saved notice", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+
       view
-      |> form("#settings-email-form",
-        user: %{email: "novo@example.com", current_password: "senha errada"}
-      )
-      |> render_submit()
+      |> element("#settings-profile-form")
+      |> render_submit(%{"user" => %{"name" => "Calliari", "username" => "calliari"}})
 
-    assert html =~ "Senha atual errada"
-  end
+      assert has_element?(view, "#settings-profile-notice", "Perfil atualizado")
+      updated = Accounts.get_user!(user.id)
+      assert updated.name == "Calliari"
+      assert updated.username == "calliari"
+    end
 
-  test "Cancelar closes Trocar e-mail without changing anything", %{conn: conn, user: user} do
-    {:ok, view, _html} = live(conn, ~p"/configuracoes")
+    test "shows validation beside the profile field and updates privacy", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
 
-    view |> element("#settings-email-edit") |> render_click()
-    view |> element("#settings-email-cancel") |> render_click()
+      view
+      |> element("#settings-profile-form")
+      |> render_change(%{"user" => %{"name" => user.name, "username" => "?"}})
 
-    refute has_element?(view, "#settings-email-form")
-    assert Dockd.Accounts.get_user!(user.id).email == user.email
-  end
+      assert has_element?(view, "#settings-profile-form .dk-field__error", "Use letras e números")
 
-  test "changes the password and ends the session", %{conn: conn} do
-    {:ok, view, _html} = live(conn, ~p"/configuracoes")
+      view
+      |> element("#settings-visibility")
+      |> render_change(%{visibility: "friends"})
 
-    assert {:error, {:redirect, %{to: "/entrar"}}} =
-             view
-             |> form("#settings-password-form", user: %{password: "another valid password"})
-             |> render_submit()
-  end
+      assert Accounts.get_user!(user.id).profile_visibility == :friends
+    end
 
-  test "Excluir conta confirms in place, no native dialog, before deleting", %{
-    conn: conn,
-    user: user
-  } do
-    {:ok, view, _html} = live(conn, ~p"/configuracoes")
+    test "rejects an empty display name", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
 
-    refute has_element?(view, "#settings-delete-warning")
+      html =
+        view
+        |> element("#settings-profile-form")
+        |> render_change(%{"user" => %{"name" => "", "username" => user.username}})
 
-    view |> element("#settings-delete-confirm") |> render_click()
-    assert has_element?(view, "#settings-delete-warning")
+      assert html =~ "Informe este campo"
+    end
 
-    view |> element("#settings-delete-cancel") |> render_click()
-    refute has_element?(view, "#settings-delete-warning")
-    assert Dockd.Accounts.get_user!(user.id)
+    test "rejects a username already taken", %{conn: conn, user: user} do
+      other = user_fixture()
 
-    view |> element("#settings-delete-confirm") |> render_click()
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
 
-    assert {:error, {:redirect, %{to: "/"}}} =
-             view |> element("#settings-delete-submit") |> render_click()
+      html =
+        view
+        |> element("#settings-profile-form")
+        |> render_submit(%{"user" => %{"name" => user.name, "username" => other.username}})
 
-    refute Dockd.Repo.get(Dockd.Accounts.User, user.id)
-  end
+      assert html =~ "já existe"
+    end
 
-  test "no native dialog anywhere on the page", %{conn: conn} do
-    {:ok, _view, html} = live(conn, ~p"/configuracoes")
+    test "sends email confirmation without changing the email first", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+      view |> element("#settings-edit-email") |> render_click()
 
-    refute html =~ "confirm("
-    refute html =~ "data-confirm"
+      view
+      |> element("#settings-email-form")
+      |> render_submit(%{"email" => %{"email" => "novo@example.com"}})
+
+      assert has_element?(view, "#settings-email-notice", "Confirmação enviada")
+      assert Accounts.get_user!(user.id).email == user.email
+    end
+
+    test "Cancelar closes Trocar e-mail without changing anything", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+
+      view |> element("#settings-edit-email") |> render_click()
+      assert has_element?(view, "#settings-email-form")
+
+      view |> element("#settings-email-form button", "Cancelar") |> render_click()
+
+      refute has_element?(view, "#settings-email-form")
+      assert Accounts.get_user!(user.id).email == user.email
+    end
+
+    test "requires the current password and ends other sessions", %{conn: conn, user: user} do
+      other = Accounts.generate_user_session_token(user)
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+      view |> element("#settings-edit-password") |> render_click()
+
+      view
+      |> element("#settings-password-form")
+      |> render_submit(%{
+        "password" => %{
+          "current_password" => "incorreta",
+          "new_password" => "uma senha bem longa",
+          "confirmation" => "uma senha bem longa"
+        }
+      })
+
+      assert has_element?(
+               view,
+               "#settings-password-form .dk-field__error",
+               "Senha atual incorreta"
+             )
+
+      view |> element("#settings-end-sessions") |> render_click()
+      assert has_element?(view, "#settings-session-notice", "Outras sessões encerradas")
+      refute Accounts.get_user_by_session_token(other)
+    end
+
+    test "changes the password with the current one, and ends other sessions right away", %{
+      conn: conn,
+      user: user
+    } do
+      other = Accounts.generate_user_session_token(user)
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+      view |> element("#settings-edit-password") |> render_click()
+
+      view
+      |> element("#settings-password-form")
+      |> render_submit(%{
+        "password" => %{
+          "current_password" => valid_user_password(),
+          "new_password" => "uma senha bem longa",
+          "confirmation" => "uma senha bem longa"
+        }
+      })
+
+      assert has_element?(view, "#settings-password-notice", "Senha atualizada")
+      refute Accounts.get_user_by_session_token(other)
+      assert Accounts.get_user_by_email_and_password(user.email, "uma senha bem longa")
+    end
+
+    test "exports data and confirms deletion inside the app", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+
+      assert has_element?(
+               view,
+               "#settings-export[href='/configuracoes/exportar']",
+               "Exportar dados"
+             )
+
+      view |> element("#settings-delete") |> render_click()
+      assert has_element?(view, "#settings-delete-modal[role='presentation']")
+
+      view
+      |> element("#settings-delete-form")
+      |> render_submit(%{"delete" => %{"confirmation" => "apagar"}})
+
+      assert has_element?(
+               view,
+               "#settings-delete-form .dk-field__error",
+               "Digite EXCLUIR para continuar"
+             )
+    end
+
+    test "excludes the account once EXCLUIR is typed, ending the session", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+
+      view |> element("#settings-delete") |> render_click()
+
+      view
+      |> element("#settings-delete-form")
+      |> render_submit(%{"delete" => %{"confirmation" => "EXCLUIR"}})
+
+      assert_redirect(view, ~p"/")
+      refute Dockd.Repo.get(Dockd.Accounts.User, user.id)
+    end
+
+    test "no native dialog anywhere on the page", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/configuracoes")
+
+      refute html =~ "confirm("
+      refute html =~ "data-confirm"
+    end
   end
 end
