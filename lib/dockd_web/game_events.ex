@@ -65,13 +65,13 @@ defmodule DockdWeb.GameEvents do
   def buy_options(_buying, _game_id), do: nil
 
   @doc """
-  What Comprei can buy for a game: one choice per platform's standard release and media
-  it is sold in, always including the media Comprar's MediaTag already has the account
-  on (the release's physical_available/digital_available only says what the catalog has
-  seen sold, never a reason to keep the account from registering the other one), then
-  the store editions on sale, cheapest first, each with the price the purchase records.
-  The label names only what differs between the standard choices; `name` and `meta`
-  describe any choice in the options under the row.
+  What Comprei can buy for a game: for each platform's standard release, both Físico
+  and Digital, the account's chosen media (Comprar's MediaTag) first, then the store
+  editions on sale, cheapest first, each with the price the purchase records. A
+  standard choice always exists, whatever the release's physical_available/
+  digital_available says; those only ever decide the price a choice shows, never
+  whether it appears. The label names only what differs between the standard choices;
+  `name` and `meta` describe any choice in the options under the row.
   """
   def purchase_choices(user, %{id: game_id, releases: releases}) do
     preferred = user |> Library.get_entry_for_game(game_id) |> Library.media()
@@ -112,28 +112,24 @@ defmodule DockdWeb.GameEvents do
     standard ++ Enum.sort_by(editions, & &1.price.price_cents)
   end
 
-  # The account's chosen media (Comprar's MediaTag) always joins whatever the release
-  # itself is known to sell in, so Comprei can never foreclose the media the account
-  # says it wants, whatever the catalog does or does not know about the release.
+  # Every standard release always offers both media, the account's chosen one
+  # (Comprar's MediaTag) first: physical_available/digital_available only ever says
+  # what the catalog has seen sold, never a reason to keep the account from
+  # registering the other one. Evidence (a price, a badge) decides what a choice shows,
+  # never whether it exists.
   defp standard_choices(releases, preferred) do
-    pairs =
-      for r <- standard_releases(releases),
-          m <- Enum.uniq([preferred | Release.media(r)]),
-          do: {r, m}
+    media_order = Enum.uniq([preferred, :physical, :digital])
+    standard = standard_releases(releases)
+    many_releases? = length(standard) > 1
 
-    many_releases? = pairs |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> length() > 1
-    many_media? = pairs |> Enum.map(&elem(&1, 1)) |> Enum.uniq() |> length() > 1
-
-    Enum.map(pairs, fn {release, media} ->
+    for release <- standard, media <- media_order do
       label =
-        cond do
-          many_releases? and many_media? -> "#{release_label(release)} · #{enum_label(media)}"
-          many_releases? -> release_label(release)
-          true -> enum_label(media)
-        end
+        if many_releases?,
+          do: "#{release_label(release)} · #{enum_label(media)}",
+          else: enum_label(media)
 
       %{release: release, media: media, label: label}
-    end)
+    end
   end
 
   def handle_event("set_status", %{"status" => status} = params, socket, reload) do

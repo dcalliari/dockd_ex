@@ -354,7 +354,7 @@ defmodule DockdWeb.GameLiveTest do
 
     view |> element("#buy-button") |> render_click()
     assert Purchasing.list_purchases_for_game(ctx.user, ctx.game.id) == []
-    view |> element("#buy .dk-choice button", "Switch 2") |> render_click()
+    view |> element("#buy .dk-choice button", "Switch 2 · Digital") |> render_click()
 
     item = Shelf.item(ctx.user, ctx.game)
     assert item.status == :backlog

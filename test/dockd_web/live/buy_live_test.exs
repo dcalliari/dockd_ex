@@ -136,6 +136,7 @@ defmodule DockdWeb.BuyLiveTest do
     assert has_element?(view, "#estimate-digital", "R$ 279,90")
 
     view |> element("#buy-#{ctx.available.id}-button") |> render_click()
+    view |> element("#buy-#{ctx.available.id} .dk-choice button", "Digital") |> render_click()
 
     assert [%{price_cents: 27_990, format: :digital, retailer: "eShop"}] =
              Purchasing.list_purchases(ctx.user, ctx.available_release.id)
@@ -268,12 +269,13 @@ defmodule DockdWeb.BuyLiveTest do
     assert has_element?(view, "#buy-#{ctx.available.id}", "R$ 349,90")
   end
 
-  test "Comprei buys in one tap with the price seen, then Desfazer undoes it",
+  test "Comprei buys in the media the account chose, with the price seen, then Desfazer undoes it",
        %{conn: conn} = ctx do
     observe(ctx.user, ctx.available_release, :digital, 9_990)
     {:ok, view, _html} = live(conn, "/comprar")
 
     view |> element("#buy-#{ctx.available.id}-button") |> render_click()
+    view |> element("#buy-#{ctx.available.id} .dk-choice button", "Digital") |> render_click()
 
     assert Shelf.item(ctx.user, ctx.available).status == :backlog
 
@@ -291,14 +293,11 @@ defmodule DockdWeb.BuyLiveTest do
     assert has_element?(view, "#buy-#{ctx.available.id}-button")
   end
 
-  test "Comprei buys in the media the account chose, even though the catalog only saw it sold digitally (Smash Bros. bug)",
+  test "Comprei offers Físico even with no media preference and no physical evidence at all (Smash Bros. bug)",
        %{conn: conn} = ctx do
     refute ctx.available_release.physical_available
+    assert Library.get_entry_for_game(ctx.user, ctx.available.id) |> Library.media() == :digital
     {:ok, view, _html} = live(conn, "/comprar")
-
-    view
-    |> element("#media-#{ctx.available.id}[phx-value-media=physical]")
-    |> render_click()
 
     view |> element("#buy-#{ctx.available.id}-button") |> render_click()
     view |> element("#buy-#{ctx.available.id} .dk-choice button", "Físico") |> render_click()
@@ -307,10 +306,25 @@ defmodule DockdWeb.BuyLiveTest do
     assert Catalog.get_release!(ctx.available.id, ctx.available_release.id).physical_available
   end
 
+  test "Comprei lists the account's chosen media first, but never drops the other one",
+       %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/comprar")
+
+    view
+    |> element("#media-#{ctx.available.id}[phx-value-media=physical]")
+    |> render_click()
+
+    view |> element("#buy-#{ctx.available.id}-button") |> render_click()
+
+    choices = element(view, "#buy-#{ctx.available.id} .dk-choice") |> render()
+    assert choices =~ ~r/Físico.*Digital/s
+  end
+
   test "the paid value opens in place and takes a correction", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/comprar")
 
     view |> element("#buy-#{ctx.available.id}-button") |> render_click()
+    view |> element("#buy-#{ctx.available.id} .dk-choice button", "Digital") |> render_click()
     assert has_element?(view, "#buy-#{ctx.available.id}", "Sem valor")
 
     view |> element("#buy-#{ctx.available.id} button", "Sem valor") |> render_click()

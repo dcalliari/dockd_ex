@@ -32,20 +32,6 @@ defmodule Dockd.Catalog.Release do
   def standard?(%__MODULE__{edition: edition}), do: edition in [nil, "", @standard]
 
   @doc """
-  The media a release is sold in, physical first. A release that declares neither is
-  treated as digital, so every release can be bought and priced.
-  """
-  def media(%__MODULE__{} = release) do
-    case Enum.filter(
-           [physical: release.physical_available, digital: release.digital_available],
-           &elem(&1, 1)
-         ) do
-      [] -> [:digital]
-      media -> Keyword.keys(media)
-    end
-  end
-
-  @doc """
   Whether a release is out by `today`: `:released`, `:upcoming` (dated, not out yet) or
   `:undated`. A date known only by month, quarter or year is out once that whole period
   is over. The eShop sales status, when the store sells the release, holds it back:
