@@ -491,6 +491,10 @@ Os contextos de domínio estão em `lib/dockd/`, o design system em `DockdWeb.Do
 
 Valide mudanças com `mix precommit`. O [Makefile](Makefile) oferece atalhos equivalentes e o `Dockerfile` define a imagem de release.
 
+## Produção (Fly.io)
+
+O app `dockd-ex` roda no Fly (conta pessoal, `fly.toml` na raiz): uma máquina `shared-cpu-1x`, `gru`, auto stop/start (`min_machines_running = 0`), sem volume e sem IPv4 dedicado, para ficar abaixo do limiar de cobrança do plano free. O banco é um projeto Neon Postgres free tier (`aws-sa-east-1`), não um Postgres do Fly; por isso `config/runtime.exs` liga `ssl: true` no `Dockd.Repo` via `ECTO_SSL=true` (`fly.toml`), separado do `ECTO_IPV6` que só importa para o Postgres interno do Fly. `config/prod.exs` exclui `/health` do `force_ssl`: sem isso o probe HTTP interno do Fly cai num loop de redirect 301 e a máquina nunca passa no health check. Segredos (`DATABASE_URL`, `SECRET_KEY_BASE`, `PHX_HOST`) via `flyctl secrets set`; nunca imprimir os valores.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.
