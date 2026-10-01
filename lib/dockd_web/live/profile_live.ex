@@ -39,7 +39,7 @@ defmodule DockdWeb.ProfileLive do
      socket
      |> assign(owner: owner, user: viewer, page_title: owner.name)
      |> assign(year: Date.utc_today().year, stats: nil, summary: nil)
-     |> assign(target: nil, q: "", results: [], slots: [])
+     |> assign(picker: nil, q: "", results: [], slots: [])
      |> assign(open_days: MapSet.new())
      |> GameEvents.init()
      |> UserAuth.halt_visitor_events([
@@ -67,46 +67,57 @@ defmodule DockdWeb.ProfileLive do
     {:noreply, load(socket)}
   end
 
-  def handle_event("pick_slot", %{"position" => position}, socket) do
-    position = String.to_integer(position)
-    target = if socket.assigns.target == position, do: nil, else: position
-    {:noreply, assign(socket, target: target)}
+  def handle_event("open_picker", %{"position" => position}, socket) do
+    if socket.assigns.relation == :self do
+      {:noreply, assign(socket, picker: slot_number(position), q: "", results: [])}
+    else
+      {:noreply, socket}
+    end
   end
 
-  def handle_event("search_favorites", %{"q" => q}, socket),
-    do: {:noreply, assign(socket, q: String.trim(q), results: Catalog.search(q))}
+  def handle_event("close_picker", _params, socket), do: {:noreply, assign(socket, picker: nil)}
+
+  def handle_event("search_favorites", %{"q" => q}, socket) do
+    taken = socket.assigns.favorites |> Enum.map(& &1.game_id) |> MapSet.new()
+
+    results =
+      q
+      |> Catalog.search()
+      |> Enum.reject(&MapSet.member?(taken, &1.game.id))
+
+    {:noreply, assign(socket, q: String.trim(q), results: results)}
+  end
 
   def handle_event("choose_favorite", %{"game_id" => game_id}, socket) do
-    %{owner: owner, relation: relation, slots: slots, target: target} = socket.assigns
-    position = target || first_empty(slots)
-
-    with :self <- relation,
-         true <- position != nil,
+    with %{relation: :self, picker: position} when not is_nil(position) <- socket.assigns,
          %Game{} = game <- Repo.get(Game, game_id) do
-      :ok = Social.put_favorite(owner, game, position)
-      {:noreply, socket |> assign(target: nil) |> load()}
+      :ok = Social.put_favorite(socket.assigns.owner, game, position)
+      {:noreply, socket |> assign(picker: nil) |> load()}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  # Dragging a cover onto a position, or the arrow keys, moves a favorite there; the one
+  # already there swaps into its old position.
+  def handle_event("place_favorite", %{"game_id" => game_id, "position" => position}, socket) do
+    with %{relation: :self} <- socket.assigns,
+         %Game{} = game <- Repo.get(Game, game_id),
+         position when position in 1..4 <- slot_number(position) do
+      :ok = Social.put_favorite(socket.assigns.owner, game, position)
+      {:noreply, load(socket)}
     else
       _ -> {:noreply, socket}
     end
   end
 
   def handle_event("clear_favorite", %{"position" => position}, socket) do
-    if socket.assigns.relation == :self do
-      :ok = Social.clear_favorite(socket.assigns.owner, String.to_integer(position))
+    with %{relation: :self} <- socket.assigns,
+         position when position in 1..4 <- slot_number(position) do
+      :ok = Social.clear_favorite(socket.assigns.owner, position)
       {:noreply, load(socket)}
     else
-      {:noreply, socket}
-    end
-  end
-
-  def handle_event("move_favorite", %{"position" => position, "to" => to}, socket)
-      when to in ["before", "after"] do
-    if socket.assigns.relation == :self do
-      direction = if to == "before", do: :before, else: :after
-      :ok = Social.move_favorite(socket.assigns.owner, String.to_integer(position), direction)
-      {:noreply, load(socket)}
-    else
-      {:noreply, socket}
+      _ -> {:noreply, socket}
     end
   end
 
@@ -116,10 +127,10 @@ defmodule DockdWeb.ProfileLive do
   def handle_event(event, params, socket) when event in @game_events,
     do: GameEvents.handle_event(event, params, socket, &load/1)
 
-  defp first_empty(slots) do
-    case Enum.find_index(slots, &is_nil/1) do
-      nil -> nil
-      index -> index + 1
+  defp slot_number(position) do
+    case Integer.parse(position) do
+      {number, ""} -> number
+      _ -> nil
     end
   end
 
@@ -152,15 +163,23 @@ defmodule DockdWeb.ProfileLive do
     )
   end
 
-  defp load_view(%{assigns: %{owner: owner, user: viewer, live_action: action}} = socket, true) do
+  defp load_view(
+         %{assigns: %{owner: owner, user: viewer, live_action: action, relation: relation}} =
+           socket,
+         true
+       ) do
     mine = if viewer, do: viewer |> Shelf.list() |> Map.new(&{&1.game.id, &1}), else: %{}
-    favorites = Social.favorites(owner)
+    slots = if relation == :self, do: Social.favorite_slots(owner), else: []
+
+    favorites =
+      if relation == :self, do: Enum.reject(slots, &is_nil/1), else: Social.favorites(owner)
+
     diary = if action == :show, do: Social.diary(owner), else: []
 
     assign(socket,
       shelf: Social.shelf(owner),
       favorites: favorites,
-      slots: if(action == :favorites, do: Social.favorite_slots(owner), else: []),
+      slots: slots,
       stats: if(action == :show, do: Social.profile_stats(owner)),
       summary: if(action == :show, do: Social.year_summary(diary, socket.assigns.year)),
       diary_months: Social.diary_months(diary, @diary_rows),
@@ -207,26 +226,40 @@ defmodule DockdWeb.ProfileLive do
             <div id="profile-layout" class="dk-profile-layout">
               <main class="dk-profile-main">
                 <%= if @favorites != [] || @relation == :self do %>
-                  <.section_head id="profile-favorites" title="Favoritos">
-                    <:action :if={@relation == :self}>
-                      <.link
-                        id="profile-edit-favorites"
-                        navigate={~p"/u/#{@owner.username}/favoritos"}
-                      >
-                        Editar favoritos
-                      </.link>
-                    </:action>
-                  </.section_head>
-                  <div
-                    :if={@favorites != []}
-                    id="profile-favorites-grid"
-                    class="dk-profile-favorites"
-                  >
-                    <.favorite_card
-                      :for={favorite <- @favorites}
-                      favorite={favorite}
-                    />
-                  </div>
+                  <.section_head id="profile-favorites" title="Favoritos" />
+                  <%= if @relation == :self do %>
+                    <div
+                      id="profile-favorites-grid"
+                      class="dk-profile-favorites"
+                      phx-hook="FavoriteSlots"
+                      aria-description="Arraste uma capa, ou use as setas esquerda e direita, para mudar a ordem"
+                    >
+                      <%= for {favorite, index} <- Enum.with_index(@slots, 1) do %>
+                        <.favorite_card :if={favorite} favorite={favorite} editable />
+                        <div
+                          :if={!favorite}
+                          id={"favorite-slot-#{index}"}
+                          class="dk-fav-slot"
+                          data-position={index}
+                        >
+                          <button
+                            id={"favorite-add-#{index}"}
+                            type="button"
+                            class="dk-fav-add"
+                            phx-click="open_picker"
+                            phx-value-position={index}
+                            aria-label={"Adicionar favorito na posição #{index}"}
+                          >
+                            <.icon name="hero-plus" />
+                          </button>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% else %>
+                    <div id="profile-favorites-grid" class="dk-profile-favorites">
+                      <.favorite_card :for={favorite <- @favorites} favorite={favorite} />
+                    </div>
+                  <% end %>
                 <% end %>
 
                 <%= if @shelf.jogando != [] do %>
@@ -287,55 +320,6 @@ defmodule DockdWeb.ProfileLive do
                 />
               </aside>
             </div>
-          <% :favorites -> %>
-            <%= if @relation == :self do %>
-              <.section_head id="profile-favorite-editor-head" title="Favoritos" />
-              <div id="favorite-editor" class="dk-favs">
-                <div class="dk-favs__slots">
-                  <.favorite_slot
-                    :for={{favorite, index} <- Enum.with_index(@slots, 1)}
-                    favorite={favorite}
-                    position={index}
-                    target={@target == index}
-                  />
-                </div>
-                <p id="favorite-hint" class="dk-favs__hint">
-                  {favorite_hint(@target, @slots)}
-                </p>
-                <form
-                  id="favorite-search-form"
-                  class="dk-search"
-                  role="search"
-                  phx-change="search_favorites"
-                  phx-submit="search_favorites"
-                >
-                  <.icon name="hero-magnifying-glass" />
-                  <input
-                    id="favorite-search"
-                    type="search"
-                    name="q"
-                    value={@q}
-                    placeholder="Buscar no catálogo"
-                    aria-label="Buscar no catálogo"
-                    autocomplete="off"
-                    phx-debounce="300"
-                  />
-                </form>
-                <div id="favorite-results" class="dk-favs__results">
-                  <.favorite_result
-                    :for={result <- @results}
-                    result={result}
-                    slots={@slots}
-                    target={@target}
-                  />
-                  <.empty_state :if={@q != "" and @results == []} id="favorite-empty">
-                    Nenhum jogo encontrado.
-                  </.empty_state>
-                </div>
-              </div>
-            <% else %>
-              <.empty_state id="profile-favorite-closed">Somente você edita favoritos.</.empty_state>
-            <% end %>
           <% :diary -> %>
             <.section_head id="profile-diary" title="Diário" count={@diary_count} />
             <div id="diary">
@@ -407,6 +391,72 @@ defmodule DockdWeb.ProfileLive do
             </div>
         <% end %>
       <% end %>
+
+      <div :if={@picker} id="favorite-picker" class="dk-modal" role="presentation">
+        <section
+          class="dk-modal__panel dk-modal__panel--wide"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="favorite-picker-title"
+          phx-window-keydown="close_picker"
+          phx-key="Escape"
+          phx-click-away="close_picker"
+        >
+          <div class="dk-modal__head">
+            <h2 id="favorite-picker-title">Escolher favorito</h2>
+            <button id="favorite-picker-close" type="button" class="dk-link" phx-click="close_picker">
+              Fechar
+            </button>
+          </div>
+          <form
+            id="favorite-search-form"
+            class="dk-search"
+            role="search"
+            phx-change="search_favorites"
+            phx-submit="search_favorites"
+          >
+            <.icon name="hero-magnifying-glass" />
+            <input
+              id="favorite-search"
+              type="search"
+              name="q"
+              value={@q}
+              placeholder="Buscar no catálogo"
+              aria-label="Buscar no catálogo"
+              autocomplete="off"
+              phx-debounce="300"
+              autofocus
+            />
+          </form>
+          <div id="favorite-results" class="dk-modal__results">
+            <div :for={result <- @results} id={"favorite-result-#{result.game.id}"} class="dk-row">
+              <.poster
+                title={result.game.title}
+                cover_url={result.game.cover_url}
+                size="sm"
+              />
+              <div>
+                <b class="dk-row__title">{result.game.title}</b>
+                <div class="dk-row__meta">{platform_label(result.game.releases)}</div>
+              </div>
+              <div class="dk-row__end">
+                <button
+                  id={"favorite-choose-#{result.game.id}"}
+                  type="button"
+                  class="dk-btn dk-btn--secondary"
+                  phx-click="choose_favorite"
+                  phx-value-game_id={result.game.id}
+                >
+                  Escolher
+                </button>
+              </div>
+            </div>
+            <.empty_state :if={@q != "" and @results == []} id="favorite-empty">
+              Nenhum jogo encontrado.
+            </.empty_state>
+          </div>
+        </section>
+      </div>
     </Layouts.app>
     """
   end
@@ -452,144 +502,38 @@ defmodule DockdWeb.ProfileLive do
   end
 
   attr :favorite, :map, required: true
+  attr :editable, :boolean, default: false
 
+  # For the owner the card is a draggable position (hook FavoriteSlots): the X clears it,
+  # shown on hover and focus, and the arrow keys move it.
   defp favorite_card(assigns) do
     ~H"""
-    <div id={"profile-favorite-#{@favorite.game_id}"} class="dk-card">
+    <div
+      id={"profile-favorite-#{@favorite.game_id}"}
+      class={["dk-card", @editable && "dk-fav-slot"]}
+      data-game-id={@editable && @favorite.game_id}
+      data-position={@editable && @favorite.position}
+    >
       <.poster
         title={@favorite.game.title}
         cover_url={@favorite.game.cover_url}
         availability={@favorite.game.availability}
         navigate={~p"/jogos/#{@favorite.game.id}"}
       />
+      <button
+        :if={@editable}
+        id={"favorite-remove-#{@favorite.position}"}
+        type="button"
+        class="dk-fav-remove"
+        phx-click="clear_favorite"
+        phx-value-position={@favorite.position}
+        aria-label={"Remover #{@favorite.game.title} dos favoritos"}
+      >
+        <.icon name="hero-x-mark" />
+      </button>
       <.link navigate={~p"/jogos/#{@favorite.game.id}"} class="dk-card__text">
         <span class="dk-card__title">{@favorite.game.title}</span>
       </.link>
-    </div>
-    """
-  end
-
-  defp favorite_hint(nil, slots) do
-    if Enum.any?(slots, &is_nil/1),
-      do: "Até quatro jogos, na ordem do perfil.",
-      else: "As quatro posições estão cheias. Escolha uma para trocar."
-  end
-
-  defp favorite_hint(target, _slots), do: "Escolhendo a posição #{target}."
-
-  attr :favorite, :map, default: nil
-  attr :position, :integer, required: true
-  attr :target, :boolean, required: true
-
-  # One of the four positions: the game, or an empty frame; Trocar picks it as the target of
-  # the search below, Esvaziar clears it and the arrows swap it with a neighbor.
-  defp favorite_slot(assigns) do
-    ~H"""
-    <div
-      id={"favorite-slot-#{@position}"}
-      class="dk-favs__slot"
-      data-state={if(@favorite, do: "filled", else: "empty")}
-      data-target={@target || nil}
-    >
-      <span class="dk-favs__n">{@position}</span>
-      <.poster
-        :if={@favorite}
-        title={@favorite.game.title}
-        cover_url={@favorite.game.cover_url}
-        availability={@favorite.game.availability}
-      />
-      <span :if={!@favorite} class="dk-poster dk-poster--empty dk-favs__empty">Vazio</span>
-      <b class="dk-favs__title">{if(@favorite, do: @favorite.game.title, else: "\u00a0")}</b>
-      <div class="dk-favs__actions">
-        <button
-          id={"favorite-pick-#{@position}"}
-          type="button"
-          class="dk-link"
-          phx-click="pick_slot"
-          phx-value-position={@position}
-          aria-pressed={to_string(@target)}
-        >
-          {if(@favorite, do: "Trocar", else: "Escolher")}
-        </button>
-        <button
-          :if={@favorite}
-          id={"favorite-clear-#{@position}"}
-          type="button"
-          class="dk-link dk-link--muted"
-          phx-click="clear_favorite"
-          phx-value-position={@position}
-        >
-          Esvaziar
-        </button>
-        <span :if={@favorite} class="dk-favs__order">
-          <button
-            id={"favorite-before-#{@position}"}
-            type="button"
-            phx-click="move_favorite"
-            phx-value-position={@position}
-            phx-value-to="before"
-            aria-label="Mover para antes"
-            disabled={@position == 1}
-          >
-            ‹
-          </button>
-          <button
-            id={"favorite-after-#{@position}"}
-            type="button"
-            phx-click="move_favorite"
-            phx-value-position={@position}
-            phx-value-to="after"
-            aria-label="Mover para depois"
-            disabled={@position == 4}
-          >
-            ›
-          </button>
-        </span>
-      </div>
-    </div>
-    """
-  end
-
-  attr :result, :map, required: true
-  attr :slots, :list, required: true
-  attr :target, :integer, default: nil
-
-  defp favorite_result(assigns) do
-    game = assigns.result.game
-
-    assigns =
-      assign(assigns,
-        game: game,
-        at: Enum.find_index(assigns.slots, &(&1 && &1.game_id == game.id)),
-        full: Enum.all?(assigns.slots, & &1)
-      )
-
-    ~H"""
-    <div id={"favorite-result-#{@game.id}"} class="dk-row">
-      <.poster
-        title={@game.title}
-        cover_url={@game.cover_url}
-        navigate={~p"/jogos/#{@game.id}"}
-        size="sm"
-      />
-      <div>
-        <.link navigate={~p"/jogos/#{@game.id}"} class="dk-row__title">{@game.title}</.link>
-        <div class="dk-row__meta">{platform_label(@game.releases)}</div>
-      </div>
-      <div class="dk-row__end">
-        <span :if={@at && is_nil(@target)} class="dk-row__meta">Na posição {@at + 1}</span>
-        <button
-          :if={!@at || @target}
-          id={"favorite-choose-#{@game.id}"}
-          type="button"
-          class="dk-btn dk-btn--secondary"
-          phx-click="choose_favorite"
-          phx-value-game_id={@game.id}
-          disabled={@full && is_nil(@target)}
-        >
-          {if(@target, do: "Pôr na posição #{@target}", else: "Escolher")}
-        </button>
-      </div>
     </div>
     """
   end

@@ -56,48 +56,76 @@ test("Editar perfil leads to Configurações and the bio, place and link show on
   await expect(page.locator("#profile-link")).toHaveAttribute("href", "https://e2e.example.com");
 });
 
-test("Editar favoritos fills up to four positions by searching, swapping, ordering and emptying", async ({ page }) => {
+test("favorites live on the profile: X on hover, + opens the search, drag and arrows order them", async ({ page }) => {
   await signIn(page);
-  await page.goto("/u/e2e/favoritos");
-  await expect(page.locator("#favorite-editor")).toBeVisible();
+  await page.goto("/u/e2e");
+  await expect(page.locator("#profile-edit-favorites")).toHaveCount(0);
 
   // start empty: earlier runs may have left favorites behind
-  while ((await page.locator("[id^='favorite-clear-']").count()) > 0) {
-    await page.locator("[id^='favorite-clear-']").first().click();
+  while ((await page.locator(".dk-fav-remove").count()) > 0) {
+    const slot = page.locator(".dk-fav-slot[data-game-id]").first();
+    await slot.hover();
+    await slot.locator(".dk-fav-remove").click();
   }
-  await expect(page.locator("#favorite-slot-1")).toHaveAttribute("data-state", "empty");
+  await expect(page.locator("#favorite-add-1")).toBeVisible();
 
-  const choose = async (query: string, title: string) => {
+  const choose = async (position: number, query: string) => {
+    await page.locator(`#favorite-add-${position}`).click();
+    await expect(page.locator("#favorite-picker")).toBeVisible();
     await page.locator("#favorite-search").fill(query);
-    const row = page.locator("#favorite-results .dk-row").filter({ hasText: title });
-    await row.locator("button").click();
+    await page.locator("#favorite-results .dk-row").filter({ hasText: query }).locator("button").click();
+    await expect(page.locator("#favorite-picker")).toHaveCount(0);
   };
 
-  await choose("Store Quest", "Store Quest");
-  await expect(page.locator("#favorite-slot-1")).toContainText("Store Quest");
-  await choose("Sale Quest", "Sale Quest");
-  await expect(page.locator("#favorite-slot-2")).toContainText("Sale Quest");
+  await choose(1, "Store Quest");
+  await choose(2, "Sale Quest");
+  await expect(page.locator("#profile-favorites-grid .dk-fav-slot[data-game-id]")).toHaveCount(2);
 
-  await page.locator("#favorite-pick-1").click();
-  await expect(page.locator("#favorite-slot-1")).toHaveAttribute("data-target", "");
-  await choose("Friendly Voyage", "Friendly Voyage");
-  await expect(page.locator("#favorite-slot-1")).toContainText("Friendly Voyage");
-  await expect(page.locator("#favorite-slot-2")).toContainText("Sale Quest");
+  // the X shows on hover only
+  const first = page.locator(".dk-fav-slot[data-position='1']");
+  const x = first.locator(".dk-fav-remove");
+  await page.mouse.move(0, 0);
+  await expect(x).toHaveCSS("opacity", "0");
+  await first.hover();
+  await expect(x).toHaveCSS("opacity", "1");
 
-  await page.locator("#favorite-after-1").click();
-  await expect(page.locator("#favorite-slot-1")).toContainText("Sale Quest");
-  await expect(page.locator("#favorite-slot-2")).toContainText("Friendly Voyage");
-  if (shots) await page.screenshot({ path: `${shots}/favoritos-1280.png`, fullPage: true });
+  // dragging the first cover onto the second swaps them
+  const title = (position: number) => page.locator(`.dk-fav-slot[data-position='${position}'] .dk-card__title`);
+  await expect(title(1)).toHaveText("Store Quest");
+  const from = await first.locator(".dk-poster").boundingBox();
+  const to = await page.locator(".dk-fav-slot[data-position='2'] .dk-poster").boundingBox();
+  await page.mouse.move(from!.x + from!.width / 2, from!.y + from!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to!.x + to!.width / 2, to!.y + to!.height / 2, { steps: 8 });
+  await page.mouse.up();
+  await expect(title(1)).toHaveText("Sale Quest");
+  await expect(title(2)).toHaveText("Store Quest");
+  await expect(page).toHaveURL(/\/u\/e2e$/);
 
-  await page.goto("/u/e2e");
-  await expect(page.locator("#profile-favorites-grid .dk-card")).toHaveCount(2);
+  // the arrow keys move the focused cover one position
+  await page.locator(".dk-fav-slot[data-position='2'] .dk-poster").focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(title(1)).toHaveText("Store Quest");
+  await expect(page.locator(".dk-fav-slot[data-position='1'] .dk-poster")).toBeFocused();
+  if (shots) {
+    await first.hover();
+    await page.screenshot({ path: `${shots}/favoritos-1280.png`, fullPage: true });
+  }
+
+  await page.locator("#favorite-add-3").click();
+  await page.locator("#favorite-search").fill("Friendly");
+  await expect(page.locator("#favorite-results .dk-row").first()).toBeVisible();
+  if (shots) await page.screenshot({ path: `${shots}/favoritos-modal-1280.png` });
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#favorite-picker")).toHaveCount(0);
+
+  for (const position of [1, 2]) {
+    const slot = page.locator(`.dk-fav-slot[data-position='${position}']`);
+    await slot.hover();
+    await slot.locator(".dk-fav-remove").click();
+  }
+  await expect(page.locator(".dk-fav-remove")).toHaveCount(0);
   await expect(page.getByText("Remover favorito")).toHaveCount(0);
-
-  await page.goto("/u/e2e/favoritos");
-  await page.locator("#favorite-clear-1").click();
-  await expect(page.locator("#favorite-slot-1")).toHaveAttribute("data-state", "empty");
-  await page.locator("#favorite-clear-2").click();
-  await expect(page.locator("[id^='favorite-clear-']")).toHaveCount(0);
 });
 
 test("followers show the friend, and following back makes a friend", async ({ page }) => {
@@ -186,12 +214,18 @@ test.describe("on a phone", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
     if (shots) await page.screenshot({ path: `${shots}/seguidores-375.png`, fullPage: true });
 
-    await page.goto("/u/e2e/favoritos");
-    await expect(page.locator("#favorite-editor")).toBeVisible();
+    await page.goto("/u/e2e");
+    await page.locator("#favorite-add-1").click();
     await page.locator("#favorite-search").fill("Store Quest");
     await expect(page.locator("#favorite-results .dk-row").first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
+    if (shots) await page.screenshot({ path: `${shots}/favoritos-modal-375.png` });
+    await page.locator("#favorite-results .dk-row").first().locator("button").click();
+    await expect(page.locator(".dk-fav-remove").first()).toHaveCSS("opacity", "0.8");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
     if (shots) await page.screenshot({ path: `${shots}/favoritos-375.png`, fullPage: true });
+    await page.locator(".dk-fav-remove").first().click();
+    await expect(page.locator(".dk-fav-remove")).toHaveCount(0);
 
     await page.goto("/u/e2e/diario");
     await expect(page.locator("#diary .dk-entry").first()).toBeVisible();

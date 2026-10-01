@@ -227,25 +227,6 @@ defmodule Dockd.SocialTest do
       assert favorite.game_id == games.finished.game.id
     end
 
-    test "orders by swapping with a neighbor, and does nothing at the edges", %{
-      ana: ana,
-      games: games
-    } do
-      :ok = Social.put_favorite(ana, games.playing.game, 1)
-      :ok = Social.put_favorite(ana, games.finished.game, 2)
-
-      :ok = Social.move_favorite(ana, 2, :before)
-      assert ids(ana) == [games.finished.game.id, games.playing.game.id]
-
-      :ok = Social.move_favorite(ana, 1, :before)
-      assert ids(ana) == [games.finished.game.id, games.playing.game.id]
-
-      # into an empty neighbor it just moves
-      :ok = Social.move_favorite(ana, 2, :after)
-      assert [_, nil, favorite, nil] = Social.favorite_slots(ana)
-      assert favorite.game_id == games.playing.game.id
-    end
-
     test "a favorite stays when the game leaves the library", %{ana: ana, games: games} do
       :ok = Social.put_favorite(ana, games.playing.game, 1)
       assert {:ok, :ok} = Library.set_status(ana, games.playing.game, nil)

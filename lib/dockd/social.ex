@@ -184,26 +184,6 @@ defmodule Dockd.Social do
   def clear_favorite(%User{} = user, position) when position in @slots,
     do: user |> slot_games() |> Map.delete(position) |> then(&save_slots(user, &1))
 
-  @doc "Swaps `position` with the one before (`:before`) or after (`:after`) it."
-  def move_favorite(%User{} = user, position, direction)
-      when position in @slots and direction in [:before, :after] do
-    other = if direction == :before, do: position - 1, else: position + 1
-
-    if other in @slots do
-      slots = slot_games(user)
-
-      swapped =
-        slots
-        |> Map.drop([position, other])
-        |> then(&if(slots[other], do: Map.put(&1, position, slots[other]), else: &1))
-        |> then(&if(slots[position], do: Map.put(&1, other, slots[position]), else: &1))
-
-      save_slots(user, swapped)
-    else
-      :ok
-    end
-  end
-
   defp slot_games(%User{id: user_id}) do
     Repo.all(
       from f in ProfileFavorite, where: f.user_id == ^user_id, select: {f.position, f.game_id}

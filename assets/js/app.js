@@ -74,11 +74,99 @@ const NavSearch = {
   },
 }
 
+// FavoriteSlots (ProfileLive): the owner's four favorites. Dragging a cover onto another
+// position (mouse after a few pixels, touch after a long press so scrolling still works)
+// or pressing the arrow keys on it sends `place_favorite`; the server swaps or moves.
+const FavoriteSlots = {
+  mounted() {
+    const grid = this.el
+    let pending = null
+    let active = null
+    let timer = null
+    let moved = false
+    this.focusGame = null
+
+    const slotAt = (x, y) => document.elementFromPoint(x, y)?.closest(".dk-fav-slot")
+    const clearOver = () => grid.querySelectorAll(".is-over").forEach(el => el.classList.remove("is-over"))
+    const activate = () => {
+      if (!pending) return
+      active = pending
+      active.card.classList.add("is-dragging")
+      grid.classList.add("is-sorting")
+    }
+    const finish = event => {
+      clearTimeout(timer)
+      if (active) {
+        moved = true
+        const target = slotAt(event.clientX, event.clientY)
+        if (target && target !== active.card) {
+          this.pushEvent("place_favorite", {game_id: active.card.dataset.gameId, position: target.dataset.position})
+        }
+        active.card.classList.remove("is-dragging")
+        grid.classList.remove("is-sorting")
+        clearOver()
+      }
+      pending = active = null
+    }
+
+    grid.addEventListener("dragstart", event => event.preventDefault())
+    grid.addEventListener("pointerdown", event => {
+      const card = event.target.closest(".dk-fav-slot[data-game-id]")
+      if (!card || event.target.closest(".dk-fav-remove") || event.button > 0) return
+      moved = false
+      pending = {card, x: event.clientX, y: event.clientY, touch: event.pointerType !== "mouse"}
+      if (pending.touch) timer = setTimeout(activate, 350)
+    })
+    grid.addEventListener("pointermove", event => {
+      if (!pending) return
+      if (!active) {
+        const distance = Math.hypot(event.clientX - pending.x, event.clientY - pending.y)
+        if (pending.touch && distance > 10) {
+          clearTimeout(timer)
+          pending = null
+        } else if (!pending.touch && distance > 6) {
+          activate()
+        }
+      }
+      if (active) {
+        clearOver()
+        const over = slotAt(event.clientX, event.clientY)
+        if (over && over !== active.card) over.classList.add("is-over")
+      }
+    })
+    grid.addEventListener("pointerup", finish)
+    grid.addEventListener("pointercancel", finish)
+    grid.addEventListener("touchmove", event => { if (active) event.preventDefault() }, {passive: false})
+    grid.addEventListener("click", event => {
+      if (moved) {
+        event.preventDefault()
+        event.stopPropagation()
+        moved = false
+      }
+    }, true)
+    grid.addEventListener("keydown", event => {
+      const card = event.target.closest(".dk-fav-slot[data-game-id]")
+      const step = {ArrowLeft: -1, ArrowRight: 1}[event.key]
+      if (!card || !step) return
+      const position = Number(card.dataset.position) + step
+      if (position < 1 || position > 4) return
+      event.preventDefault()
+      this.focusGame = card.dataset.gameId
+      this.pushEvent("place_favorite", {game_id: card.dataset.gameId, position: String(position)})
+    })
+  },
+  updated() {
+    if (!this.focusGame) return
+    this.el.querySelector(`.dk-fav-slot[data-game-id="${this.focusGame}"] a`)?.focus()
+    this.focusGame = null
+  },
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, StatusMenu, NavSearch},
+  hooks: {...colocatedHooks, StatusMenu, NavSearch, FavoriteSlots},
 })
 
 // Show progress bar on live navigation and form submits

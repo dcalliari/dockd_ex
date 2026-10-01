@@ -623,22 +623,28 @@ div:has(> .dk-buy__options) > .dk-row { border-bottom: 0; }
   .dk-profile-now .dk-card__meta, .dk-profile-now .dk-status-menu, .dk-profile-now .dk-card__action--touch, .dk-profile-now .dk-status { display: none; }
 }
 
-/* FavoritesEditor: as quatro posições do perfil e, abaixo, a busca no catálogo
+/* FavoriteSlots: as até quatro posições de Favoritos no perfil. Para o dono, X aparece ao
+   apontar ou focar (no toque fica pequeno e sempre visível), a posição vazia é um + que abre
+   a busca no modal, e a ordem muda arrastando, ou com as setas no teclado
    (maquetes/perfil-favoritos.html) */
-.dk-favs__slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
-.dk-favs__slot { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-2); border-radius: var(--radius-md); outline: 2px solid transparent; transition: outline-color 120ms; }
-.dk-favs__slot[data-target] { outline-color: var(--red); }
-.dk-favs__n { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
-.dk-favs__empty { display: flex; align-items: center; justify-content: center; border: 1px dashed var(--line-strong); background: transparent; color: var(--ink-muted); font-size: 13px; font-weight: 600; }
-.dk-favs__title { min-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 18px; font-weight: 700; }
-.dk-favs__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
-.dk-favs__order { margin-left: auto; display: inline-flex; gap: var(--space-1); }
-.dk-favs__order button { width: 28px; height: 28px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); font-weight: 700; transition: background-color 120ms; }
-.dk-favs__order button:hover:not(:disabled) { background: var(--surface-raised); }
-.dk-favs__order button:disabled { opacity: .35; cursor: default; }
-.dk-favs__hint { margin: var(--space-4) 0 var(--space-2); font-size: 13px; line-height: 18px; color: var(--ink-muted); }
-.dk-favs__results { margin-top: var(--space-3); }
-@media (max-width: 767px) { .dk-favs__slots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.dk-fav-slot { position: relative; min-width: 0; }
+.dk-fav-slot[data-game-id] { cursor: grab; }
+.dk-fav-slot.is-dragging { opacity: .45; cursor: grabbing; }
+.dk-fav-slot.is-over .dk-poster, .dk-fav-slot.is-over .dk-fav-add { outline: 2px solid var(--red); outline-offset: 2px; }
+.dk-profile-favorites.is-sorting { user-select: none; }
+.dk-fav-remove { position: absolute; top: var(--space-2); right: var(--space-2); z-index: 2; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--scrim); color: var(--on-red); opacity: 0; transition: opacity 120ms; }
+.dk-fav-remove svg, .dk-fav-remove [class*="hero-"] { width: 14px; height: 14px; }
+.dk-fav-slot:hover .dk-fav-remove, .dk-fav-slot:focus-within .dk-fav-remove { opacity: 1; }
+@media (hover: none) { .dk-fav-remove { opacity: .8; width: 20px; height: 20px; } }
+.dk-fav-add { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 3 / 4; border: 1px dashed var(--line-strong); border-radius: var(--radius-md); color: var(--ink-muted); transition: border-color 120ms, color 120ms; }
+.dk-fav-add:hover { border-color: var(--ink); color: var(--ink); }
+.dk-fav-add svg, .dk-fav-add [class*="hero-"] { width: 24px; height: 24px; }
+.dk-modal__panel--wide { width: min(100%, 560px); max-height: calc(100vh - 2 * var(--space-4)); overflow-y: auto; }
+.dk-modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+.dk-modal__head h2 { margin: 0; }
+.dk-modal__results { margin-top: var(--space-3); }
+.dk-modal__results .dk-row > div:nth-child(2) { min-width: 0; }
+.dk-modal__results .dk-row__title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* FollowButton: Seguindo é o controle do vínculo; apontar mostra o que o clique faz */
 .dk-follow { min-width: 132px; }
