@@ -264,6 +264,14 @@ defmodule DockdWeb.SettingsLive do
             autocomplete="username"
             required
           />
+          <.text_field field={@profile_form[:bio]} placeholder="Bio curta" maxlength="140" />
+          <.text_field field={@profile_form[:location]} placeholder="Local" maxlength="60" />
+          <.text_field
+            field={@profile_form[:link]}
+            placeholder="Link"
+            autocomplete="url"
+            maxlength="200"
+          />
           <div class="dk-settings-form__actions">
             <button id="settings-profile-submit" class="dk-btn dk-btn--primary" type="submit">Atualizar perfil</button>
             <span :if={@profile_notice} id="settings-profile-notice" class="dk-settings-notice">{@profile_notice}</span>

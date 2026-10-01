@@ -546,43 +546,81 @@ div:has(> .dk-buy__options) > .dk-row { border-bottom: 0; }
 .dk-flash--error { background: var(--red); color: var(--on-red); }
 .dk-flash button { margin-left: var(--space-3); font-weight: 700; }
 
-/* ProfileHead: o nome em t-display, sem foto nem iniciais; as contagens de seguir no metadado e,
-   à direita, FollowButton ou, no próprio perfil, a Choice de quem vê (maquetes/perfil-social.html) */
-.dk-profile { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-4); align-items: center; margin: var(--space-5) 0; }
-.dk-profile__who { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; }
-.dk-profile__who h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dk-profile__meta { grid-column: 1; margin: 0; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+/* ProfileHead: monograma das iniciais, nome em t-display com @usuário, bio, local e link,
+   faixa de números; à direita, FollowButton ou, no próprio perfil, a Choice e Editar perfil
+   (maquetes/perfil-completo.html) */
+.dk-profile { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-1) var(--space-4); align-items: center; margin: var(--space-5) 0 var(--space-4); padding-bottom: var(--space-4); border-bottom: 1px solid var(--line); }
+.dk-avatar { grid-row: 1 / span 3; display: grid; place-items: center; width: 72px; height: 72px; border-radius: var(--radius-md); background: var(--ink); color: var(--on-ink); font-size: 26px; line-height: 1; font-weight: 800; font-stretch: 110%; letter-spacing: -.02em; }
+.dk-profile__who { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-1) var(--space-2); min-width: 0; }
+.dk-profile__who h1 { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.dk-profile__user { font-size: 13px; line-height: 16px; color: var(--ink-muted); }
+.dk-profile__bio { grid-column: 2; margin: 0; font-size: 14px; line-height: 20px; }
+.dk-profile__meta { grid-column: 2; display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin: 0; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
 .dk-profile__meta a { transition: color 120ms; }
 .dk-profile__meta a:hover { color: var(--ink); }
-.dk-profile__meta b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-.dk-profile__you { margin-left: var(--space-3); padding-left: var(--space-3); border-left: 1px solid var(--line); }
-.dk-profile__action { grid-column: 2; grid-row: 1 / span 2; }
+.dk-profile__you { padding-left: var(--space-3); border-left: 1px solid var(--line); }
+.dk-profile__action { grid-column: 3; grid-row: 1 / span 3; display: flex; align-items: center; gap: var(--space-3); }
+.dk-profile__nums { grid-column: 1 / -1; display: flex; margin-top: var(--space-3); }
+.dk-profile__nums > * { padding: 0 var(--space-4); border-left: 1px solid var(--line); text-align: center; }
+.dk-profile__nums > :first-child { padding-left: 0; border-left: 0; text-align: left; }
+.dk-profile__nums b { display: block; font-size: 22px; line-height: 24px; font-weight: 800; font-stretch: 90%; font-variant-numeric: tabular-nums; }
+.dk-profile__nums small { font-size: 10px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
+.dk-profile__nums a { transition: color 120ms; }
+.dk-profile__nums a:hover small { color: var(--ink); }
 @media (max-width: 767px) {
-  .dk-profile { grid-template-columns: minmax(0, 1fr); }
-  .dk-profile__action { grid-column: 1; grid-row: auto; justify-self: start; margin-top: var(--space-2); }
+  .dk-profile { grid-template-columns: auto minmax(0, 1fr); }
+  .dk-avatar { width: 56px; height: 56px; grid-row: 1 / span 2; font-size: 20px; }
+  .dk-profile__bio, .dk-profile__meta { grid-column: 1 / -1; }
+  .dk-profile__action { grid-column: 1 / -1; grid-row: auto; flex-wrap: wrap; margin-top: var(--space-2); }
+  .dk-profile__action .dk-btn, .dk-profile__action .dk-follow { flex: 1; }
+  .dk-profile__nums { justify-content: space-between; }
+  .dk-profile__nums > * { flex: 1; padding: 0 var(--space-2); }
+  .dk-profile__nums b { font-size: 18px; }
 }
 
-/* Perfil: identidade e atividade na coluna principal; números e relações na lateral. */
-.dk-profile-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: var(--space-7); align-items: start; }
+/* Perfil: favoritos, jogando agora e o diário por mês na coluna principal; a lateral resume a estante. */
+.dk-profile-layout { display: grid; grid-template-columns: minmax(0, 1fr) 264px; gap: var(--space-6); align-items: start; }
 .dk-profile-main { min-width: 0; }
+.dk-profile-main > .dk-section:first-child { margin-top: 0; }
 .dk-profile-sidebar { min-width: 0; padding-left: var(--space-5); border-left: 1px solid var(--line); }
 .dk-profile-sidebar > section + section { margin-top: var(--space-5); }
 .dk-profile-sidebar .dk-section { margin-top: 0; }
-.dk-profile-favorites { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
-.dk-profile-now .dk-card { width: min(100%, 220px); }
-.dk-profile-timeline { position: relative; padding-left: var(--space-5); }
-.dk-profile-timeline::before { content: ""; position: absolute; left: 4px; top: var(--space-3); bottom: var(--space-3); width: 1px; background: var(--line-strong); }
-.dk-profile-timeline .dk-row { position: relative; }
-.dk-profile-timeline .dk-row::before { content: ""; position: absolute; left: calc(-1 * var(--space-5)); top: 20px; width: 9px; height: 9px; border-radius: 2px; background: var(--ink); }
-.dk-profile-timeline .dk-row:first-child::before { background: var(--red); }
-.dk-profile-stats { display: grid; gap: var(--space-2); }
-.dk-profile-stats a, .dk-profile-meta { margin: 0; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
-.dk-profile-stats a:hover { color: var(--ink); }
-.dk-profile-stats b, .dk-profile-meta b { color: var(--ink); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.dk-profile-favorites, .dk-profile-now { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+.dk-profile-favorites .dk-card__title, .dk-profile-now .dk-card__title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-month { display: grid; grid-template-columns: var(--thumb-height) minmax(0, 1fr); gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--line-strong); }
+.dk-month:first-child { border-top: 0; padding-top: 0; }
+.dk-month__day { display: grid; grid-template-columns: 24px 33px minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-1) 0; border-bottom: 1px solid var(--line); }
+.dk-month__day:last-child { border-bottom: 0; }
+.dk-month__d { font-size: 13px; line-height: 16px; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-muted); }
+.dk-month__title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; font-weight: 600; }
+.dk-month__title:hover { color: var(--red-ink); }
+.dk-profile-bar { display: flex; gap: 2px; height: 14px; margin: var(--space-2) 0 var(--space-3); }
+.dk-profile-bar i { display: block; min-width: 3px; border-radius: 2px; }
+.dk-profile-legend { display: grid; gap: var(--space-1); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-profile-legend > * { display: flex; justify-content: space-between; gap: var(--space-2); }
+.dk-profile-legend a:hover { color: var(--ink); }
+.dk-profile-legend b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.dk-profile-legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 2px; background: var(--swatch); box-shadow: inset 0 0 0 1px var(--swatch-edge, transparent); }
+.dk-profile-bar__quero, .dk-profile-legend__quero { --swatch: var(--gold); background: var(--gold); }
+.dk-profile-bar__backlog, .dk-profile-legend__backlog { --swatch: var(--ink); background: var(--ink); }
+.dk-profile-bar__jogando, .dk-profile-legend__jogando { --swatch: var(--red); background: var(--red); }
+.dk-profile-bar__pausado, .dk-profile-legend__pausado { --swatch: var(--surface); --swatch-edge: var(--red-ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--red-ink); }
+.dk-profile-bar__zerado, .dk-profile-legend__zerado { --swatch: var(--line-strong); background: var(--line-strong); }
+.dk-profile-bar__larguei, .dk-profile-legend__larguei { --swatch: var(--surface-sunken); --swatch-edge: var(--line-strong); background: var(--surface-sunken); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.dk-profile-legend span { background: none; box-shadow: none; }
+.dk-profile-fan { display: flex; }
+.dk-profile-fan .dk-poster { width: 25%; margin-right: -6%; border-radius: var(--radius-sm); box-shadow: 2px 0 6px #0004; }
+.dk-profile-fan .dk-poster:last-child { margin-right: 0; }
+.dk-profile-histo { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; align-items: end; height: 48px; margin-top: var(--space-2); }
+.dk-profile-histo i { display: block; min-height: 3px; background: var(--line); border-radius: 2px 2px 0 0; }
+.dk-profile-histo i.is-on { background: var(--red); }
+.dk-profile-histo__axis { display: flex; justify-content: space-between; margin: var(--space-1) 0 0; font-size: 10px; line-height: 16px; color: var(--ink-muted); }
 @media (max-width: 767px) {
-  .dk-profile-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
-  .dk-profile-sidebar { padding: var(--space-5) 0 0; border-top: 1px solid var(--line); border-left: 0; }
-  .dk-profile-favorites { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dk-profile-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+  .dk-profile-sidebar { padding: 0; border-left: 0; }
+  .dk-profile-favorites, .dk-profile-now { gap: var(--space-2); }
+  .dk-profile-favorites .dk-card__title, .dk-profile-now .dk-card__title { font-size: 10px; line-height: 14px; }
+  .dk-profile-now .dk-card__meta, .dk-profile-now .dk-status-menu, .dk-profile-now .dk-card__action--touch, .dk-profile-now .dk-status { display: none; }
 }
 
 /* FollowButton: Seguindo é o controle do vínculo; apontar mostra o que o clique faz */

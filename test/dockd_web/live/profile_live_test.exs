@@ -25,14 +25,21 @@ defmodule DockdWeb.ProfileLiveTest do
   end
 
   describe "a visitor" do
-    test "sees the Estante and Recente, never a price", %{conn: conn} = ctx do
+    test "sees the head, the Estante and the Diário, never a price", %{conn: conn} = ctx do
       {:ok, view, html} = live(conn, ~p"/u/ana")
 
       assert has_element?(view, "#profile-head h1", "Ana")
+      assert has_element?(view, "#profile-head .dk-avatar", "A")
+      assert has_element?(view, "#profile-head", "@ana")
+      assert has_element?(view, "#profile-games b", "2")
+      assert has_element?(view, "#profile-year b", "#{length(Social.diary(ctx.ana))}")
       assert has_element?(view, "#profile-playing-now #profile-now-#{ctx.playing.id}")
-      assert has_element?(view, "#profile-stats a[href='/u/ana/quero']", "1 quero")
+      assert has_element?(view, "#profile-stat-quero[href='/u/ana/quero'] b", "1")
+      assert has_element?(view, "#profile-stat-jogando[href='/u/ana/jogando'] b", "1")
       assert has_element?(view, "#profile-sidebar")
-      assert has_element?(view, "#recent-#{ctx.playing.id} .dk-verb", "Começou a jogar")
+      assert has_element?(view, "#profile-diary-months .dk-month .dk-status--jogando")
+      refute has_element?(view, "#profile-edit")
+      refute has_element?(view, "#profile-finished")
       refute html =~ "R$"
       refute html =~ "79,90"
 
@@ -43,7 +50,7 @@ defmodule DockdWeb.ProfileLiveTest do
              )
     end
 
-    test "keeps the Quero count in the sidebar without another home-like rail",
+    test "shows Quero as a fan of five covers and the count only in the Estante",
          %{conn: conn, ana: ana} do
       for index <- 1..10 do
         {:ok, _} = Library.set_status(ana, game_fixture(%{title: "Wish #{index}"}), :quero)
@@ -51,8 +58,47 @@ defmodule DockdWeb.ProfileLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/u/ana")
 
-      assert has_element?(view, "#profile-stats a[href='/u/ana/quero']", "11 quero")
+      assert has_element?(view, "#profile-stat-quero[href='/u/ana/quero'] b", "11")
+      assert has_element?(view, "#profile-wishlist-link[href='/u/ana/quero']", "Ver todos")
+      refute has_element?(view, "#profile-wishlist-head span")
+
+      assert view
+             |> render()
+             |> LazyHTML.from_fragment()
+             |> LazyHTML.query("#profile-wishlist-fan .dk-poster")
+             |> Enum.count() == 5
+
       refute has_element?(view, "#profile-quero-strip")
+    end
+
+    test "shows the bio, place and link the owner wrote, with the link as its host",
+         %{conn: conn, ana: ana} do
+      {:ok, _} =
+        Dockd.Accounts.update_user_profile(ana, %{
+          bio: "Zerando um jogo por vez",
+          location: "Belém, Brasil",
+          link: "www.ana.dev/jogos"
+        })
+
+      {:ok, view, _html} = live(conn, ~p"/u/ana")
+
+      assert has_element?(view, "#profile-bio", "Zerando um jogo por vez")
+      assert has_element?(view, "#profile-location", "Belém, Brasil")
+      assert has_element?(view, "#profile-link[href='https://www.ana.dev/jogos']", "ana.dev")
+    end
+
+    test "charts the games finished in the year only once there is one",
+         %{conn: conn, ana: ana} do
+      {:ok, view, _html} = live(conn, ~p"/u/ana")
+      refute has_element?(view, "#profile-finished")
+
+      {:ok, _} =
+        Library.set_status(ana, game_fixture(%{title: "Celeste"}), :zerado, owned_elsewhere: true)
+
+      {:ok, view, _html} = live(conn, ~p"/u/ana")
+
+      assert has_element?(view, "#profile-finished-head", "Zerados em #{Date.utc_today().year}")
+      assert has_element?(view, "#profile-finished .dk-profile-histo i.is-on")
     end
 
     test "sees only the name when the profile is for friends", %{conn: conn, ana: ana} do
@@ -61,8 +107,12 @@ defmodule DockdWeb.ProfileLiveTest do
 
       assert has_element?(view, "#profile-head h1", "Ana")
       assert has_element?(view, "#profile-closed", "Perfil só para amigos.")
+      assert has_element?(view, "#profile-numbers #profile-followers", "Seguidores")
+      refute has_element?(view, "#profile-games")
+      refute has_element?(view, "#profile-year")
+      refute has_element?(view, "#profile-bio")
       refute has_element?(view, "#profile-jogando")
-      refute has_element?(view, "#profile-followers")
+      refute has_element?(view, "a#profile-followers")
 
       {:ok, view, _html} = live(conn, ~p"/u/ana/diario")
       assert has_element?(view, "#profile-closed")
@@ -73,6 +123,7 @@ defmodule DockdWeb.ProfileLiveTest do
          %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/u/ana")
       assert has_element?(view, "#profile-diary-link[href='/u/ana/diario']", "Ver diário")
+      assert has_element?(view, "#profile-diary-months .dk-month .dk-date--month")
 
       {:ok, view, html} = live(conn, ~p"/u/ana/diario")
       assert has_element?(view, "#profile-back", "Ana")
@@ -143,6 +194,7 @@ defmodule DockdWeb.ProfileLiveTest do
       {:ok, view, _html} = live(conn, ~p"/u/#{user.username}")
 
       refute has_element?(view, "#follow-button")
+      assert has_element?(view, "#profile-edit[href='/configuracoes']", "Editar perfil")
       assert has_element?(view, "#profile-visibility input[value='public'][checked]")
 
       view |> element("#profile-visibility") |> render_change(%{visibility: "friends"})

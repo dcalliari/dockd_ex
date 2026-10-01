@@ -190,31 +190,47 @@ defmodule Dockd.Social do
     :ok
   end
 
-  @doc "Compact library counts for the profile sidebar, without purchases or prices."
+  @doc """
+  How many games `user` has in each of the six statuses, for the profile's Estante bar.
+  Counts only: no price, purchase, platform or media.
+  """
   def profile_stats(%User{} = user) do
     items = Shelf.list(user)
+    counts = Enum.frequencies_by(items, & &1.status)
 
     %{
       games: length(items),
-      playing: Enum.count(items, &(&1.status == :jogando)),
-      finished: Enum.count(items, &(&1.status == :zerado)),
-      wanted: Enum.count(items, &(&1.status == :quero)),
-      platforms: items |> Enum.flat_map(& &1.platforms) |> Enum.frequencies(),
-      media: items |> Enum.flat_map(&Shelf.media/1) |> Enum.frequencies(),
-      friends: friend_count(user)
+      statuses: Map.new(Shelf.statuses(), &{&1, Map.get(counts, &1, 0)})
     }
   end
 
-  defp friend_count(%User{id: user_id}) do
-    Repo.aggregate(
-      from(f in Follow,
-        join: back in Follow,
-        on: back.follower_id == f.followed_id and back.followed_id == f.follower_id,
-        where: f.follower_id == ^user_id
-      ),
-      :count
-    )
+  @doc """
+  What the diary says about one `year`: how many records it holds and how many games
+  were finished in each month (a list of twelve counts, January first).
+  """
+  def year_summary(diary, year) do
+    entries = Enum.filter(diary, &(DateTime.to_date(&1.at).year == year))
+
+    finished =
+      entries
+      |> Enum.filter(&(&1.status == :zerado))
+      |> Enum.frequencies_by(&DateTime.to_date(&1.at).month)
+
+    %{records: length(entries), finished: Enum.map(1..12, &Map.get(finished, &1, 0))}
   end
+
+  @doc """
+  The newest `limit` diary entries grouped by month, newest month first, as
+  `{first_day_of_month, entries}`.
+  """
+  def diary_months(diary, limit) do
+    diary
+    |> Enum.take(limit)
+    |> Enum.chunk_by(&month_start(&1.at))
+    |> Enum.map(fn [first | _] = entries -> {month_start(first.at), entries} end)
+  end
+
+  defp month_start(at), do: at |> DateTime.to_date() |> Date.beginning_of_month()
 
   @doc """
   The followers or the followed accounts of `owner`, newest follow first, each with the
@@ -298,38 +314,6 @@ defmodule Dockd.Social do
 
   defp changed_at(%Shelf{entry: %Entry{updated_at: at}}), do: at
   defp changed_at(_item), do: ~U[1970-01-01 00:00:00Z]
-
-  @doc """
-  The latest status changes of `owner`, one per game: the change that led to the status
-  the game has now, as a verb (`Zerou`, `Começou a jogar`, `Quer`). Purchases, prices,
-  ownership, vetoes and games that left the library never appear.
-  """
-  def recent(%User{id: owner_id} = owner, limit \\ 5) do
-    shelf = owner |> Shelf.list() |> Map.new(&{&1.game.id, &1})
-
-    owner_id
-    |> status_events()
-    |> Enum.flat_map(fn event ->
-      case change(event) do
-        nil ->
-          []
-
-        {:backlog, _verb} ->
-          []
-
-        {status, verb} ->
-          [%{game_id: event.game_id, status: status, verb: verb, at: event.occurred_at}]
-      end
-    end)
-    |> Enum.uniq_by(& &1.game_id)
-    |> Enum.flat_map(fn %{game_id: game_id, status: status} = change ->
-      case shelf[game_id] do
-        %Shelf{status: ^status} = item -> [%{item: item, verb: change.verb, at: change.at}]
-        _ -> []
-      end
-    end)
-    |> Enum.take(limit)
-  end
 
   @doc """
   The Diário of a profile (`maquetes/perfil-diario.html`, caminho A): every status change

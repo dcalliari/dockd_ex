@@ -195,28 +195,52 @@ defmodule Dockd.SocialTest do
       refute Enum.any?(Social.favorites(ana), &(&1.game_id == games.playing.game.id))
     end
 
-    test "counts the library without prices or purchases", %{ana: ana} do
+    test "counts the library by the six statuses, without prices or purchases", %{ana: ana} do
       stats = Social.profile_stats(ana)
 
       assert stats.games == 5
-      assert stats.playing == 1
-      assert stats.finished == 1
-      assert stats.wanted == 1
-      assert stats.media.digital == 4
+
+      assert stats.statuses == %{
+               quero: 1,
+               backlog: 1,
+               jogando: 1,
+               pausado: 0,
+               zerado: 1,
+               larguei: 1
+             }
     end
 
-    test "Recente says the change behind each current status and nothing bought or owned",
+    test "the year summary counts the year's records and the games finished by month",
          %{ana: ana, games: games} do
-      recent = Social.recent(ana, 10)
-      verbs = Map.new(recent, &{&1.item.game.id, &1.verb})
+      diary = Social.diary(ana)
+      today = Date.utc_today()
+      summary = Social.year_summary(diary, today.year)
 
-      assert verbs[games.playing.game.id] == "Começou a jogar"
-      assert verbs[games.finished.game.id] == "Zerou"
-      assert verbs[games.dropped.game.id] == "Largou"
-      assert verbs[games.wanted.game.id] == "Quer"
-      refute Map.has_key?(verbs, games.owned.game.id)
-      refute Map.has_key?(verbs, games.removed.game.id)
-      assert length(recent) == 4
+      assert summary.records == length(diary)
+      assert length(summary.finished) == 12
+      assert Enum.at(summary.finished, today.month - 1) == 1
+      assert Enum.sum(summary.finished) == 1
+
+      assert Social.year_summary(diary, today.year - 1) == %{
+               records: 0,
+               finished: List.duplicate(0, 12)
+             }
+
+      assert games.finished.game
+    end
+
+    test "the Diário groups by month, newest first, up to the limit", %{ana: ana} do
+      diary = Social.diary(ana)
+      today = Date.utc_today()
+
+      assert [{month, entries}] = Social.diary_months(diary, 3)
+      assert month == Date.beginning_of_month(today)
+      assert length(entries) == 3
+
+      older = %{hd(diary) | at: ~U[2025-12-31 12:00:00Z]}
+
+      assert [{^month, _}, {~D[2025-12-01], [^older]}] =
+               Social.diary_months([hd(diary), older], 5)
     end
 
     test "the Diário lists every status change of games still in the library",

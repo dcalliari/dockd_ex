@@ -1,11 +1,12 @@
 defmodule DockdWeb.ProfileLive do
   @moduledoc """
-  Perfil público em `/u/:username` (`maquetes/perfil-redesenho.html`, Cartão de visita):
-  favoritos escolhidos, Jogando agora e Recente na coluna principal, com os números da
-  estante e relações na lateral; as listas de seguidores e seguindo; as grades completas
-  de status; e o Diário (`maquetes/perfil-diario.html`, caminho A), uma linha por troca de
-  status com o bloco de data na primeira do dia. As capas levam a etiqueta de quem olha,
-  como em Descobrir.
+  Perfil público em `/u/:username` (`maquetes/perfil-completo.html`, retrato em movimento):
+  cabeçalho com monograma, bio, local, link e números; favoritos escolhidos, Jogando agora
+  e o Diário por mês na coluna principal, com a barra da estante, o Quero e os zerados do
+  ano na lateral; as listas de seguidores e seguindo; as grades completas de status; e o
+  Diário inteiro (`maquetes/perfil-diario.html`, caminho A), uma linha por troca de status
+  com o bloco de data na primeira do dia. As capas levam a etiqueta de quem olha, como em
+  Descobrir.
 
   O perfil é aberto na web por padrão; com Só amigos, quem não é amigo vê só o nome, as
   contagens e o botão Seguir.
@@ -19,6 +20,9 @@ defmodule DockdWeb.ProfileLive do
 
   @game_events GameEvents.events()
   @day 10
+  @now 4
+  @fan 5
+  @diary_rows 8
   @sections [
     jogando: {"Jogando agora", "jogando"},
     zerado: {"Zerados", "zerados"},
@@ -33,6 +37,7 @@ defmodule DockdWeb.ProfileLive do
     {:ok,
      socket
      |> assign(owner: owner, user: viewer, page_title: owner.name)
+     |> assign(year: Date.utc_today().year, stats: nil, summary: nil)
      |> assign(open_days: MapSet.new())
      |> GameEvents.init()
      |> UserAuth.halt_visitor_events(["favorite", "more_day", "unfavorite"])
@@ -119,19 +124,20 @@ defmodule DockdWeb.ProfileLive do
     )
   end
 
-  defp load_view(%{assigns: %{owner: owner, user: viewer}} = socket, true) do
+  defp load_view(%{assigns: %{owner: owner, user: viewer, live_action: action}} = socket, true) do
     mine = if viewer, do: viewer |> Shelf.list() |> Map.new(&{&1.game.id, &1}), else: %{}
-    shelf = Social.shelf(owner)
     favorites = Social.favorites(owner)
+    diary = if action == :show, do: Social.diary(owner), else: []
 
     assign(socket,
-      shelf: shelf,
+      shelf: Social.shelf(owner),
       favorites: favorites,
       favorite_ids: favorites |> Map.new(&{&1.game_id, true}),
-      stats: Social.profile_stats(owner),
-      recent: if(socket.assigns.live_action == :show, do: Social.recent(owner), else: []),
+      stats: if(action == :show, do: Social.profile_stats(owner)),
+      summary: if(action == :show, do: Social.year_summary(diary, socket.assigns.year)),
+      diary_months: Social.diary_months(diary, @diary_rows),
       mine: mine,
-      favorite_items: Shelf.list(owner)
+      favorite_items: if(action == :favorites, do: Shelf.list(owner), else: [])
     )
   end
 
@@ -145,7 +151,7 @@ defmodule DockdWeb.ProfileLive do
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, sections: @sections, day: @day)
+    assigns = assign(assigns, sections: @sections, day: @day, now: @now, fan: @fan)
 
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope} catalog_review={@catalog_review}>
@@ -161,6 +167,9 @@ defmodule DockdWeb.ProfileLive do
         counts={@counts}
         relation={@relation}
         links={@visible}
+        year={@year}
+        games={@stats && @stats.games}
+        records={@summary && @summary.records}
       />
 
       <.empty_state :if={!@visible} id="profile-closed">Perfil só para amigos.</.empty_state>
@@ -170,34 +179,39 @@ defmodule DockdWeb.ProfileLive do
           <% :show -> %>
             <div id="profile-layout" class="dk-profile-layout">
               <main class="dk-profile-main">
-                <.section_head id="profile-favorites" title="Favoritos" count={length(@favorites)}>
-                  <:action :if={@relation == :self}>
-                    <.link id="profile-edit-favorites" navigate={~p"/u/#{@owner.username}/favoritos"}>
-                      Editar favoritos
-                    </.link>
-                  </:action>
-                </.section_head>
-                <div :if={@favorites != []} id="profile-favorites-grid" class="dk-profile-favorites">
-                  <.favorite_card
-                    :for={favorite <- @favorites}
-                    favorite={favorite}
-                    editable={@relation == :self}
-                  />
-                </div>
+                <%= if @favorites != [] || @relation == :self do %>
+                  <.section_head id="profile-favorites" title="Favoritos">
+                    <:action :if={@relation == :self}>
+                      <.link
+                        id="profile-edit-favorites"
+                        navigate={~p"/u/#{@owner.username}/favoritos"}
+                      >
+                        Editar favoritos
+                      </.link>
+                    </:action>
+                  </.section_head>
+                  <div
+                    :if={@favorites != []}
+                    id="profile-favorites-grid"
+                    class="dk-profile-favorites"
+                  >
+                    <.favorite_card
+                      :for={favorite <- @favorites}
+                      favorite={favorite}
+                      editable={@relation == :self}
+                    />
+                  </div>
+                <% end %>
 
                 <%= if @shelf.jogando != [] do %>
-                  <% item = hd(@shelf.jogando) %>
-                  <.section_head
-                    id="profile-playing"
-                    title="Jogando agora"
-                    count={length(@shelf.jogando)}
-                  >
-                    <:action :if={length(@shelf.jogando) > 1}>
+                  <.section_head id="profile-playing" title="Jogando agora">
+                    <:action>
                       <.link navigate={section_path(@owner, :jogando)}>Ver todos</.link>
                     </:action>
                   </.section_head>
                   <div id="profile-playing-now" class="dk-profile-now">
                     <.profile_card
+                      :for={item <- Enum.take(@shelf.jogando, @now)}
                       item={mine(@mine, item)}
                       rail={:now}
                       user={@user}
@@ -207,41 +221,25 @@ defmodule DockdWeb.ProfileLive do
                   </div>
                 <% end %>
 
-                <%= if @recent != [] do %>
-                  <.section_head id="profile-recent" title="Recente">
+                <%= if @diary_months != [] do %>
+                  <.section_head id="profile-recent" title="Diário">
                     <:action>
                       <.link id="profile-diary-link" navigate={~p"/u/#{@owner.username}/diario"}>
                         Ver diário
                       </.link>
                     </:action>
                   </.section_head>
-                  <div id="profile-recent-rows" class="dk-profile-timeline">
-                    <div
-                      :for={change <- @recent}
-                      id={"recent-#{change.item.game.id}"}
-                      class="dk-row"
-                    >
-                      <.poster
-                        title={change.item.game.title}
-                        cover_url={change.item.game.cover_url}
-                        navigate={~p"/jogos/#{change.item.game.id}"}
-                        size="sm"
-                      />
-                      <div>
-                        <.link navigate={~p"/jogos/#{change.item.game.id}"} class="dk-row__title">
-                          {change.item.game.title}
-                        </.link>
-                        <div class="dk-row__meta">
-                          <b class="dk-verb">{change.verb}</b> · {relative_label(change.at)}
-                        </div>
-                      </div>
-                      <div class="dk-row__end"></div>
-                    </div>
+                  <div id="profile-diary-months">
+                    <.diary_month
+                      :for={{month, entries} <- @diary_months}
+                      month={month}
+                      entries={entries}
+                    />
                   </div>
                 <% end %>
 
                 <.empty_state
-                  :if={@favorites == [] && @shelf.jogando == [] && @recent == []}
+                  :if={@favorites == [] && @shelf.jogando == [] && @diary_months == []}
                   id="profile-empty"
                 >
                   Nada no perfil ainda.
@@ -249,7 +247,18 @@ defmodule DockdWeb.ProfileLive do
               </main>
 
               <aside id="profile-sidebar" class="dk-profile-sidebar">
-                <.profile_stats stats={@stats} counts={@counts} owner={@owner} />
+                <.profile_shelf stats={@stats} owner={@owner} />
+                <.profile_wishlist
+                  :if={@shelf.quero != []}
+                  owner={@owner}
+                  items={@shelf.quero}
+                  fan={@fan}
+                />
+                <.profile_finished
+                  :if={Enum.sum(@summary.finished) > 0}
+                  summary={@summary}
+                  year={@year}
+                />
               </aside>
             </div>
           <% :favorites -> %>
@@ -399,7 +408,6 @@ defmodule DockdWeb.ProfileLive do
       />
       <.link navigate={~p"/jogos/#{@favorite.game.id}"} class="dk-card__text">
         <span class="dk-card__title">{@favorite.game.title}</span>
-        <span class="dk-card__meta">{platform_label(@favorite.game.releases)}</span>
       </.link>
       <button
         :if={@editable}
@@ -447,42 +455,116 @@ defmodule DockdWeb.ProfileLive do
     """
   end
 
+  @month_labels ~w(JAN FEV MAR ABR MAI JUN JUL AGO SET OUT NOV DEZ)
+
+  attr :month, Date, required: true
+  attr :entries, :list, required: true
+
+  # A month of the Diário on the profile: the DateBlock once, then one line per record with
+  # its day, so the page reads as a ledger and not as a second Início.
+  defp diary_month(assigns) do
+    ~H"""
+    <div id={"profile-month-#{Date.to_iso8601(@month)}"} class="dk-month">
+      <.date_block date={@month} precision={:month} release={false} />
+      <div class="dk-month__days">
+        <div :for={entry <- @entries} id={"profile-diary-#{entry.id}"} class="dk-month__day">
+          <span class="dk-month__d">{DateTime.to_date(entry.at).day}</span>
+          <.poster
+            title={entry.item.game.title}
+            cover_url={entry.item.game.cover_url}
+            navigate={~p"/jogos/#{entry.item.game.id}"}
+            size="sm"
+          />
+          <.link navigate={~p"/jogos/#{entry.item.game.id}"} class="dk-month__title">
+            {entry.item.game.title}
+          </.link>
+          <.status_chip status={entry.status} size="sm" />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   attr :stats, :map, required: true
-  attr :counts, :map, required: true
   attr :owner, :map, required: true
 
-  defp profile_stats(assigns) do
+  # The Estante bar: the library by the six statuses, the same colors as their tags.
+  defp profile_shelf(assigns) do
+    assigns =
+      assign(assigns, :rows, Enum.filter(Shelf.statuses(), &(assigns.stats.statuses[&1] > 0)))
+
     ~H"""
-    <section id="profile-stats">
-      <.section_head id="profile-stats-head" title="Estante" count={@stats.games} />
-      <div class="dk-profile-stats">
-        <.link navigate={section_path(@owner, :jogando)}><b>{@stats.playing}</b> jogando</.link>
-        <.link navigate={section_path(@owner, :zerado)}><b>{@stats.finished}</b> zerados</.link>
-        <.link navigate={section_path(@owner, :quero)}><b>{@stats.wanted}</b> quero</.link>
+    <section :if={@rows != []} id="profile-stats">
+      <.section_head id="profile-stats-head" title="Estante" />
+      <div class="dk-profile-bar" role="img" aria-label="Jogos por status">
+        <i
+          :for={status <- @rows}
+          class={"dk-profile-bar__#{status}"}
+          style={"flex: #{@stats.statuses[status]}"}
+        ></i>
+      </div>
+      <div class="dk-profile-legend">
+        <%= for status <- @rows do %>
+          <.link
+            :if={status in [:jogando, :zerado, :quero]}
+            id={"profile-stat-#{status}"}
+            navigate={section_path(@owner, status)}
+          >
+            <span class={"dk-profile-legend__#{status}"}>{status_label(status)}</span>
+            <b>{@stats.statuses[status]}</b>
+          </.link>
+          <div :if={status not in [:jogando, :zerado, :quero]} id={"profile-stat-#{status}"}>
+            <span class={"dk-profile-legend__#{status}"}>{status_label(status)}</span>
+            <b>{@stats.statuses[status]}</b>
+          </div>
+        <% end %>
       </div>
     </section>
+    """
+  end
 
-    <section id="profile-platforms">
-      <.section_head id="profile-platforms-head" title="Plataformas" />
-      <p class="dk-profile-meta"><b>{Map.get(@stats.platforms, :switch, 0)}</b> Switch</p>
-      <p class="dk-profile-meta"><b>{Map.get(@stats.platforms, :switch_2, 0)}</b> Switch 2</p>
+  attr :owner, :map, required: true
+  attr :items, :list, required: true
+  attr :fan, :integer, required: true
+
+  defp profile_wishlist(assigns) do
+    ~H"""
+    <section id="profile-wishlist">
+      <.section_head id="profile-wishlist-head" title="Quero">
+        <:action>
+          <.link id="profile-wishlist-link" navigate={section_path(@owner, :quero)}>Ver todos</.link>
+        </:action>
+      </.section_head>
+      <div id="profile-wishlist-fan" class="dk-profile-fan">
+        <.poster
+          :for={item <- Enum.take(@items, @fan)}
+          title={item.game.title}
+          cover_url={item.game.cover_url}
+          navigate={~p"/jogos/#{item.game.id}"}
+        />
+      </div>
     </section>
+    """
+  end
 
-    <section id="profile-media">
-      <.section_head id="profile-media-head" title="Mídia" />
-      <p class="dk-profile-meta"><b>{Map.get(@stats.media, :physical, 0)}</b> físico</p>
-      <p class="dk-profile-meta"><b>{Map.get(@stats.media, :digital, 0)}</b> digital</p>
-    </section>
+  attr :summary, :map, required: true
+  attr :year, :integer, required: true
 
-    <section id="profile-people-summary">
-      <.section_head id="profile-people-summary-head" title="Pessoas" />
-      <p class="dk-profile-meta">
-        <.link navigate={~p"/u/#{@owner.username}/seguindo"}><b>{@counts.following}</b> seguindo</.link>
-      </p>
-      <p class="dk-profile-meta">
-        <.link navigate={~p"/u/#{@owner.username}/seguidores"}><b>{@counts.followers}</b> seguidores</.link>
-      </p>
-      <p class="dk-profile-meta"><b>{@stats.friends}</b> amigos</p>
+  defp profile_finished(assigns) do
+    assigns = assign(assigns, max: Enum.max(assigns.summary.finished), labels: @month_labels)
+
+    ~H"""
+    <section id="profile-finished">
+      <.section_head id="profile-finished-head" title={"Zerados em #{@year}"} />
+      <div class="dk-profile-histo" role="img" aria-label={"Zerados por mês em #{@year}"}>
+        <i
+          :for={{count, label} <- Enum.zip(@summary.finished, @labels)}
+          title={"#{label}: #{count}"}
+          class={count > 0 && "is-on"}
+          style={"height: #{if(count > 0, do: round(count / @max * 100), else: 6)}%"}
+        ></i>
+      </div>
+      <p class="dk-profile-histo__axis"><span>JAN</span><span>JUN</span><span>DEZ</span></p>
     </section>
     """
   end

@@ -47,6 +47,53 @@ defmodule DockdWeb.SettingsLiveTest do
       assert updated.username == "calliari"
     end
 
+    test "saves the bio, place and link, and clears them when emptied", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+
+      view
+      |> element("#settings-profile-form")
+      |> render_submit(%{
+        "user" => %{
+          "name" => user.name,
+          "username" => user.username,
+          "bio" => "Zerando um jogo por vez",
+          "location" => "Belém",
+          "link" => "calliari.dev"
+        }
+      })
+
+      updated = Accounts.get_user!(user.id)
+      assert updated.bio == "Zerando um jogo por vez"
+      assert updated.location == "Belém"
+      assert updated.link == "https://calliari.dev"
+
+      view
+      |> element("#settings-profile-form")
+      |> render_submit(%{
+        "user" => %{"name" => user.name, "username" => user.username, "bio" => "  ", "link" => ""}
+      })
+
+      assert Accounts.get_user!(user.id).bio == nil
+      assert Accounts.get_user!(user.id).link == nil
+    end
+
+    test "rejects a link that is not a web address", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+
+      view
+      |> element("#settings-profile-form")
+      |> render_submit(%{
+        "user" => %{
+          "name" => user.name,
+          "username" => user.username,
+          "link" => "javascript:alert(1)"
+        }
+      })
+
+      assert has_element?(view, "#settings-profile-form .dk-field__error", "Link inválido")
+      assert Accounts.get_user!(user.id).link == nil
+    end
+
     test "shows validation beside the profile field and updates privacy", %{
       conn: conn,
       user: user

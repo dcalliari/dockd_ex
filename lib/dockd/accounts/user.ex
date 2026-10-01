@@ -11,6 +11,9 @@ defmodule Dockd.Accounts.User do
     field :email, :string
     field :admin, :boolean, default: false
     field :username, :string
+    field :bio, :string
+    field :location, :string
+    field :link, :string
     field :profile_visibility, Ecto.Enum, values: [:public, :friends], default: :public
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
@@ -42,13 +45,21 @@ defmodule Dockd.Accounts.User do
   def profile_changeset(user, attrs, opts \\ []) do
     changeset =
       user
-      |> cast(attrs, [:name, :username])
+      |> cast(attrs, [:name, :username, :bio, :location, :link])
       |> update_change(:name, &trim/1)
+      |> update_change(:bio, &blank_to_nil/1)
+      |> update_change(:location, &blank_to_nil/1)
+      |> update_change(:link, &blank_to_nil/1)
+      |> update_change(:link, &put_scheme/1)
       |> update_change(:username, fn value -> value |> trim() |> downcase() end)
       |> validate_required([:name, :username], message: "Informe este campo")
       |> validate_length(:name, max: 60, message: "Nome longo demais")
       |> validate_length(:username, min: 3, max: 30, message: "Use de 3 a 30 caracteres")
       |> validate_format(:username, ~r/^[a-z0-9]+$/, message: "Use letras e números")
+      |> validate_length(:bio, max: 140, message: "Máximo de 140 caracteres")
+      |> validate_length(:location, max: 60, message: "Máximo de 60 caracteres")
+      |> validate_length(:link, max: 200, message: "Link longo demais")
+      |> validate_link()
 
     if Keyword.get(opts, :validate_unique, true) do
       changeset
@@ -125,6 +136,30 @@ defmodule Dockd.Accounts.User do
   # `cast/3` turns an empty string into `nil` before this runs.
   defp trim(nil), do: nil
   defp trim(string), do: String.trim(string)
+
+  defp blank_to_nil(nil), do: nil
+
+  defp blank_to_nil(string) do
+    case String.trim(string) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  # A bare domain is a link too: the owner types `site.com`, the profile links `https://site.com`.
+  defp put_scheme(nil), do: nil
+  defp put_scheme(link), do: if(link =~ "://", do: link, else: "https://" <> link)
+
+  defp validate_link(changeset) do
+    validate_change(changeset, :link, fn :link, link ->
+      if web_address?(URI.parse(link)), do: [], else: [link: "Link inválido"]
+    end)
+  end
+
+  defp web_address?(%URI{scheme: scheme, host: host}) when scheme in ["http", "https"],
+    do: is_binary(host) and String.contains?(host, ".")
+
+  defp web_address?(_uri), do: false
 
   defp downcase(nil), do: nil
   defp downcase(string), do: String.downcase(string)

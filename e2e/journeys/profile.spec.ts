@@ -20,6 +20,8 @@ test("Início shows what friends play and the menu leads to the profile", async 
   await expect(page.locator("#profile-head h1")).toHaveText("E2e");
   await expect(page.locator("#profile-visibility")).toBeVisible();
   await expect(page.locator("#follow-button")).toHaveCount(0);
+  await expect(page.locator("#profile-numbers")).toContainText("Jogos");
+  await expect(page.locator("#profile-stats")).toBeVisible();
   await expect(page.getByText("R$")).toHaveCount(0);
   if (shots) await page.screenshot({ path: `${shots}/perfil-1280.png`, fullPage: true });
 
@@ -32,6 +34,25 @@ test("Início shows what friends play and the menu leads to the profile", async 
   await page.goto("/u/e2e/quero");
   await expect(page.locator("#profile-quero")).toBeVisible();
   await expect(page.getByText("R$")).toHaveCount(0);
+});
+
+test("Editar perfil leads to Configurações and the bio, place and link show on the profile", async ({ page }) => {
+  await signIn(page);
+  await page.goto("/u/e2e");
+  await page.locator("#profile-edit").click();
+  await expect(page).toHaveURL(/\/configuracoes$/);
+
+  await page.locator("#settings-profile-form input[name='user[bio]']").fill("Zerando um jogo por vez");
+  await page.locator("#settings-profile-form input[name='user[location]']").fill("Belém, Brasil");
+  await page.locator("#settings-profile-form input[name='user[link]']").fill("e2e.example.com");
+  await page.locator("#settings-profile-submit").click();
+  await expect(page.locator("#settings-profile-notice")).toHaveText("Perfil atualizado");
+
+  await page.goto("/u/e2e");
+  await expect(page.locator("#profile-bio")).toHaveText("Zerando um jogo por vez");
+  await expect(page.locator("#profile-location")).toHaveText("Belém, Brasil");
+  await expect(page.locator("#profile-link")).toHaveText("e2e.example.com");
+  await expect(page.locator("#profile-link")).toHaveAttribute("href", "https://e2e.example.com");
 });
 
 test("followers show the friend, and following back makes a friend", async ({ page }) => {

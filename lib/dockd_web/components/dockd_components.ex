@@ -297,7 +297,7 @@ defmodule DockdWeb.DockdComponents do
   attr :field, Phoenix.HTML.FormField, required: true
   attr :type, :string, default: "text"
   attr :placeholder, :string, required: true
-  attr :rest, :global, include: ~w(autocomplete disabled readonly required phx-debounce)
+  attr :rest, :global, include: ~w(autocomplete disabled readonly required maxlength phx-debounce)
 
   def text_field(assigns) do
     assigns = assign(assigns, :errors, Enum.map(assigns.field.errors, &translate_error/1))
@@ -1349,44 +1349,89 @@ defmodule DockdWeb.DockdComponents do
   # Profile (maquetes/perfil-social.html, decided on 28/09/2026)
 
   @doc """
-  ProfileHead: the name in `t-display`, with no photo nor initials, the friend label when
-  the viewer and the owner follow each other, the follows in the metadata and, at the
-  right, FollowButton or, on one's own profile, the Choice of who sees it.
+  ProfileHead (`maquetes/perfil-completo.html`): a monogram of the initials, the name in
+  `t-display` with the friend label and `@username`, the bio, place and link the owner
+  wrote, and a strip of numbers. At the right, FollowButton or, on one's own profile, the
+  Choice of who sees it and Editar perfil. While the profile is closed to the viewer only
+  the name and the follow counts remain.
   """
   attr :owner, :map, required: true
   attr :counts, :map, required: true
   attr :relation, :atom, required: true
   attr :links, :boolean, default: true, doc: "false while the profile is closed to the viewer"
+  attr :games, :integer, default: nil, doc: "library size, only for a profile the viewer sees"
+  attr :year, :integer, required: true
+  attr :records, :integer, default: nil, doc: "diary records of `year`, like `games`"
 
   def profile_head(assigns) do
     ~H"""
     <header id="profile-head" class="dk-profile">
+      <span class="dk-avatar" aria-hidden="true">{profile_initials(@owner.name)}</span>
       <div class="dk-profile__who">
         <h1 class="t-display">{@owner.name}</h1>
+        <span class="dk-profile__user">@{@owner.username}</span>
         <.friend_mark :if={@relation == :friends} />
       </div>
-      <p class="dk-profile__meta">
-        <.link :if={@links} id="profile-following" navigate={~p"/u/#{@owner.username}/seguindo"}>
-          <b>{@counts.following}</b> seguindo
-        </.link>
-        <span :if={!@links}><b>{@counts.following}</b> seguindo</span>
-        ·
-        <.link :if={@links} id="profile-followers" navigate={~p"/u/#{@owner.username}/seguidores"}>
-          <b>{@counts.followers}</b> {followers_label(@counts.followers)}
-        </.link>
-        <span :if={!@links}><b>{@counts.followers}</b> {followers_label(@counts.followers)}</span>
-        <span :if={@relation == :followed_by} class="dk-profile__you">Segue você</span>
-      </p>
       <div class="dk-profile__action">
         <.visibility_choice :if={@relation == :self} visibility={@owner.profile_visibility} />
+        <.link
+          :if={@relation == :self}
+          id="profile-edit"
+          navigate={~p"/configuracoes"}
+          class="dk-btn dk-btn--secondary"
+        >
+          Editar perfil
+        </.link>
         <.follow_button :if={@relation != :self} relation={@relation} username={@owner.username} />
+      </div>
+      <p :if={@links && @owner.bio} id="profile-bio" class="dk-profile__bio">{@owner.bio}</p>
+      <p
+        :if={(@links && (@owner.location || @owner.link)) || @relation == :followed_by}
+        class="dk-profile__meta"
+      >
+        <span :if={@links && @owner.location} id="profile-location">{@owner.location}</span>
+        <a
+          :if={@links && @owner.link}
+          id="profile-link"
+          href={@owner.link}
+          target="_blank"
+          rel="nofollow noopener noreferrer"
+        >
+          {link_host(@owner.link)}
+        </a>
+        <span :if={@relation == :followed_by} class="dk-profile__you">Segue você</span>
+      </p>
+      <div id="profile-numbers" class="dk-profile__nums">
+        <span :if={@games} id="profile-games"><b>{@games}</b><small>Jogos</small></span>
+        <span :if={@records} id="profile-year"><b>{@records}</b><small>Em {@year}</small></span>
+        <.link :if={@links} id="profile-following" navigate={~p"/u/#{@owner.username}/seguindo"}>
+          <b>{@counts.following}</b><small>Seguindo</small>
+        </.link>
+        <span :if={!@links} id="profile-following"><b>{@counts.following}</b><small>Seguindo</small></span>
+        <.link :if={@links} id="profile-followers" navigate={~p"/u/#{@owner.username}/seguidores"}>
+          <b>{@counts.followers}</b><small>{followers_label(@counts.followers)}</small>
+        </.link>
+        <span :if={!@links} id="profile-followers">
+          <b>{@counts.followers}</b><small>{followers_label(@counts.followers)}</small>
+        </span>
       </div>
     </header>
     """
   end
 
-  defp followers_label(1), do: "seguidor"
-  defp followers_label(_), do: "seguidores"
+  defp followers_label(1), do: "Seguidor"
+  defp followers_label(_), do: "Seguidores"
+
+  # The first letter of the first two words of a name: `Daniel Calliari` is `DC`.
+  defp profile_initials(name) do
+    name
+    |> String.split()
+    |> Enum.take(2)
+    |> Enum.map_join(&(&1 |> String.first() |> String.upcase()))
+  end
+
+  defp link_host(link),
+    do: link |> URI.parse() |> Map.fetch!(:host) |> String.replace_prefix("www.", "")
 
   @doc "The friend label beside a name: both accounts follow each other."
   def friend_mark(assigns) do
