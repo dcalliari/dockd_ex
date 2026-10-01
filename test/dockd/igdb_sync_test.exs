@@ -15,7 +15,7 @@ defmodule Dockd.IGDBSyncTest do
     :ok
   end
 
-  test "maps metadata and platform dates, without changing availability" do
+  test "maps metadata and platform dates, keeping an availability IGDB agrees with" do
     external = game_response()
     stub_igdb(external)
 
@@ -36,6 +36,36 @@ defmodule Dockd.IGDBSyncTest do
 
     refute Enum.any?(game.releases, & &1.physical_available)
     assert Enum.all?(game.releases, & &1.digital_available)
+  end
+
+  test "sync corrects an exclusivity mark IGDB's platforms contradict" do
+    # IGDB lists the Switch 2 remake on Switch 2 only; the catalog had marked it as a
+    # Nintendo exclusive on both consoles.
+    stub_igdb(Map.put(game_response(), "platforms", [%{"id" => 508}]))
+
+    {:ok, game} =
+      Catalog.create_game(%{title: "Local", availability: :nintendo_exclusive, igdb_id: 42})
+
+    assert {:ok, %{results: [{:ok, result}]}} = Catalog.sync_igdb()
+    assert Repo.get!(Game, game.id).availability == :switch2_exclusive
+    refute result.availability_difference
+  end
+
+  test "a game that stops being multiplatform drops its list of other platforms" do
+    stub_igdb(Map.put(game_response(), "platforms", [%{"id" => 508}]))
+
+    {:ok, game} =
+      Catalog.create_game(%{
+        title: "Local",
+        availability: :multiplatform,
+        other_platforms: ["pc"],
+        igdb_id: 42
+      })
+
+    assert {:ok, _} = Catalog.sync_igdb()
+    game = Repo.get!(Game, game.id)
+    assert game.availability == :switch2_exclusive
+    assert game.other_platforms == []
   end
 
   test "sync heals a wrong slug always, and a shortened title only when the rename is clear" do

@@ -145,6 +145,7 @@ defmodule Dockd.Catalog do
       })
       |> put_canonical_slug(external)
       |> put_clear_title(game.title, external)
+      |> put_availability(external)
 
     game =
       case game |> Game.changeset(attrs) |> Repo.update() do
@@ -395,6 +396,18 @@ defmodule Dockd.Catalog do
     do: Map.put(attrs, :slug, slug)
 
   defp put_canonical_slug(attrs, _external), do: attrs
+
+  # The exclusivity mark follows the platforms IGDB lists, on every refresh, like the slug:
+  # a game imported while IGDB listed it differently (a Switch 2 remake first seen beside
+  # the original, say) would otherwise keep the wrong mark forever. A game that is no
+  # longer multiplatform leaves its list of other platforms empty, as the changeset asks.
+  defp put_availability(attrs, external) do
+    case suggested_availability(external) do
+      nil -> attrs
+      :multiplatform -> Map.put(attrs, :availability, :multiplatform)
+      exclusive -> Map.merge(attrs, %{availability: exclusive, other_platforms: []})
+    end
+  end
 
   # A manually typed or matched title is corrected to IGDB's official name only when the
   # difference is unambiguous (the local title shortened or missing the official prefix);

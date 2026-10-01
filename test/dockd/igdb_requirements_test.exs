@@ -289,7 +289,8 @@ defmodule Dockd.IGDBRequirementsTest do
     assert {:ok, _} = Catalog.sync_igdb()
     assert {:created, _} = import_game()
     assert table_counts() == before
-    assert Repo.get!(Game, game.id).availability == :multiplatform
+    # the exclusivity mark follows IGDB's platforms (Switch only here); nothing personal moves
+    assert Repo.get!(Game, game.id).availability == :nintendo_exclusive
   end
 
   test "IGDB routes validate success responses and document not configured errors" do
