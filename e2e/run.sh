@@ -15,8 +15,13 @@ export BASE_URL="${BASE_URL:-http://localhost:${PORT}}"
 mix ecto.create --quiet
 mix ecto.migrate --quiet
 mix run priv/repo/e2e_seeds.exs
-if [[ -w priv/static/assets/css/app.css ]]; then
+# A fresh checkout (CI) has no priv/static/assets: without the bundles the page
+# never loads app.js and LiveView never connects. Only skip the rebuild when the
+# bundle exists but is not ours to rewrite.
+css=priv/static/assets/css/app.css
+if [[ ! -e "$css" || -w "$css" ]]; then
   MIX_ENV=dev mix deps.get
+  MIX_ENV=dev mix assets.setup
   MIX_ENV=dev mix assets.build
 fi
 
