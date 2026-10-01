@@ -22,6 +22,11 @@ defmodule DockdWeb do
       ~w(assets fonts images favicon.ico favicon.svg apple-touch-icon.png icon-192.png icon-512.png
       icon-maskable-512.png site.webmanifest robots.txt)
 
+  # `mix phx.digest` renames every root file to `<name>-<hash>.<ext>` and the layout links
+  # those names, so Plug.Static must also serve the root files by prefix: `only` alone
+  # matches the exact names and would 404 each digested icon and the manifest.
+  def static_prefixes, do: ~w(favicon apple-touch-icon site icon- robots)
+
   def router do
     quote do
       use Phoenix.Router, helpers: false
