@@ -190,16 +190,15 @@ defmodule DockdWeb.ProfileLiveTest do
       assert has_element?(view, "#profile-playing")
     end
 
-    test "chooses who sees its own profile in place of Seguir", %{conn: conn, user: user} do
+    test "offers Editar perfil in place of Seguir, with no visibility control", %{
+      conn: conn,
+      user: user
+    } do
       {:ok, view, _html} = live(conn, ~p"/u/#{user.username}")
 
       refute has_element?(view, "#follow-button")
       assert has_element?(view, "#profile-edit[href='/configuracoes']", "Editar perfil")
-      assert has_element?(view, "#profile-visibility input[value='public'][checked]")
-
-      view |> element("#profile-visibility") |> render_change(%{visibility: "friends"})
-      assert has_element?(view, "#profile-visibility input[value='friends'][checked]")
-      assert Dockd.Accounts.get_user!(user.id).profile_visibility == :friends
+      refute has_element?(view, "#profile-visibility")
     end
 
     test "carries its own status on the covers, as in Descobrir",

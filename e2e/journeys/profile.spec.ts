@@ -18,7 +18,8 @@ test("Início shows what friends play and the menu leads to the profile", async 
   await page.locator("#account-profile").click();
   await expect(page).toHaveURL(/\/u\/e2e$/);
   await expect(page.locator("#profile-head h1")).toHaveText("E2e");
-  await expect(page.locator("#profile-visibility")).toBeVisible();
+  await expect(page.locator("#profile-edit")).toBeVisible();
+  await expect(page.locator("#profile-visibility")).toHaveCount(0);
   await expect(page.locator("#follow-button")).toHaveCount(0);
   await expect(page.locator("#profile-numbers")).toContainText("Jogos");
   await expect(page.locator("#profile-stats")).toBeVisible();
@@ -90,17 +91,17 @@ test("a friend's profile carries the label and Seguindo", async ({ page }) => {
 
 test("Só amigos closes the profile to a visitor and Público opens it again", async ({ page, browser }) => {
   await signIn(page);
-  await page.goto("/u/e2e");
-  await page.locator("#profile-visibility label", { hasText: "Só amigos" }).click();
-  await expect(page.locator("#profile-visibility input[value='friends']")).toBeChecked();
+  await page.goto("/configuracoes");
+  await page.locator("#settings-visibility label", { hasText: "Só amigos" }).click();
+  await expect(page.locator("#settings-visibility input[value='friends']")).toBeChecked();
 
   const visitor = await browser.newPage();
   await visitor.goto("/u/e2e");
   await expect(visitor.locator("#profile-closed")).toHaveText("Perfil só para amigos.");
   await expect(visitor.locator("#follow-button")).toHaveText("Seguir");
 
-  await page.locator("#profile-visibility label", { hasText: "Público" }).click();
-  await expect(page.locator("#profile-visibility input[value='public']")).toBeChecked();
+  await page.locator("#settings-visibility label", { hasText: "Público" }).click();
+  await expect(page.locator("#settings-visibility input[value='public']")).toBeChecked();
   await visitor.reload();
   await expect(visitor.locator("#profile-closed")).toHaveCount(0);
   await expect(visitor.locator("#profile-head h1")).toHaveText("E2e");

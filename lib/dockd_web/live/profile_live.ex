@@ -81,17 +81,6 @@ defmodule DockdWeb.ProfileLive do
   def handle_event("more_day", %{"day" => day}, socket),
     do: {:noreply, update(socket, :open_days, &MapSet.put(&1, Date.from_iso8601!(day)))}
 
-  def handle_event("set_visibility", %{"visibility" => visibility}, socket) do
-    %{owner: owner, user: user} = socket.assigns
-
-    if owner.id == user.id do
-      {:ok, owner} = Social.set_visibility(owner, visibility)
-      {:noreply, socket |> assign(owner: owner) |> load()}
-    else
-      {:noreply, socket}
-    end
-  end
-
   def handle_event(event, params, socket) when event in @game_events,
     do: GameEvents.handle_event(event, params, socket, &load/1)
 

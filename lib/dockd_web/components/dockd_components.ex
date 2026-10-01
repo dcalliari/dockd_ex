@@ -1373,7 +1373,6 @@ defmodule DockdWeb.DockdComponents do
         <.friend_mark :if={@relation == :friends} />
       </div>
       <div class="dk-profile__action">
-        <.visibility_choice :if={@relation == :self} visibility={@owner.profile_visibility} />
         <.link
           :if={@relation == :self}
           id="profile-edit"
@@ -1495,12 +1494,11 @@ defmodule DockdWeb.DockdComponents do
   end
 
   @doc """
-  Choice for who sees the profile: Público or Só amigos. The same control everywhere it
-  appears (the profile page and Configurações), so `set_visibility` grabs and saves it in
-  place, with no separate save button.
+  Choice for who sees the profile: Público or Só amigos. It lives only in Configurações,
+  where `set_visibility` saves it in place, with no separate save button.
   """
   attr :visibility, :atom, required: true
-  attr :id, :string, default: "profile-visibility"
+  attr :id, :string, required: true
 
   def visibility_choice(assigns) do
     ~H"""
