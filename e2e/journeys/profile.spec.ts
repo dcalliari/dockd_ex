@@ -56,6 +56,50 @@ test("Editar perfil leads to Configurações and the bio, place and link show on
   await expect(page.locator("#profile-link")).toHaveAttribute("href", "https://e2e.example.com");
 });
 
+test("Editar favoritos fills up to four positions by searching, swapping, ordering and emptying", async ({ page }) => {
+  await signIn(page);
+  await page.goto("/u/e2e/favoritos");
+  await expect(page.locator("#favorite-editor")).toBeVisible();
+
+  // start empty: earlier runs may have left favorites behind
+  while ((await page.locator("[id^='favorite-clear-']").count()) > 0) {
+    await page.locator("[id^='favorite-clear-']").first().click();
+  }
+  await expect(page.locator("#favorite-slot-1")).toHaveAttribute("data-state", "empty");
+
+  const choose = async (query: string, title: string) => {
+    await page.locator("#favorite-search").fill(query);
+    const row = page.locator("#favorite-results .dk-row").filter({ hasText: title });
+    await row.locator("button").click();
+  };
+
+  await choose("Store Quest", "Store Quest");
+  await expect(page.locator("#favorite-slot-1")).toContainText("Store Quest");
+  await choose("Sale Quest", "Sale Quest");
+  await expect(page.locator("#favorite-slot-2")).toContainText("Sale Quest");
+
+  await page.locator("#favorite-pick-1").click();
+  await expect(page.locator("#favorite-slot-1")).toHaveAttribute("data-target", "");
+  await choose("Friendly Voyage", "Friendly Voyage");
+  await expect(page.locator("#favorite-slot-1")).toContainText("Friendly Voyage");
+  await expect(page.locator("#favorite-slot-2")).toContainText("Sale Quest");
+
+  await page.locator("#favorite-after-1").click();
+  await expect(page.locator("#favorite-slot-1")).toContainText("Sale Quest");
+  await expect(page.locator("#favorite-slot-2")).toContainText("Friendly Voyage");
+  if (shots) await page.screenshot({ path: `${shots}/favoritos-1280.png`, fullPage: true });
+
+  await page.goto("/u/e2e");
+  await expect(page.locator("#profile-favorites-grid .dk-card")).toHaveCount(2);
+  await expect(page.getByText("Remover favorito")).toHaveCount(0);
+
+  await page.goto("/u/e2e/favoritos");
+  await page.locator("#favorite-clear-1").click();
+  await expect(page.locator("#favorite-slot-1")).toHaveAttribute("data-state", "empty");
+  await page.locator("#favorite-clear-2").click();
+  await expect(page.locator("[id^='favorite-clear-']")).toHaveCount(0);
+});
+
 test("followers show the friend, and following back makes a friend", async ({ page }) => {
   await signIn(page);
   await page.goto("/u/e2e/seguidores");
@@ -141,6 +185,13 @@ test.describe("on a phone", () => {
     await expect(page.locator("#person-amiga")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
     if (shots) await page.screenshot({ path: `${shots}/seguidores-375.png`, fullPage: true });
+
+    await page.goto("/u/e2e/favoritos");
+    await expect(page.locator("#favorite-editor")).toBeVisible();
+    await page.locator("#favorite-search").fill("Store Quest");
+    await expect(page.locator("#favorite-results .dk-row").first()).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
+    if (shots) await page.screenshot({ path: `${shots}/favoritos-375.png`, fullPage: true });
 
     await page.goto("/u/e2e/diario");
     await expect(page.locator("#diary .dk-entry").first()).toBeVisible();

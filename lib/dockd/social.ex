@@ -11,6 +11,7 @@ defmodule Dockd.Social do
 
   alias Dockd.Accounts.User
   alias Dockd.Activity.Event
+  alias Dockd.Catalog.Game
   alias Dockd.Library.{Entry, Shelf}
   alias Dockd.Repo
   alias Dockd.Social.{Follow, ProfileFavorite}
@@ -151,41 +152,86 @@ defmodule Dockd.Social do
     )
   end
 
-  @doc "Adds a current library game to a profile, up to four chosen games."
-  def favorite(%User{} = user, %{} = game) do
-    if Enum.any?(Shelf.list(user), &(&1.game.id == game.id)) do
-      case Repo.get_by(ProfileFavorite, user_id: user.id, game_id: game.id) do
-        %ProfileFavorite{} -> :ok
-        nil -> insert_favorite(user, game)
-      end
+  @slots 1..4
+
+  @doc """
+  The four positions of the profile editor, one entry each: the favorite there or `nil`.
+  """
+  def favorite_slots(%User{} = user) do
+    by_position = Map.new(favorites(user), &{&1.position, &1})
+    Enum.map(@slots, &by_position[&1])
+  end
+
+  @doc """
+  Puts `game`, any game of the catalog, in `position` (1 to 4). The game that was there
+  leaves, unless `game` came from another position, which then takes its place.
+  """
+  def put_favorite(%User{} = user, %Game{id: game_id}, position) when position in @slots do
+    slots = slot_games(user)
+    from = Enum.find_value(slots, fn {at, id} -> id == game_id && at end)
+    displaced = slots[position]
+
+    slots =
+      slots
+      |> Map.delete(from)
+      |> Map.put(position, game_id)
+      |> then(&if(from && displaced, do: Map.put(&1, from, displaced), else: &1))
+
+    save_slots(user, slots)
+  end
+
+  @doc "Empties `position`; the other favorites keep theirs."
+  def clear_favorite(%User{} = user, position) when position in @slots,
+    do: user |> slot_games() |> Map.delete(position) |> then(&save_slots(user, &1))
+
+  @doc "Swaps `position` with the one before (`:before`) or after (`:after`) it."
+  def move_favorite(%User{} = user, position, direction)
+      when position in @slots and direction in [:before, :after] do
+    other = if direction == :before, do: position - 1, else: position + 1
+
+    if other in @slots do
+      slots = slot_games(user)
+
+      swapped =
+        slots
+        |> Map.drop([position, other])
+        |> then(&if(slots[other], do: Map.put(&1, position, slots[other]), else: &1))
+        |> then(&if(slots[position], do: Map.put(&1, other, slots[position]), else: &1))
+
+      save_slots(user, swapped)
     else
-      {:error, :not_found}
+      :ok
     end
   end
 
-  defp insert_favorite(%User{id: user_id}, %{id: game_id}) do
-    position =
-      Repo.aggregate(from(f in ProfileFavorite, where: f.user_id == ^user_id), :max, :position) ||
-        0
-
-    if position == 4 do
-      {:error, :limit}
-    else
-      %ProfileFavorite{}
-      |> ProfileFavorite.changeset(%{user_id: user_id, game_id: game_id, position: position + 1})
-      |> Repo.insert()
-      |> case do
-        {:ok, _favorite} -> :ok
-        {:error, changeset} -> {:error, changeset}
-      end
-    end
-  end
-
-  @doc "Removes a game from a person's chosen profile favorites."
-  def unfavorite(%User{id: user_id}, %{id: game_id}) do
-    Repo.delete_all(
-      from(f in ProfileFavorite, where: f.user_id == ^user_id and f.game_id == ^game_id)
+  defp slot_games(%User{id: user_id}) do
+    Repo.all(
+      from f in ProfileFavorite, where: f.user_id == ^user_id, select: {f.position, f.game_id}
     )
+    |> Map.new()
+  end
+
+  # Rewrites the whole set in one transaction: four rows at most, and a swap would
+  # otherwise trip the unique position index halfway.
+  defp save_slots(%User{id: user_id}, slots) do
+    now = DateTime.utc_now()
+
+    Repo.transaction(fn ->
+      Repo.delete_all(from f in ProfileFavorite, where: f.user_id == ^user_id)
+
+      Repo.insert_all(
+        ProfileFavorite,
+        for {position, game_id} <- slots do
+          %{
+            id: Ecto.UUID.generate(),
+            user_id: user_id,
+            game_id: game_id,
+            position: position,
+            inserted_at: now
+          }
+        end
+      )
+    end)
 
     :ok
   end

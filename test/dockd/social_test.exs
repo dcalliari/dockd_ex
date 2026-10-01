@@ -178,21 +178,78 @@ defmodule Dockd.SocialTest do
       refute Map.has_key?(shelf, :backlog)
     end
 
-    test "keeps up to four chosen games and removes a favorite with the game", %{
+    test "puts a catalog game in a position, never more than four", %{ana: ana, games: games} do
+      outside = game_fixture(%{title: "Outer Wilds"})
+      g = games
+
+      for {game, position} <- [
+            {g.playing.game, 1},
+            {g.finished.game, 2},
+            {g.wanted.game, 3},
+            {outside, 4}
+          ],
+          do: assert(:ok = Social.put_favorite(ana, game, position))
+
+      assert Enum.map(Social.favorite_slots(ana), & &1.game_id) ==
+               Enum.map([g.playing.game, g.finished.game, g.wanted.game, outside], & &1.id)
+
+      assert_raise FunctionClauseError, fn -> Social.put_favorite(ana, g.owned.game, 5) end
+      assert length(Social.favorites(ana)) == 4
+    end
+
+    test "replaces the game in a position and moves one that was elsewhere", %{
       ana: ana,
       games: games
     } do
-      assert :ok = Social.favorite(ana, games.playing.game)
-      assert :ok = Social.favorite(ana, games.playing.game)
-      assert [favorite] = Social.favorites(ana)
-      assert favorite.game_id == games.playing.game.id
-      assert :ok = Social.favorite(ana, games.finished.game)
-      assert :ok = Social.favorite(ana, games.wanted.game)
-      assert :ok = Social.favorite(ana, games.owned.game)
-      assert {:error, :limit} = Social.favorite(ana, games.dropped.game)
+      :ok = Social.put_favorite(ana, games.playing.game, 1)
+      :ok = Social.put_favorite(ana, games.finished.game, 2)
 
+      # a new game takes position 2 and the one there leaves
+      :ok = Social.put_favorite(ana, games.wanted.game, 2)
+      assert ids(ana) == [games.playing.game.id, games.wanted.game.id]
+
+      # a game that was elsewhere moves and swaps with the occupant
+      :ok = Social.put_favorite(ana, games.playing.game, 2)
+      assert ids(ana) == [games.wanted.game.id, games.playing.game.id]
+
+      # moving into an empty position leaves its old one empty
+      :ok = Social.put_favorite(ana, games.playing.game, 4)
+      assert [wanted, nil, nil, playing] = Social.favorite_slots(ana)
+      assert {wanted.game_id, playing.game_id} == {games.wanted.game.id, games.playing.game.id}
+    end
+
+    test "empties a position and keeps the others where they are", %{ana: ana, games: games} do
+      :ok = Social.put_favorite(ana, games.playing.game, 1)
+      :ok = Social.put_favorite(ana, games.finished.game, 2)
+
+      :ok = Social.clear_favorite(ana, 1)
+      assert [nil, favorite, nil, nil] = Social.favorite_slots(ana)
+      assert favorite.game_id == games.finished.game.id
+    end
+
+    test "orders by swapping with a neighbor, and does nothing at the edges", %{
+      ana: ana,
+      games: games
+    } do
+      :ok = Social.put_favorite(ana, games.playing.game, 1)
+      :ok = Social.put_favorite(ana, games.finished.game, 2)
+
+      :ok = Social.move_favorite(ana, 2, :before)
+      assert ids(ana) == [games.finished.game.id, games.playing.game.id]
+
+      :ok = Social.move_favorite(ana, 1, :before)
+      assert ids(ana) == [games.finished.game.id, games.playing.game.id]
+
+      # into an empty neighbor it just moves
+      :ok = Social.move_favorite(ana, 2, :after)
+      assert [_, nil, favorite, nil] = Social.favorite_slots(ana)
+      assert favorite.game_id == games.playing.game.id
+    end
+
+    test "a favorite stays when the game leaves the library", %{ana: ana, games: games} do
+      :ok = Social.put_favorite(ana, games.playing.game, 1)
       assert {:ok, :ok} = Library.set_status(ana, games.playing.game, nil)
-      refute Enum.any?(Social.favorites(ana), &(&1.game_id == games.playing.game.id))
+      assert ids(ana) == [games.playing.game.id]
     end
 
     test "counts the library by the six statuses, without prices or purchases", %{ana: ana} do
@@ -281,4 +338,6 @@ defmodule Dockd.SocialTest do
       assert name == bia.name
     end
   end
+
+  defp ids(user), do: Enum.map(Social.favorites(user), & &1.game_id)
 end

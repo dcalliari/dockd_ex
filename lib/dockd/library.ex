@@ -10,7 +10,6 @@ defmodule Dockd.Library do
   alias Dockd.Library.ReleaseVeto
   alias Dockd.Library.Shelf
   alias Dockd.Repo
-  alias Dockd.Social.ProfileFavorite
 
   @doc "Lists entries for a user, preloading their games."
   def list_entries(%User{id: id}),
@@ -223,11 +222,6 @@ defmodule Dockd.Library do
 
       entry = get_entry_for_game(user, game_id)
       if entry, do: Repo.delete!(entry)
-
-      Repo.delete_all(
-        from f in ProfileFavorite,
-          where: f.user_id == ^user_id and f.game_id == ^game_id
-      )
 
       if entry || owned > 0,
         do:

@@ -210,17 +210,73 @@ defmodule DockdWeb.ProfileLiveTest do
       assert has_element?(view, "#{card}[data-status='zerado']")
     end
 
-    test "chooses favorites in its own profile", %{conn: conn, user: user} = ctx do
-      {:ok, _} = Library.set_status(user, ctx.playing, :jogando, owned_elsewhere: true)
+    test "fills the four positions by searching the catalog, swapping and emptying",
+         %{conn: conn, user: user} = ctx do
+      zelda = game_fixture(%{title: "Zelda Echoes"})
       {:ok, view, _html} = live(conn, ~p"/u/#{user.username}/favoritos")
 
-      view
-      |> element("#profile-picker-favorite-#{ctx.playing.id}", "Favoritar")
-      |> render_click()
+      assert has_element?(view, "#favorite-slot-1[data-state='empty']")
+      refute has_element?(view, "#favorite-clear-1")
+
+      view |> form("#favorite-search-form", %{q: "hollow"}) |> render_change()
+      view |> element("#favorite-choose-#{ctx.playing.id}") |> render_click()
+      assert has_element?(view, "#favorite-slot-1[data-state='filled']", "Hollow Knight")
+      assert has_element?(view, "#favorite-result-#{ctx.playing.id}", "Na posição 1")
+      refute has_element?(view, "#favorite-choose-#{ctx.playing.id}")
+
+      # a game outside the library goes to the next empty position
+      view |> form("#favorite-search-form", %{q: "zelda"}) |> render_change()
+      view |> element("#favorite-choose-#{zelda.id}") |> render_click()
+      assert has_element?(view, "#favorite-slot-2", "Zelda Echoes")
+
+      # Trocar targets a position, and Pôr nela replaces the game there
+      view |> element("#favorite-pick-1") |> render_click()
+      assert has_element?(view, "#favorite-slot-1[data-target]")
+      assert has_element?(view, "#favorite-hint", "posição 1")
+      view |> form("#favorite-search-form", %{q: "hades"}) |> render_change()
+      view |> element("#favorite-choose-#{ctx.wanted.id}", "Pôr na posição 1") |> render_click()
+      assert has_element?(view, "#favorite-slot-1", "Hades II")
+      refute has_element?(view, "#favorite-slot-1[data-target]")
+      refute has_element?(view, "#favorite-slot-3 #favorite-clear-3")
+
+      # the order is defined by the arrows
+      view |> element("#favorite-after-1") |> render_click()
+      assert has_element?(view, "#favorite-slot-1", "Zelda Echoes")
+      assert has_element?(view, "#favorite-slot-2", "Hades II")
+      assert has_element?(view, "#favorite-before-1[disabled]")
+
+      view |> element("#favorite-clear-1") |> render_click()
+      assert has_element?(view, "#favorite-slot-1[data-state='empty']")
 
       {:ok, view, _html} = live(conn, ~p"/u/#{user.username}")
-      assert has_element?(view, "#profile-favorite-#{ctx.playing.id}")
       assert has_element?(view, "#profile-edit-favorites", "Editar favoritos")
+      assert has_element?(view, "#profile-favorites-grid #profile-favorite-#{ctx.wanted.id}")
+      refute has_element?(view, "#profile-favorites-grid #profile-favorite-#{zelda.id} button")
+      refute has_element?(view, "[id^='profile-unfavorite']")
+    end
+
+    test "never takes a fifth favorite and blocks Escolher while all are full",
+         %{conn: conn, user: user} do
+      for n <- 1..4, do: :ok = Social.put_favorite(user, game_fixture(%{title: "Fav #{n}"}), n)
+      extra = game_fixture(%{title: "Fav Extra"})
+
+      {:ok, view, _html} = live(conn, ~p"/u/#{user.username}/favoritos")
+      assert has_element?(view, "#favorite-hint", "cheias")
+
+      view |> form("#favorite-search-form", %{q: "fav extra"}) |> render_change()
+      assert has_element?(view, "#favorite-choose-#{extra.id}[disabled]")
+
+      render_click(view, "choose_favorite", %{"game_id" => extra.id})
+      assert length(Social.favorites(user)) == 4
+      refute Enum.any?(Social.favorites(user), &(&1.game_id == extra.id))
+    end
+
+    test "only the owner edits favorites", %{conn: conn, ana: ana} do
+      {:ok, view, _html} = live(conn, ~p"/u/ana/favoritos")
+      assert has_element?(view, "#profile-favorite-closed")
+      refute has_element?(view, "#favorite-editor")
+      render_click(view, "clear_favorite", %{"position" => "1"})
+      assert Social.favorites(ana) == []
     end
 
     test "lists followers with the friend label and each follow button",
