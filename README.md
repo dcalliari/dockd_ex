@@ -173,6 +173,17 @@ mix precommit
 
 `mix precommit` compila com warnings tratados como erro, verifica formatação, executa Credo em modo estrito e roda os testes.
 
+## Deploy no Fly.io
+
+Cada push na `main` publica o `dockd-ex` no Fly (região `gru`) pelo job `deploy` de `.github/workflows/ci.yml`, que só roda depois de `quality`, `e2e` e `container` passarem e executa `flyctl deploy --remote-only` com a configuração de `fly.toml`. Pull request nunca publica. Sem o segredo `FLY_API_TOKEN`, o job avisa e termina sem erro.
+
+Para ligar a publicação automática, uma única vez:
+
+1. Crie um token só de deploy para o app: `fly tokens create deploy -a dockd-ex`.
+2. Cadastre o valor impresso como segredo do repositório: `gh secret set FLY_API_TOKEN` (cole o token quando pedido) ou, no GitHub, Settings, Secrets and variables, Actions, New repository secret com o nome `FLY_API_TOKEN`.
+
+O token nunca vai para o repositório nem para o log. Segredos do app (`DATABASE_URL`, `SECRET_KEY_BASE`, `PHX_HOST`) continuam em `fly secrets set`.
+
 ## Roadmap
 
 1. **0.1.0**: catálogo, biblioteca, compras, carteira, planejador e API entregues.
