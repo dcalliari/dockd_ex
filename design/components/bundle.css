@@ -362,6 +362,23 @@ button.dk-price:hover, button.dk-price[aria-expanded="true"] { background: var(-
   .dk-profile-now .dk-card__meta, .dk-profile-now .dk-status-menu, .dk-profile-now .dk-card__action--touch, .dk-profile-now .dk-status { display: none; }
 }
 
+/* FavoritesEditor: as quatro posições do perfil e, abaixo, a busca no catálogo
+   (maquetes/perfil-favoritos.html) */
+.dk-favs__slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+.dk-favs__slot { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-2); border-radius: var(--radius-md); outline: 2px solid transparent; transition: outline-color 120ms; }
+.dk-favs__slot[data-target] { outline-color: var(--red); }
+.dk-favs__n { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+.dk-favs__empty { display: flex; align-items: center; justify-content: center; border: 1px dashed var(--line-strong); background: transparent; color: var(--ink-muted); font-size: 13px; font-weight: 600; }
+.dk-favs__title { min-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 18px; font-weight: 700; }
+.dk-favs__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
+.dk-favs__order { margin-left: auto; display: inline-flex; gap: var(--space-1); }
+.dk-favs__order button { width: 28px; height: 28px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); font-weight: 700; transition: background-color 120ms; }
+.dk-favs__order button:hover:not(:disabled) { background: var(--surface-raised); }
+.dk-favs__order button:disabled { opacity: .35; cursor: default; }
+.dk-favs__hint { margin: var(--space-4) 0 var(--space-2); font-size: 13px; line-height: 18px; color: var(--ink-muted); }
+.dk-favs__results { margin-top: var(--space-3); }
+@media (max-width: 767px) { .dk-favs__slots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 /* FollowButton: Seguindo é o controle do vínculo; apontar mostra o que o clique faz */
 .dk-follow { min-width: 132px; }
 .dk-btn--sm.dk-follow { min-width: 118px; }
