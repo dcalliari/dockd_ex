@@ -49,6 +49,14 @@ defmodule Dockd.AccountsTest do
       assert Enum.sort(errors) == ["Use de 3 a 30 caracteres", "Use letras e números"]
     end
 
+    test "rejects profile links with embedded credentials" do
+      user = user_fixture()
+
+      changeset = User.profile_changeset(user, %{link: "https://user:secret@example.com"})
+
+      assert %{link: ["Link inválido"]} = errors_on(changeset)
+    end
+
     test "confirms the new email before changing it" do
       user = user_fixture()
 

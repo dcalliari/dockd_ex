@@ -152,14 +152,21 @@ defmodule Dockd.Accounts.User do
 
   defp validate_link(changeset) do
     validate_change(changeset, :link, fn :link, link ->
-      if web_address?(URI.parse(link)), do: [], else: [link: "Link inválido"]
+      if web_address?(link), do: [], else: [link: "Link inválido"]
     end)
   end
 
-  defp web_address?(%URI{scheme: scheme, host: host}) when scheme in ["http", "https"],
-    do: is_binary(host) and String.contains?(host, ".")
+  defp web_address?(link) do
+    case URI.parse(link) do
+      %URI{scheme: scheme, host: host, userinfo: nil} when scheme in ["http", "https"] ->
+        is_binary(host) and String.contains?(host, ".")
 
-  defp web_address?(_uri), do: false
+      _ ->
+        false
+    end
+  rescue
+    URI.Error -> false
+  end
 
   defp downcase(nil), do: nil
   defp downcase(string), do: String.downcase(string)
