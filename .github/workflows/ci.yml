@@ -39,6 +39,7 @@ jobs:
           key: beam-${{ runner.os }}-${{ hashFiles('.tool-versions', 'mix.lock') }}
           restore-keys: beam-${{ runner.os }}-
       - run: mix deps.get
+      - run: mix hex.audit
       - run: mix format --check-formatted
       - run: mix compile --warnings-as-errors
       - run: mix credo --strict
@@ -114,19 +115,9 @@ jobs:
     concurrency:
       group: fly-deploy
       cancel-in-progress: false
-    env:
-      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     steps:
-      - id: token
-        run: |
-          if [ -n "$FLY_API_TOKEN" ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::FLY_API_TOKEN is not set; skipping the Fly deploy."
-          fi
-      - if: steps.token.outputs.present == 'true'
-        uses: actions/checkout@v7
-      - if: steps.token.outputs.present == 'true'
-        uses: superfly/flyctl-actions/setup-flyctl@master
-      - if: steps.token.outputs.present == 'true'
-        run: flyctl deploy --remote-only
+      - uses: actions/checkout@v7
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
