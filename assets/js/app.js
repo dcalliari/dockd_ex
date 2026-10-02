@@ -191,7 +191,11 @@ const FavoritePicker = {
     })
   },
   destroyed() {
-    if (this.returnFocusTo?.isConnected) this.returnFocusTo.focus()
+    const position = this.returnFocusTo?.id.match(/^favorite-add-(\d+)$/)?.[1]
+    const target = this.returnFocusTo?.isConnected
+      ? this.returnFocusTo
+      : position && document.querySelector(`.dk-fav-slot[data-position="${position}"] a`)
+    target?.focus()
   },
 }
 

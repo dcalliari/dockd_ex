@@ -75,7 +75,7 @@ test("favorites live on the profile: X on hover, + opens the search, drag and ar
     await page.locator("#favorite-search").fill(query);
     await page.locator("#favorite-results .dk-row").filter({ hasText: query }).locator("button").click();
     await expect(page.locator("#favorite-picker")).toHaveCount(0);
-    await expect(page.locator(`#favorite-add-${position}`)).toBeFocused();
+    await expect(page.locator(`.dk-fav-slot[data-position='${position}'] .dk-poster`)).toBeFocused();
   };
 
   await choose(1, "Store Quest");
