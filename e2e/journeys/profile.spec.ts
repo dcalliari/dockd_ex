@@ -75,6 +75,7 @@ test("favorites live on the profile: X on hover, + opens the search, drag and ar
     await page.locator("#favorite-search").fill(query);
     await page.locator("#favorite-results .dk-row").filter({ hasText: query }).locator("button").click();
     await expect(page.locator("#favorite-picker")).toHaveCount(0);
+    await expect(page.locator(`#favorite-add-${position}`)).toBeFocused();
   };
 
   await choose(1, "Store Quest");
@@ -113,11 +114,25 @@ test("favorites live on the profile: X on hover, + opens the search, drag and ar
   }
 
   await page.locator("#favorite-add-3").click();
+  const search = page.locator("#favorite-search");
+  const close = page.locator("#favorite-picker-close");
+  await expect(search).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(close).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(search).toBeFocused();
   await page.locator("#favorite-search").fill("Friendly");
   await expect(page.locator("#favorite-results .dk-row").first()).toBeVisible();
   if (shots) await page.screenshot({ path: `${shots}/favoritos-modal-1280.png` });
+  const lastResult = page.locator("#favorite-results .dk-row button").last();
+  await lastResult.focus();
+  await page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(lastResult).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page.locator("#favorite-picker")).toHaveCount(0);
+  await expect(page.locator("#favorite-add-3")).toBeFocused();
 
   for (const position of [1, 2]) {
     const slot = page.locator(`.dk-fav-slot[data-position='${position}']`);

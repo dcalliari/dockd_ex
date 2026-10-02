@@ -162,11 +162,44 @@ const FavoriteSlots = {
   },
 }
 
+const FavoritePicker = {
+  mounted() {
+    this.returnFocusTo = document.activeElement
+    this.search = this.el.querySelector("#favorite-search")
+    this.search?.focus()
+    this.el.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        event.preventDefault()
+        this.pushEvent("close_picker", {})
+        return
+      }
+      if (event.key !== "Tab") return
+
+      const focusable = [...this.el.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )].filter(element => element.getClientRects().length)
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+
+      if (event.shiftKey && (document.activeElement === first || !this.el.contains(document.activeElement))) {
+        event.preventDefault()
+        last?.focus()
+      } else if (!event.shiftKey && (document.activeElement === last || !this.el.contains(document.activeElement))) {
+        event.preventDefault()
+        first?.focus()
+      }
+    })
+  },
+  destroyed() {
+    if (this.returnFocusTo?.isConnected) this.returnFocusTo.focus()
+  },
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, StatusMenu, NavSearch, FavoriteSlots},
+  hooks: {...colocatedHooks, StatusMenu, NavSearch, FavoriteSlots, FavoritePicker},
 })
 
 // Show progress bar on live navigation and form submits
