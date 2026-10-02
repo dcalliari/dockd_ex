@@ -91,8 +91,8 @@ defmodule DockdWeb.ProfileLive do
   def handle_event("choose_favorite", %{"game_id" => game_id}, socket) do
     with %{relation: :self, picker: position} when not is_nil(position) <- socket.assigns,
          %Game{} = game <- Repo.get(Game, game_id) do
-      :ok = Social.put_favorite(socket.assigns.owner, game, position)
-      {:noreply, socket |> assign(picker: nil) |> load()}
+      result = Social.put_favorite(socket.assigns.owner, game, position)
+      {:noreply, socket |> assign(picker: nil) |> favorite_result(result)}
     else
       _ -> {:noreply, socket}
     end
@@ -104,8 +104,8 @@ defmodule DockdWeb.ProfileLive do
     with %{relation: :self} <- socket.assigns,
          %Game{} = game <- Repo.get(Game, game_id),
          position when position in 1..4 <- slot_number(position) do
-      :ok = Social.put_favorite(socket.assigns.owner, game, position)
-      {:noreply, load(socket)}
+      result = Social.put_favorite(socket.assigns.owner, game, position)
+      {:noreply, favorite_result(socket, result)}
     else
       _ -> {:noreply, socket}
     end
@@ -114,8 +114,8 @@ defmodule DockdWeb.ProfileLive do
   def handle_event("clear_favorite", %{"position" => position}, socket) do
     with %{relation: :self} <- socket.assigns,
          position when position in 1..4 <- slot_number(position) do
-      :ok = Social.clear_favorite(socket.assigns.owner, position)
-      {:noreply, load(socket)}
+      result = Social.clear_favorite(socket.assigns.owner, position)
+      {:noreply, favorite_result(socket, result)}
     else
       _ -> {:noreply, socket}
     end
@@ -126,6 +126,9 @@ defmodule DockdWeb.ProfileLive do
 
   def handle_event(event, params, socket) when event in @game_events,
     do: GameEvents.handle_event(event, params, socket, &load/1)
+
+  defp favorite_result(socket, result) when result == :ok, do: load(socket)
+  defp favorite_result(socket, {:error, _reason}), do: load(socket)
 
   defp slot_number(position) do
     case Integer.parse(position) do
@@ -224,7 +227,7 @@ defmodule DockdWeb.ProfileLive do
         <%= case @live_action do %>
           <% :show -> %>
             <div id="profile-layout" class="dk-profile-layout">
-              <main class="dk-profile-main">
+              <section class="dk-profile-main">
                 <%= if @favorites != [] || @relation == :self do %>
                   <.section_head id="profile-favorites" title="Favoritos" />
                   <%= if @relation == :self do %>
@@ -303,7 +306,7 @@ defmodule DockdWeb.ProfileLive do
                 >
                   Nada no perfil ainda.
                 </.empty_state>
-              </main>
+              </section>
 
               <aside id="profile-sidebar" class="dk-profile-sidebar">
                 <.profile_shelf stats={@stats} owner={@owner} />
@@ -392,7 +395,13 @@ defmodule DockdWeb.ProfileLive do
         <% end %>
       <% end %>
 
-      <div :if={@picker} id="favorite-picker" class="dk-modal" role="presentation">
+      <div
+        :if={@picker}
+        id="favorite-picker"
+        class="dk-modal"
+        role="presentation"
+        phx-hook="FavoritePicker"
+      >
         <section
           class="dk-modal__panel dk-modal__panel--wide"
           role="dialog"

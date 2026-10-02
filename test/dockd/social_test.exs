@@ -197,6 +197,30 @@ defmodule Dockd.SocialTest do
       assert length(Social.favorites(ana)) == 4
     end
 
+    test "serializes simultaneous favorite updates for one account", %{ana: ana, games: games} do
+      game_list = Enum.map(games, fn {_key, game} -> game.game end)
+
+      tasks =
+        for {game, position} <-
+              Stream.zip(Stream.cycle(game_list), Stream.cycle(1..4)) |> Enum.take(8) do
+          Task.async(fn ->
+            receive do
+              :start -> Social.put_favorite(ana, game, position)
+            end
+          end)
+        end
+
+      Enum.each(tasks, &Ecto.Adapters.SQL.Sandbox.allow(Dockd.Repo, self(), &1.pid))
+      Enum.each(tasks, &send(&1.pid, :start))
+
+      assert Enum.map(tasks, &Task.await(&1, 10_000)) == List.duplicate(:ok, 8)
+
+      favorites = Social.favorites(ana)
+      assert length(favorites) <= 4
+      assert length(Enum.uniq_by(favorites, & &1.position)) == length(favorites)
+      assert length(Enum.uniq_by(favorites, & &1.game_id)) == length(favorites)
+    end
+
     test "replaces the game in a position and moves one that was elsewhere", %{
       ana: ana,
       games: games

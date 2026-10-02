@@ -167,22 +167,32 @@ defmodule Dockd.Social do
   leaves, unless `game` came from another position, which then takes its place.
   """
   def put_favorite(%User{} = user, %Game{id: game_id}, position) when position in @slots do
-    slots = slot_games(user)
-    from = Enum.find_value(slots, fn {at, id} -> id == game_id && at end)
-    displaced = slots[position]
+    update_favorite_slots(user, fn slots ->
+      from = Enum.find_value(slots, fn {at, id} -> id == game_id && at end)
+      displaced = slots[position]
 
-    slots =
       slots
       |> Map.delete(from)
       |> Map.put(position, game_id)
       |> then(&if(from && displaced, do: Map.put(&1, from, displaced), else: &1))
-
-    save_slots(user, slots)
+    end)
   end
 
   @doc "Empties `position`; the other favorites keep theirs."
   def clear_favorite(%User{} = user, position) when position in @slots,
-    do: user |> slot_games() |> Map.delete(position) |> then(&save_slots(user, &1))
+    do: update_favorite_slots(user, &Map.delete(&1, position))
+
+  defp update_favorite_slots(%User{id: user_id}, update) do
+    Repo.transaction(fn ->
+      Repo.one!(from u in User, where: u.id == ^user_id, lock: "FOR UPDATE")
+      slots = slot_games(%User{id: user_id})
+      save_slots(user_id, update.(slots))
+    end)
+    |> case do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
   defp slot_games(%User{id: user_id}) do
     Repo.all(
@@ -193,27 +203,22 @@ defmodule Dockd.Social do
 
   # Rewrites the whole set in one transaction: four rows at most, and a swap would
   # otherwise trip the unique position index halfway.
-  defp save_slots(%User{id: user_id}, slots) do
+  defp save_slots(user_id, slots) do
     now = DateTime.utc_now()
+    Repo.delete_all(from f in ProfileFavorite, where: f.user_id == ^user_id)
 
-    Repo.transaction(fn ->
-      Repo.delete_all(from f in ProfileFavorite, where: f.user_id == ^user_id)
-
-      Repo.insert_all(
-        ProfileFavorite,
-        for {position, game_id} <- slots do
-          %{
-            id: Ecto.UUID.generate(),
-            user_id: user_id,
-            game_id: game_id,
-            position: position,
-            inserted_at: now
-          }
-        end
-      )
-    end)
-
-    :ok
+    Repo.insert_all(
+      ProfileFavorite,
+      for {position, game_id} <- slots do
+        %{
+          id: Ecto.UUID.generate(),
+          user_id: user_id,
+          game_id: game_id,
+          position: position,
+          inserted_at: now
+        }
+      end
+    )
   end
 
   @doc """
