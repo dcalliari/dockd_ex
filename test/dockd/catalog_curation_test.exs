@@ -126,6 +126,21 @@ defmodule Dockd.CatalogCurationTest do
                        "platforms" => @switch ++ @switch_2
                      })
 
+  # Out for years on Switch alone, rated by nobody, and not at the eShop: the shovelware
+  # most Switch exclusives are made of.
+  @shovelware Map.merge(@base, %{
+                "id" => 250_011,
+                "name" => "Some Unrated Exclusive",
+                "total_rating_count" => 0,
+                "platforms" => @switch
+              })
+  # The same, but not out yet: nobody has had the chance to rate it.
+  @upcoming_exclusive Map.merge(@shovelware, %{
+                        "id" => 250_012,
+                        "name" => "Some Unreleased Exclusive",
+                        "release_dates" => [%{"platform" => 130, "date" => 2_000_000_000}]
+                      })
+
   @pool [
     @totk,
     @totk_switch_2,
@@ -143,7 +158,9 @@ defmodule Dockd.CatalogCurationTest do
     @nintendo_own,
     @hyped_upcoming,
     @hyped_flop,
-    @obscure_exclusive
+    @obscure_exclusive,
+    @shovelware,
+    @upcoming_exclusive
   ]
 
   # What IGDB lists inside the collections, and the original Skyward Sword.
@@ -183,7 +200,13 @@ defmodule Dockd.CatalogCurationTest do
     )
 
     criteria = Application.fetch_env!(:dockd, :catalog_criteria)
-    Application.put_env(:dockd, :catalog_criteria, Keyword.put(criteria, :max_eshop_rank, 1000))
+
+    Application.put_env(
+      :dockd,
+      :catalog_criteria,
+      criteria |> Keyword.put(:max_eshop_rank, 1000) |> Keyword.put(:eshop_listed_rank, 1000)
+    )
+
     Application.put_env(:dockd, :eshop, EshopStub.config())
     EshopStub.stub(self())
     IGDB.clear_cache()
@@ -266,8 +289,27 @@ defmodule Dockd.CatalogCurationTest do
       assert by_name[@hyped_flop["name"]] == {:exclude, :unpopular}
       # Unpopular, but exclusive: the catalog never leaves an exclusive out.
       assert by_name[@obscure_exclusive["name"]] == :admit
+      # An exclusive needs a sign that it is real: unrated, out for years and unsold is not.
+      assert by_name[@shovelware["name"]] == {:exclude, :unpopular}
+      assert by_name[@upcoming_exclusive["name"]] == :admit
       # Mods are another game type: IGDB never answers them.
       refute Map.has_key?(by_name, @randomizer["name"])
+    end
+
+    test "an unrated exclusive that the eShop Brasil sells, at any rank, is real" do
+      criteria = Map.put(Curation.criteria(), :max_eshop_rank, 500)
+      sold = fn rank -> Curation.context(criteria, %{}, %{@shovelware["id"] => {rank, nil}}) end
+
+      assert Curation.decide(@shovelware, Curation.context(criteria), criteria) ==
+               {:exclude, :unpopular}
+
+      # Far past `max_eshop_rank`, so not popular, but on sale.
+      assert Curation.decide(@shovelware, sold.(999), criteria) == :admit
+
+      # The same rank does not rescue a game that is not exclusive.
+      multi = Map.put(@shovelware, "platforms", @switch_and_pc)
+
+      assert Curation.decide(multi, sold.(999), criteria) == {:exclude, :unpopular}
     end
 
     test "without the eShop ranking it still decides, and says why" do
@@ -281,8 +323,8 @@ defmodule Dockd.CatalogCurationTest do
   describe "curate/1" do
     test "imports what it admits, an edition through its game, and resumes" do
       assert {:ok, report} = Catalog.curate()
-      assert report.admitted == 8
-      assert report.imported == 7
+      assert report.admitted == 9
+      assert report.imported == 8
       assert report.failed == []
       assert report.excluded.publisher == %{count: 2, sample: ["Hole io", @cozy["name"]]}
 
@@ -297,9 +339,9 @@ defmodule Dockd.CatalogCurationTest do
 
       assert %{availability: :nintendo_exclusive} = Catalog.get_game_by_igdb_id(250_010)
 
-      assert Repo.aggregate(Game, :count) == 7
+      assert Repo.aggregate(Game, :count) == 8
       assert {:ok, %{imported: 0}} = Catalog.curate()
-      assert Repo.aggregate(Game, :count) == 7
+      assert Repo.aggregate(Game, :count) == 8
     end
 
     test "prunes what nobody follows outside the criterion, never a library's game" do

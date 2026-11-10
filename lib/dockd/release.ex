@@ -127,7 +127,12 @@ defmodule Dockd.Release do
       "Fora do critério, mantidos por estarem numa biblioteca: #{Enum.join(report.kept, "; ")}"
     )
 
-    IO.puts("Removidos do catálogo: #{Enum.join(report.pruned, "; ")}")
+    IO.puts(
+      "Fora do critério e sem ninguém usando: #{length(report.unused)}" <>
+        if(report.pruned == [], do: " (nada removido)", else: "")
+    )
+
+    IO.puts("Removidos do catálogo: #{length(report.pruned)}")
     IO.puts("Falharam: #{inspect(report.failed)}")
     report
   end

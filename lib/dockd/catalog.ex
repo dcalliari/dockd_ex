@@ -684,7 +684,8 @@ defmodule Dockd.Catalog do
   never when the eShop ranking was not read, since its games would look unpopular.
 
   Returns `{:ok, report}` with `admitted`, `imported`, `failed` (`{igdb_id, reason}`),
-  `kept` (titles outside the criterion kept for an account), `pruned` (titles),
+  `kept` (titles outside the criterion kept for an account), `unused` (titles outside it
+  that no account refers to, which `prune: true` removes), `pruned` (titles removed),
   `excluded` (reason => `%{count:, sample:}`, most rated first) and `eshop`.
   """
   def curate(opts \\ []) do
@@ -706,6 +707,7 @@ defmodule Dockd.Catalog do
          imported: Enum.count(games, &elem(&1, 1)),
          failed: failed,
          kept: Enum.map(in_use, & &1.title),
+         unused: Enum.map(unused, & &1.title),
          pruned: if(prune?, do: Enum.map(unused, & &1.title), else: []),
          excluded: excluded_report(decisions),
          eshop: eshop

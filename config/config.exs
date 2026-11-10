@@ -29,13 +29,18 @@ config :dockd,
 # expansion, 8 remake, 9 remaster, 10 expanded, 11 port) with a cover, popular by any
 # of the counts (the rating count of the game or of the game it remasters or ports),
 # published by Nintendo, among the eShop Brasil's best selling or hyped and not out yet,
-# and not from a publisher in `excluded_publishers`.
+# and not from a publisher in `excluded_publishers`. An exclusive (Switch or Switch 2
+# only) also needs a sign that it is real: not out yet, rated by `min_exclusive_rating_count`
+# people, or sold at the eShop Brasil (ranked at most `eshop_listed_rank`, which covers
+# the whole store: about 13,500 products).
 config :dockd, :catalog_criteria,
   game_types: [0, 3, 4, 8, 9, 10, 11],
   min_rating_count: 45,
   min_critic_count: 5,
   min_hypes: 20,
   max_eshop_rank: 500,
+  eshop_listed_rank: 20_000,
+  min_exclusive_rating_count: 1,
   excluded_publishers: [
     "REDDEER.GAMES",
     "QubicGames",

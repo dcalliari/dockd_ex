@@ -14,7 +14,9 @@ defmodule Dockd.Catalog.Curation do
       eShop Brasil popularity rank at most `max_eshop_rank`; published by Nintendo, by
       IGDB or by the eShop (`Nintendo`, `Nintendo of America`, `Nintendo of Europe` and
       other spellings of the same company); or exclusive, on no platform but Switch and
-      Switch 2, since an exclusive is what the catalog exists to show;
+      Switch 2, since an exclusive is what the catalog exists to show, as long as it is
+      real: not out yet, rated by `min_exclusive_rating_count` people, or sold at the
+      eShop Brasil (anywhere in the ranking up to `eshop_listed_rank`);
     * a collection (game_type 3) holds games: one holding only add-ons is a pass or a
       DLC pack, and one holding a single game sold on Switch is an edition of it.
 
@@ -119,7 +121,7 @@ defmodule Dockd.Catalog.Curation do
       hype: not released?(entry) and signals.hypes >= criteria.min_hypes,
       eshop_rank: signals.eshop_rank != nil and signals.eshop_rank <= criteria.max_eshop_rank,
       nintendo: nintendo_published?(entry, context),
-      exclusive: exclusive?(entry)
+      exclusive: exclusive?(entry) and real?(entry, signals, criteria)
     ]
     |> Enum.filter(&elem(&1, 1))
     |> Enum.map(&elem(&1, 0))
@@ -144,6 +146,13 @@ defmodule Dockd.Catalog.Curation do
   defp exclusive?(entry) do
     ids = entry["platforms"] |> List.wrap() |> Enum.map(& &1["id"])
     ids != [] and Enum.all?(ids, &(&1 in Map.values(@platform_codes)))
+  end
+
+  # Out for a while, never rated and not sold at the eShop Brasil: shovelware that the
+  # Switch's thousands of exclusives are mostly made of, not what the catalog is for.
+  defp real?(entry, signals, criteria) do
+    not released?(entry) or signals.rating_count >= criteria.min_exclusive_rating_count or
+      signals.eshop_rank != nil
   end
 
   defp excluded_publisher?(entry, context), do: publisher?(entry, context, context.excluded)
@@ -198,7 +207,7 @@ defmodule Dockd.Catalog.Curation do
   # title without the edition) to an entry of the same platform, the most rated when
   # several share it.
   defp eshop_ranks(entries, criteria) do
-    case Eshop.popular(criteria.max_eshop_rank) do
+    case Eshop.popular(max(criteria.max_eshop_rank, criteria.eshop_listed_rank)) do
       {:ok, hits} ->
         {:ok, match_ranks(entries, hits)}
 
