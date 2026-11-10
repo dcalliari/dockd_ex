@@ -24,7 +24,9 @@ jobs:
       - name: Run the sync in a one-off machine
         run: |
           set -euo pipefail
-          image=$(flyctl image show -a "$APP" --json | jq -r '.[0] | "\(.Registry)/\(.Repository):\(.Tag)"')
+          # The image of the latest release, not `flyctl image show`: that one reports a
+          # machine's image, which is the old one while a sync or a stopped app lags behind.
+          image=$(flyctl releases -a "$APP" --image --json | jq -r '.[0].ImageRef')
           name="catalog-sync-${GITHUB_RUN_ID}"
 
           flyctl machine run "$image" bin/dockd eval 'Dockd.Release.sync()' \
