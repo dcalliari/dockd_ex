@@ -8,11 +8,13 @@ defmodule Dockd.CatalogCurationTest do
   @cover %{"image_id" => "cover"}
   @switch [%{"id" => 130}]
   @switch_2 [%{"id" => 508}]
+  @switch_and_pc [%{"id" => 130}, %{"id" => 6}]
 
+  # Multiplatform, so popularity decides; an exclusive is admitted regardless.
   @base %{
     "game_type" => 0,
     "cover" => @cover,
-    "platforms" => @switch,
+    "platforms" => @switch_and_pc,
     "release_dates" => [%{"platform" => 130, "date" => 1_683_849_600, "date_format" => 0}]
   }
 
@@ -116,6 +118,13 @@ defmodule Dockd.CatalogCurationTest do
                 "total_rating_count" => 8,
                 "hypes" => 40
               })
+  # Rated by nobody and published by nobody famous, but only on Switch and Switch 2.
+  @obscure_exclusive Map.merge(@base, %{
+                       "id" => 250_010,
+                       "name" => "Some Obscure Exclusive",
+                       "total_rating_count" => 2,
+                       "platforms" => @switch ++ @switch_2
+                     })
 
   @pool [
     @totk,
@@ -133,7 +142,8 @@ defmodule Dockd.CatalogCurationTest do
     @randomizer,
     @nintendo_own,
     @hyped_upcoming,
-    @hyped_flop
+    @hyped_flop,
+    @obscure_exclusive
   ]
 
   # What IGDB lists inside the collections, and the original Skyward Sword.
@@ -254,6 +264,8 @@ defmodule Dockd.CatalogCurationTest do
       assert by_name[@hyped_upcoming["name"]] == :admit
       # Out for years and still barely rated: hype no longer excuses it.
       assert by_name[@hyped_flop["name"]] == {:exclude, :unpopular}
+      # Unpopular, but exclusive: the catalog never leaves an exclusive out.
+      assert by_name[@obscure_exclusive["name"]] == :admit
       # Mods are another game type: IGDB never answers them.
       refute Map.has_key?(by_name, @randomizer["name"])
     end
@@ -269,8 +281,8 @@ defmodule Dockd.CatalogCurationTest do
   describe "curate/1" do
     test "imports what it admits, an edition through its game, and resumes" do
       assert {:ok, report} = Catalog.curate()
-      assert report.admitted == 7
-      assert report.imported == 6
+      assert report.admitted == 8
+      assert report.imported == 7
       assert report.failed == []
       assert report.excluded.publisher == %{count: 2, sample: ["Hole io", @cozy["name"]]}
 
@@ -283,9 +295,11 @@ defmodule Dockd.CatalogCurationTest do
       assert game_id == totk.id
       assert %{rating_count: 928, alternative_names: ["Zelda: TotK"]} = totk
 
-      assert Repo.aggregate(Game, :count) == 6
+      assert %{availability: :nintendo_exclusive} = Catalog.get_game_by_igdb_id(250_010)
+
+      assert Repo.aggregate(Game, :count) == 7
       assert {:ok, %{imported: 0}} = Catalog.curate()
-      assert Repo.aggregate(Game, :count) == 6
+      assert Repo.aggregate(Game, :count) == 7
     end
 
     test "prunes what nobody follows outside the criterion, never a library's game" do

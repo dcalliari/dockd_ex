@@ -13,7 +13,8 @@ defmodule Dockd.Catalog.Curation do
       `min_critic_count`; not yet out on Switch and hyped at least `min_hypes`; the
       eShop Brasil popularity rank at most `max_eshop_rank`; published by Nintendo, by
       IGDB or by the eShop (`Nintendo`, `Nintendo of America`, `Nintendo of Europe` and
-      other spellings of the same company);
+      other spellings of the same company); or exclusive, on no platform but Switch and
+      Switch 2, since an exclusive is what the catalog exists to show;
     * a collection (game_type 3) holds games: one holding only add-ons is a pass or a
       DLC pack, and one holding a single game sold on Switch is an edition of it.
 
@@ -117,7 +118,8 @@ defmodule Dockd.Catalog.Curation do
       critic: signals.critic_count >= criteria.min_critic_count,
       hype: not released?(entry) and signals.hypes >= criteria.min_hypes,
       eshop_rank: signals.eshop_rank != nil and signals.eshop_rank <= criteria.max_eshop_rank,
-      nintendo: nintendo_published?(entry, context)
+      nintendo: nintendo_published?(entry, context),
+      exclusive: exclusive?(entry)
     ]
     |> Enum.filter(&elem(&1, 1))
     |> Enum.map(&elem(&1, 0))
@@ -135,6 +137,13 @@ defmodule Dockd.Catalog.Curation do
     |> List.wrap()
     |> Enum.filter(&(&1["platform"] in platform_ids))
     |> Release.igdb_launched?()
+  end
+
+  # The same reading as `Dockd.Catalog.suggested_availability/1`, so whatever the
+  # catalog marks as exclusive is never left out for being unpopular.
+  defp exclusive?(entry) do
+    ids = entry["platforms"] |> List.wrap() |> Enum.map(& &1["id"])
+    ids != [] and Enum.all?(ids, &(&1 in Map.values(@platform_codes)))
   end
 
   defp excluded_publisher?(entry, context), do: publisher?(entry, context, context.excluded)
