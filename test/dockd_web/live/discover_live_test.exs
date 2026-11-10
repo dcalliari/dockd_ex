@@ -10,20 +10,27 @@ defmodule DockdWeb.DiscoverLiveTest do
 
   setup %{user: user} do
     candidate = game_fixture(%{title: "Discovery Candidate"})
-    release_fixture(candidate, %{platform: :switch_2, release_date: ~D[2026-11-05]})
+    upcoming = Date.add(Date.utc_today(), 30)
+    release_fixture(candidate, %{platform: :switch_2, release_date: upcoming})
 
     listed = game_fixture(%{title: "Discovery Listed"})
     release_fixture(listed, %{platform: :switch, release_date: ~D[2024-01-01]})
     {:ok, _} = entry_fixture(user, listed, %{purchase_intent: :want})
 
     _other = game_fixture(%{title: "Something else"})
-    %{user: user, candidate: candidate, listed: listed}
+    %{user: user, candidate: candidate, listed: listed, upcoming: upcoming}
   end
 
   test "opens on upcoming releases and searches the catalog by title", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/descobrir")
     assert has_element?(view, "#discover-list", "Próximos lançamentos")
-    assert has_element?(view, "#result-#{ctx.candidate.id}", "05/11/2026")
+
+    assert has_element?(
+             view,
+             "#result-#{ctx.candidate.id}",
+             Calendar.strftime(ctx.upcoming, "%d/%m/%Y")
+           )
+
     refute has_element?(view, "#result-#{ctx.listed.id}")
 
     view |> form("#nav-search-form", %{"q" => "discovery"}) |> render_change()
