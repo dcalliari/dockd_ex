@@ -470,32 +470,46 @@ defmodule DockdWeb.DockdComponents do
   slot :inner_block
 
   def poster(assigns) do
+    exclusive = assigns.size == "grid" && exclusive_kind(assigns.availability)
+
     assigns =
-      assign(assigns, :class, [
-        "dk-poster",
-        assigns.size == "sm" && "dk-poster--sm",
-        is_nil(assigns.cover_url) && "dk-poster--empty",
-        assigns.faded && "dk-poster--faded"
-      ])
+      assign(assigns,
+        class: [
+          "dk-poster",
+          assigns.size == "sm" && "dk-poster--sm",
+          is_nil(assigns.cover_url) && "dk-poster--empty",
+          assigns.faded && "dk-poster--faded",
+          exclusive && "dk-poster--exclusive dk-poster--#{exclusive}"
+        ],
+        label:
+          if(exclusive,
+            do: "#{assigns.title}, #{enum_label(assigns.availability)}",
+            else: assigns.title
+          )
+      )
 
     ~H"""
-    <.link :if={@navigate} navigate={@navigate} class={@class} aria-label={@title} {@rest}>
+    <.link :if={@navigate} navigate={@navigate} class={@class} aria-label={@label} {@rest}>
       <.poster_body
         title={@title}
         cover_url={@cover_url}
         status={@status}
         size={@size}
-        availability={@availability}
       />
       {render_slot(@inner_block)}
     </.link>
-    <span :if={!@navigate} class={@class} {@rest}>
+    <span
+      :if={!@navigate}
+      class={@class}
+      role={@label != @title && "img"}
+      aria-label={@label != @title && @label}
+      {@rest}
+    >
       <.poster_body
         title={@title}
         cover_url={@cover_url}
         status={@status}
         size={@size}
-        availability={@availability}
       />
       {render_slot(@inner_block)}
     </span>
@@ -512,7 +526,6 @@ defmodule DockdWeb.DockdComponents do
       size="sm"
       class="dk-poster__status"
     />
-    <.exclusive_mark :if={@size == "grid"} availability={@availability} />
     """
   end
 
@@ -527,8 +540,9 @@ defmodule DockdWeb.DockdComponents do
   end
 
   @doc """
-  The exclusivity mark: the console's own game card, black for a Nintendo
-  exclusive and red for a Switch 2 exclusive. A multiplatform game has none.
+  The exclusivity mark in a line of text: the console's own game card, black for a
+  Nintendo exclusive and red for a Switch 2 exclusive. A multiplatform game has none. On a
+  cover the same card becomes the frame and its chamfered corner (`poster/1`).
   """
   attr :availability, :atom, default: nil
 
@@ -549,6 +563,7 @@ defmodule DockdWeb.DockdComponents do
 
   defp exclusive_kind(:nintendo_exclusive), do: "nintendo"
   defp exclusive_kind(:switch2_exclusive), do: "switch2"
+  defp exclusive_kind(_availability), do: nil
 
   attr :status, :atom, required: true, values: @statuses
   attr :size, :string, default: "md", values: ~w(md sm)

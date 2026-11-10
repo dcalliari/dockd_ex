@@ -7,7 +7,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 1. **Um estado é sempre um StatusChip.** Onde quer que o status de um jogo apareça, sobre a capa, numa linha, no seletor da página do jogo, ele tem a mesma forma e as mesmas palavras. Não existe versão em texto solto, em cor de fundo ou em ícone.
 2. **Uma ação é sempre um Button.** Primário só uma vez por tela, vermelho. Dentro de linha e de cartão, só secundário pequeno. Um link em `red-ink` é navegação, não ação.
 3. **Três preenchimentos sólidos: `red`, `ink` e `gold`.** `gold` existe só no chip Quero. Todo o resto é superfície, fio ou texto.
-4. **Borda tem 1px e é `line-strong` quando é controle, `line` quando é separação.** Não existe 1,5px, não existe 2px, exceto o indicador de aba ativa.
+4. **Borda tem 1px e é `line-strong` quando é controle, `line` quando é separação.** Não existe 1,5px, não existe 2px, exceto o indicador de aba ativa. A moldura do exclusivo na capa não é borda: é o cartão de jogo do ExclusiveMark (5px na grade, 6px na página do jogo).
 5. **Número é tabular e alinhado à direita, com a data ao lado.** Dinheiro sem data não existe.
 6. **Uma ação, um controle, um texto, um efeito.** Uma ação que aparece em mais de uma tela usa o mesmo componente, as mesmas palavras e grava o mesmo efeito em todas, e a regra de domínio fica num lugar só (`Dockd.Library`, `Dockd.Purchasing`), chamada por um só tratador de eventos (`DockdWeb.GameEvents`). Uma tela não ganha um atalho próprio para algo que outra tela já faz. O inventário está em `maquetes/status.html`.
 7. **Nunca diálogo nativo do navegador.** Sem `confirm`, `alert`, `prompt` nem `data-confirm`. O que precisar de confirmação confirma dentro da interface, no próprio controle. `DockdWeb.NativeDialogTest` falha se algum aparecer em `lib/` ou `assets/js`.
@@ -27,7 +27,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 ## Cor
 
 - A página é `surface`; o texto é `ink`; o metadado é `ink-muted`. Não existe um terceiro nível de cinza: se algo não merece `ink-muted`, não merece estar na tela.
-- `red` é preenchimento em cinco lugares e só neles: o botão primário da tela, o chip Jogando, o indicador da aba e do destino ativos, o ponto do wordmark e o cartão de jogo de Switch 2 do ExclusiveMark. Como texto e contorno, use `red-ink`, que escurece no claro e clareia no escuro para manter contraste.
+- `red` é preenchimento em cinco lugares e só neles: o botão primário da tela, o chip Jogando, o indicador da aba e do destino ativos, o ponto do wordmark e o cartão de jogo de Switch 2 do ExclusiveMark, na linha e na moldura da capa. Como texto e contorno, use `red-ink`, que escurece no claro e clareia no escuro para manter contraste.
 - Texto sobre `red` é `on-red`; sobre `ink` é `on-ink`. Nunca `#fff` literal.
 - Os seis status são preenchimentos, exceto um: amarelo Quero, preto Backlog, vermelho Jogando, cinza claro Zerado, cinza escuro Larguei. Zerado e Larguei ficam a 75% e apagam a capa a 55%, como o Letterboxd faz com o que já foi visto. Pausado é o único sem preenchimento sólido, contorno e texto em `red-ink`, porque `red` continua reservado aos cinco usos já descritos. Ver StatusChip.
 - `warn` tem um único uso: preço desatualizado. Não há verde de sucesso nem azul de informação. Uma ação bem-sucedida se mostra no próprio controle mudando de estado, não em um aviso.
@@ -96,11 +96,11 @@ A mídia é um segundo eixo, por versão: Físico, Digital ou Key card, sempre c
 
 O status só se troca pelo StatusMenu, o mesmo sobre a capa (Biblioteca, Descobrir) e na página do jogo: o chip atual é o controle, apontar para ele abre os outros estados embaixo, e clicar nele pergunta, no mesmo painel, `Tirar da biblioteca?` com Tirar e Cancelar; só Tirar desmarca. No toque, o primeiro toque abre e o segundo pergunta. Desmarcar é a única forma de tirar um jogo da biblioteca: não há lixeira nem link de remoção. Sai a entrada e a posse, por isso a pergunta avisa `A posse registrada sai junto.` quando há posse; compra, preço visto e histórico ficam. A confirmação foi pedida por Daniel em 10/11/2026, depois de remover jogos sem querer com um clique. Ver StatusMenu.
 
-Na página do jogo, a plataforma não vai no texto do herói: fica na legenda da capa (`SWITCH · SWITCH 2`). A exclusividade é o ExclusiveMark sobre a capa, como na grade.
+Na página do jogo, a plataforma não vai no texto do herói: fica na legenda da capa (`SWITCH · SWITCH 2`). A exclusividade é a moldura do ExclusiveMark na capa, como na grade.
 
 ## Exclusivo
 
-Decidido em 28/09/2026 (`maquetes/exclusivos.html`, desenho D, Silhueta). A exclusividade da obra nunca é texto: é o cartão de jogo do próprio console, a silhueta em retrato com o canto superior esquerdo chanfrado, em `gamecard` (preto) para exclusivo Nintendo e em `red` para exclusivo Switch 2. Multiplataforma não tem marca e não aparece escrito: a ausência já diz. Na linha, o cartão vem logo depois da plataforma, centrado nas letras do metadado; na capa da grade e da página do jogo, fica no canto inferior direito, longe do status. A miniatura da linha não recebe marca. Ver ExclusiveMark.
+Decidido em 28/09/2026 (`maquetes/exclusivos.html`, desenho D, Silhueta). A exclusividade da obra nunca é texto: é o cartão de jogo do próprio console, a silhueta em retrato com o canto superior esquerdo chanfrado, em `gamecard` (preto) para exclusivo Nintendo e em `red` para exclusivo Switch 2. Multiplataforma não tem marca e não aparece escrito: a ausência já diz. Na linha, o cartão vem logo depois da plataforma, centrado nas letras do metadado. Na capa da grade e da página do jogo, a capa inteira vira o cartão (decidido em 10/11/2026, `maquetes/exclusivo-moldura-b.html`, caminho B2, depois de Daniel achar o cartão do canto discreto demais): moldura na cor dele e o canto chanfrado, em cima à direita porque a esquerda é do status. A miniatura da linha não recebe marca. Ver ExclusiveMark.
 
 ## Rodapé
 

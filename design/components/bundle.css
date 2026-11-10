@@ -38,13 +38,44 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-exclusive path { stroke-width: 1px; vector-effect: non-scaling-stroke; }
 .dk-exclusive--nintendo path { fill: var(--gamecard); stroke: var(--gamecard-edge); }
 .dk-exclusive--switch2 path { fill: var(--red); stroke: transparent; }
-/* Na capa, embaixo à direita, longe da etiqueta de status, com aro branco sobre qualquer arte. */
-.dk-poster > .dk-exclusive { position: absolute; right: 6px; bottom: 6px; z-index: 1; height: 16px; margin: 0; filter: drop-shadow(0 1px 2px var(--scrim)); }
-.dk-poster > .dk-exclusive path { stroke: var(--on-red); }
-/* Capa sem imagem: o título quebra antes de chegar à marca. */
-.dk-poster--empty:has(> .dk-exclusive) { padding-right: calc(var(--space-2) + 16px); }
-.dk-hero .dk-poster > .dk-exclusive { right: var(--space-2); bottom: var(--space-2); height: 20px; }
-@media (max-width: 767px) { .dk-hero .dk-poster > .dk-exclusive { height: 18px; } }
+/* Na capa, o ExclusiveMark vira o próprio cartão de jogo (B2, maquetes/exclusivo-moldura-b.html,
+   decidido em 10/11/2026): moldura na cor do cartão e o canto chanfrado dele. O chanfro fica em
+   cima à direita porque o canto esquerdo é da etiqueta de status. O corte é máscara, não triângulo
+   pintado, e serve sobre qualquer fundo; a moldura acompanha a diagonal com a mesma espessura
+   (--di é o corte da arte, recuado --frame na perpendicular), e por baixo da arte há
+   surface-sunken, para a capa esmaecida não tingir de preto ou vermelho. */
+.dk-poster--exclusive, .dk-poster__veil { --frame: 5px; --cut: 18px; --d0: calc(var(--cut) * .7071); --di: calc(var(--d0) - var(--frame) * .4142); }
+.dk-poster--nintendo { --frame-color: var(--gamecard); --frame-edge: var(--gamecard-edge); }
+.dk-poster--switch2 { --frame-color: var(--red); --frame-edge: #0000; }
+.dk-poster--exclusive {
+  background:
+    linear-gradient(225deg, #0000 var(--d0), var(--frame-edge) var(--d0) calc(var(--d0) + 1px), #0000 calc(var(--d0) + 1.5px)),
+    linear-gradient(225deg, #0000 calc(var(--di) - .5px), var(--surface-sunken) calc(var(--di) + .5px)) var(--frame) var(--frame) / calc(100% - 2 * var(--frame)) calc(100% - 2 * var(--frame)) no-repeat,
+    var(--frame-color);
+  box-shadow: inset 0 0 0 1px var(--frame-edge);
+  -webkit-mask: linear-gradient(225deg, #0000 calc(var(--d0) - .5px), #000 calc(var(--d0) + .5px));
+  mask: linear-gradient(225deg, #0000 calc(var(--d0) - .5px), #000 calc(var(--d0) + .5px));
+}
+.dk-poster--exclusive img, .dk-poster--exclusive::after {
+  inset: var(--frame); width: calc(100% - 2 * var(--frame)); height: calc(100% - 2 * var(--frame)); border-radius: 2px;
+  -webkit-mask: linear-gradient(225deg, #0000 calc(var(--di) - .5px), #000 calc(var(--di) + .5px));
+  mask: linear-gradient(225deg, #0000 calc(var(--di) - .5px), #000 calc(var(--di) + .5px));
+}
+.dk-poster--exclusive::after { box-shadow: none; }
+/* Apontar e focar: o anel não cabe por fora (a máscara o cortaria) nem em vermelho (some na
+   moldura do Switch 2); é um aro branco por dentro da moldura, diagonal incluída. */
+a.dk-poster--exclusive:hover::after, a.dk-card:hover .dk-poster--exclusive::after, .dk-poster--exclusive:focus-visible::after {
+  box-shadow: inset 0 0 0 2px var(--on-red);
+  background: linear-gradient(225deg, #0000 calc(var(--di) - .5px), var(--on-red) calc(var(--di) + .5px) calc(var(--di) + 2px), #0000 calc(var(--di) + 2.5px));
+}
+.dk-poster--exclusive:focus-visible { outline: none; }
+.dk-poster--empty.dk-poster--exclusive { padding: calc(var(--space-2) + var(--frame)); }
+.dk-card:has(> .dk-poster--exclusive) > .dk-poster__veil {
+  -webkit-mask: linear-gradient(225deg, #0000 calc(var(--d0) - .5px), #000 calc(var(--d0) + .5px));
+  mask: linear-gradient(225deg, #0000 calc(var(--d0) - .5px), #000 calc(var(--d0) + .5px));
+}
+.dk-hero .dk-poster--exclusive { --frame: 6px; --cut: 26px; }
+@media (max-width: 767px) { .dk-hero .dk-poster--exclusive { --frame: 5px; --cut: 20px; } }
 
 /* O véu é irmão da capa dentro do cartão, nunca filho do link: o botão não pode navegar. */
 .dk-poster__veil { position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 3 / 4; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: var(--scrim); opacity: 0; transition: opacity 160ms; }

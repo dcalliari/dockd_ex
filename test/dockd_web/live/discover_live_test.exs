@@ -42,9 +42,13 @@ defmodule DockdWeb.DiscoverLiveTest do
     refute has_element?(view, "#discover-results", "Something else")
   end
 
-  test "an exclusive carries the game card on its cover", %{conn: conn} = ctx do
+  test "an exclusive carries the game card frame on its cover", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/descobrir")
-    assert has_element?(view, "#result-#{ctx.candidate.id} .dk-poster .dk-exclusive--nintendo")
+
+    assert has_element?(
+             view,
+             "#result-#{ctx.candidate.id} .dk-poster--exclusive.dk-poster--nintendo"
+           )
   end
 
   test "the add chip sets a status in one tap", %{conn: conn} = ctx do
