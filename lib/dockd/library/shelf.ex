@@ -12,7 +12,8 @@ defmodule Dockd.Library.Shelf do
     * `nil` otherwise (a game the user only browsed)
 
   Pausado shares the Jogando tab (`tab_key/1`): it is still being played, just not
-  right now. Jogando, Pausado, Zerado and Larguei all require ownership, the same as
+  right now. Quero is a wish, not a game in the library: Todos counts and shows only the
+  owned statuses, and Quero is a list of its own, the last tab. Jogando, Pausado, Zerado and Larguei all require ownership, the same as
   Backlog (`Dockd.Library.set_status/4`); `owned?` here only reflects that gate, not
   whether it renders.
   """
@@ -23,7 +24,7 @@ defmodule Dockd.Library.Shelf do
   alias Dockd.Repo
 
   @statuses [:quero, :backlog, :jogando, :pausado, :zerado, :larguei]
-  @tabs ~w(todos jogando backlog quero zerado)
+  @tabs ~w(todos jogando backlog zerado quero)
   @wanting [:want, :planned, :preordered]
 
   defstruct [:game, :entry, :status, :platforms, :year, ownerships: [], releases: []]
@@ -110,34 +111,46 @@ defmodule Dockd.Library.Shelf do
   defp earliest_year([]), do: nil
   defp earliest_year(dates), do: dates |> Enum.min(Date) |> Map.fetch!(:year)
 
-  @doc "Counts items per tab, `todos` included."
+  @doc "Counts items per tab; `todos` counts the owned statuses, never Quero."
   def counts(items) do
     base = Map.new(@tabs, &{&1, 0})
 
-    Enum.reduce(items, %{base | "todos" => length(items)}, fn item, acc ->
+    Enum.reduce(items, %{base | "todos" => Enum.count(items, &in_todos?/1)}, fn item, acc ->
       Map.update(acc, tab_key(item.status), 1, &(&1 + 1))
     end)
   end
 
+  defp in_todos?(item), do: item.status != :quero
+
+  @doc "Whether the game is exclusive to Nintendo's consoles, Switch 2 only or not."
+  def exclusive?(%__MODULE__{game: game}),
+    do: game.availability in [:nintendo_exclusive, :switch2_exclusive]
+
   @doc """
   Filters and sorts items by the Biblioteca controls.
 
-  Keys: `"tab"`, `"plat"` (switch or switch_2), `"media"` (physical or digital)
-  and `"sort"` (`titulo` or `lancamento`). Title search lives in Descobrir.
+  Keys: `"tab"` (`todos` is every owned status, without Quero), `"plat"` (switch or
+  switch_2), `"media"` (physical or digital), `"excl"` (`sim` keeps only exclusives) and
+  `"sort"` (`titulo` or `lancamento`). Title search lives in Descobrir.
   """
   def filter(items, params) do
     tab = Map.get(params, "tab", "todos")
     plat = Map.get(params, "plat", "")
     media = Map.get(params, "media", "")
+    exclusive = Map.get(params, "excl", "")
 
     items
     |> Enum.filter(fn item ->
-      (tab in ["", "todos"] or tab_key(item.status) == tab) and
+      in_tab?(item, tab) and
         (plat == "" or plat in Enum.map(item.platforms, &Atom.to_string/1)) and
-        (media == "" or Enum.any?(item.ownerships, &(Atom.to_string(&1.ownership_type) == media)))
+        (media == "" or Enum.any?(item.ownerships, &(Atom.to_string(&1.ownership_type) == media))) and
+        (exclusive != "sim" or exclusive?(item))
     end)
     |> sort(Map.get(params, "sort", "titulo"))
   end
+
+  defp in_tab?(item, tab) when tab in ["", "todos"], do: in_todos?(item)
+  defp in_tab?(item, tab), do: tab_key(item.status) == tab
 
   defp sort(items, "lancamento"),
     do: Enum.sort_by(items, &{-(&1.year || 0), String.downcase(&1.game.title)})

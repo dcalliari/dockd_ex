@@ -14,7 +14,7 @@ defmodule DockdWeb.LibraryLive do
   alias Dockd.Library.Shelf
   alias DockdWeb.{GameEvents, Showcase, UserAuth}
 
-  @filters ~w(tab plat media sort)
+  @filters ~w(tab plat media excl sort)
   @game_events GameEvents.events()
 
   @impl true
@@ -118,6 +118,13 @@ defmodule DockdWeb.LibraryLive do
             value={@filters["media"] || ""}
             options={[{"", "Qualquer"}, {"physical", "Físico"}, {"digital", "Digital"}]}
             path={&library_path(@filters, "media", &1)}
+          />
+          <.filter
+            id="filter-excl"
+            label="Exclusivo"
+            value={@filters["excl"] || ""}
+            options={[{"", "Todos"}, {"sim", "Só exclusivos"}]}
+            path={&library_path(@filters, "excl", &1)}
           />
           <.filter
             id="filter-sort"

@@ -49,7 +49,7 @@ defmodule DockdWeb.LibraryLiveTest do
     release_fixture(multi, %{platform: :switch, release_date: ~D[2025-09-25]})
     {:ok, _} = entry_fixture(ctx.user, multi, %{purchase_intent: :want})
 
-    {:ok, view, _html} = live(conn, "/biblioteca")
+    {:ok, view, _html} = live(conn, "/biblioteca?tab=quero")
 
     assert has_element?(view, "#shelf-#{ctx.wanted.id} .dk-poster .dk-exclusive--nintendo")
     refute has_element?(view, "#shelf-#{multi.id} .dk-exclusive")
@@ -58,15 +58,50 @@ defmodule DockdWeb.LibraryLiveTest do
   test "shows one derived status per game and the tab counts", %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/biblioteca")
 
-    assert has_element?(view, "#shelf-#{ctx.wanted.id}[data-status=quero]")
     assert has_element?(view, "#shelf-#{ctx.owned.id}[data-status=backlog]")
     assert has_element?(view, "#shelf-#{ctx.playing.id}[data-status=jogando]")
     refute has_element?(view, "#library-grid", "Never touched")
 
-    assert has_element?(view, "#library-tabs a[aria-selected=true]", "Todos")
+    assert has_element?(view, "#library-tabs a[aria-selected=true]", "Todos 2")
     assert has_element?(view, "#library-tabs a", "Backlog 1")
     assert has_element?(view, "#library-tabs a", "Quero 1")
-    assert has_element?(view, "#library-count", "3 jogos")
+    assert has_element?(view, "#library-count", "2 jogos")
+  end
+
+  test "Quero is a wish list apart: Todos never shows or counts it", %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/biblioteca")
+    refute has_element?(view, "#shelf-#{ctx.wanted.id}")
+
+    {:ok, view, _html} = live(conn, "/biblioteca?tab=quero")
+    assert has_element?(view, "#shelf-#{ctx.wanted.id}[data-status=quero]")
+    refute has_element?(view, "#shelf-#{ctx.owned.id}")
+    assert has_element?(view, "#library-count", "1 jogo")
+    assert has_element?(view, "#library-tabs a:last-child", "Quero 1")
+  end
+
+  test "filters only the exclusives", %{conn: conn} = ctx do
+    multi = game_fixture(%{title: "Hades II", availability: :multiplatform})
+    multi_release = release_fixture(multi, %{platform: :switch, release_date: ~D[2025-09-25]})
+    {:ok, _} = entry_fixture(ctx.user, multi, %{purchase_intent: :none})
+
+    {:ok, _} =
+      Library.create_ownership(ctx.user, %{
+        release_id: multi_release.id,
+        ownership_type: :digital,
+        acquired_at: DateTime.utc_now()
+      })
+
+    {:ok, view, _html} = live(conn, "/biblioteca")
+    assert has_element?(view, "#shelf-#{multi.id}")
+
+    view |> element("#filter-excl a", "Só exclusivos") |> render_click()
+    assert_patch(view, "/biblioteca?excl=sim")
+    assert has_element?(view, "#filter-excl.dk-filter--active summary b", "Só exclusivos")
+    assert has_element?(view, "#shelf-#{ctx.owned.id}")
+    refute has_element?(view, "#shelf-#{multi.id}")
+
+    {:ok, view, _html} = live(conn, "/biblioteca?tab=quero&excl=sim")
+    assert has_element?(view, "#shelf-#{ctx.wanted.id}")
   end
 
   test "filters by tab, platform and media through the URL", %{conn: conn} = ctx do
@@ -133,7 +168,7 @@ defmodule DockdWeb.LibraryLiveTest do
 
     refute has_element?(view, "#shelf-#{ctx.wanted.id}")
 
-    {:ok, view, _html} = live(conn, "/biblioteca")
+    {:ok, view, _html} = live(conn, "/biblioteca?tab=quero")
     assert has_element?(view, "#status-#{ctx.wanted.id} button[phx-value-status=backlog]")
 
     refute has_element?(
@@ -151,7 +186,7 @@ defmodule DockdWeb.LibraryLiveTest do
     assert Shelf.item(ctx.user, ctx.owned).status == nil
     assert Library.get_entry_for_game(ctx.user, ctx.owned.id) == nil
     assert has_element?(view, "#shelf-#{ctx.owned.id}:not([data-status]) .dk-status--add")
-    assert has_element?(view, "#library-tabs a", "Todos 2")
+    assert has_element?(view, "#library-tabs a", "Todos 1")
     assert has_element?(view, "#library-tabs a", "Backlog 0")
 
     view
@@ -159,14 +194,15 @@ defmodule DockdWeb.LibraryLiveTest do
     |> render_click()
 
     assert has_element?(view, "#shelf-#{ctx.owned.id}[data-status=quero]")
-    assert has_element?(view, "#library-tabs a", "Todos 3")
+    assert has_element?(view, "#library-tabs a", "Todos 1")
+    assert has_element?(view, "#library-tabs a", "Quero 2")
 
     view |> element("#library-tabs a", "Backlog") |> render_click()
     refute has_element?(view, "#shelf-#{ctx.owned.id}")
   end
 
   test "Backlog without ownership asks the version on the card", %{conn: conn} = ctx do
-    {:ok, view, _html} = live(conn, "/biblioteca")
+    {:ok, view, _html} = live(conn, "/biblioteca?tab=quero")
 
     view
     |> element("#status-#{ctx.wanted.id} button[phx-value-status=backlog]")

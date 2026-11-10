@@ -53,7 +53,7 @@ Valem antes de qualquer componente. Se uma tela as respeita, ela parece Dockd.
 
 Acima de 768px: uma barra superior de `nav-height` com o wordmark, os destinos Início, Biblioteca, Comprar e Descobrir, e a busca à direita. Abaixo: a barra superior fica com wordmark e lupa, e os quatro destinos vão para uma barra inferior fixa de `nav-height`, só texto, com o mesmo indicador `red` do destino ativo. Não há barra lateral, menu hambúrguer nem ícone nos destinos.
 
-Para a conta, Início é `/`: faixas pessoais de Jogando agora, Amigos jogando, Em promoção e Da sua lista. Biblioteca é `/biblioteca`, a grade com abas e filtros. Descobrir continua em `/descobrir`, para busca e listas do catálogo. A escolha A está em `maquetes/inicio-conta.html`.
+Para a conta, Início é `/`: faixas pessoais de Jogando agora, Amigos jogando, Em promoção e Da sua lista. Biblioteca é `/biblioteca`, a grade com abas e filtros. Quero é desejo, não posse: Todos mostra e conta só os jogos com posse (Jogando, Pausado, Backlog, Zerado, Larguei), e Quero é a lista à parte, a última aba (decidido em 10/11/2026). Descobrir continua em `/descobrir`, para busca e listas do catálogo. A escolha A está em `maquetes/inicio-conta.html`.
 
 ### Busca única no topo
 
@@ -61,7 +61,7 @@ Existe um campo de busca, `Buscar no catálogo`, na barra superior de toda tela,
 
 ### Barra de filtros
 
-Filtro de lista é uma linha logo abaixo das abas: rótulos em `t-label`, caixa alta, `ink-muted`, cada um com o chevron e um menu próprio em `surface-raised`, como o Letterboxd (Plataforma, Mídia, Ordem). Um filtro ativo mostra o valor escolhido em `ink`, e a opção atual do menu tem o marcador `red`. À direita, a contagem em `t-meta` (`21 jogos`). Não existe select nativo, chip solto nem segundo estilo de filtro; no celular a linha rola de lado. Ver `maquetes/biblioteca.html`.
+Filtro de lista é uma linha logo abaixo das abas: rótulos em `t-label`, caixa alta, `ink-muted`, cada um com o chevron e um menu próprio em `surface-raised`, como o Letterboxd (Plataforma, Mídia, Exclusivo, Ordem). Exclusivo tem `Todos` e `Só exclusivos`, que deixa Exclusivo Nintendo e Exclusivo Switch 2. Um filtro ativo mostra o valor escolhido em `ink`, e a opção atual do menu tem o marcador `red`. À direita, a contagem em `t-meta` (`21 jogos`). Não existe select nativo, chip solto nem segundo estilo de filtro; no celular a linha rola de lado. Ver `maquetes/biblioteca.html`.
 
 ### Área do visitante
 

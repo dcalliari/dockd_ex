@@ -45,7 +45,7 @@ test.describe("on a phone", () => {
 
   test("first tap opens, second clears, and nothing overflows", async ({ page }) => {
     await signIn(page);
-    await page.goto("/biblioteca");
+    await page.goto("/biblioteca?tab=quero");
     const card = page.locator("#library-grid .dk-card").filter({ hasText: "Future Veto" });
     const menu = card.locator(".dk-status-menu");
 
