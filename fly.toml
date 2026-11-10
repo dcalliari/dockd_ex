@@ -14,6 +14,9 @@ primary_region = 'gru'
 
 [env]
   ECTO_SSL = 'true'
+  # The machine stops when idle, so the daily sync runs in a one-off machine started
+  # by .github/workflows/sync.yml, not inside the app.
+  CATALOG_SYNC_SCHEDULER = 'false'
   PHX_HOST = 'dockd-ex.fly.dev'
   PHX_SERVER = 'true'
   POOL_SIZE = '5'

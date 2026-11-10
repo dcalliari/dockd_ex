@@ -32,6 +32,7 @@ config :dockd, DockdWeb.Endpoint, http: [port: env_integer.("PORT", 4000)]
 config :dockd, :igdb,
   client_id: System.get_env("IGDB_CLIENT_ID"),
   client_secret: System.get_env("IGDB_CLIENT_SECRET"),
+  sync_scheduler: System.get_env("CATALOG_SYNC_SCHEDULER") != "false",
   sync_initial_delay: env_integer.("IGDB_SYNC_INITIAL_DELAY_MS", 1000),
   sync_interval: env_integer.("IGDB_SYNC_INTERVAL_MS", 86_400_000)
 

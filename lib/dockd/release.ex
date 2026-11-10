@@ -73,6 +73,16 @@ defmodule Dockd.Release do
   end
 
   @doc ~S"""
+  Runs the daily sync once, IGDB and eShop, as the in-app schedule would
+  (`Dockd.IGDB.SyncScheduler.run/0`): `bin/dockd eval 'Dockd.Release.sync()'`. On Fly the
+  scheduled workflow `.github/workflows/sync.yml` runs it in a one-off machine.
+  """
+  def sync do
+    {:ok, _} = Application.ensure_all_started(:req)
+    with_repo(&Dockd.IGDB.SyncScheduler.run/0)
+  end
+
+  @doc ~S"""
   Runs the IGDB catalog synchronization now, including existing releases:
   `bin/dockd eval 'Dockd.Release.sync_catalog()'`. It is safe to repeat.
   """

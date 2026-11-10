@@ -243,19 +243,24 @@ defmodule Dockd.IGDB.SyncScheduler do
 
   @impl true
   def handle_info(:initial_sync, interval) do
-    run_sync()
+    run()
     schedule(interval)
     {:noreply, interval}
   end
 
   @impl true
   def handle_info(:sync, interval) do
-    run_sync()
+    run()
     schedule(interval)
     {:noreply, interval}
   end
 
-  defp run_sync do
+  @doc """
+  One sync, the same the schedule runs: matches local games to IGDB, brings in what the
+  criterion admits, synchronizes the catalog and then the eShop. `Dockd.Release.sync/0`
+  runs it from a one-off machine where no scheduler lives (`CATALOG_SYNC_SCHEDULER`).
+  """
+  def run do
     _ = Dockd.Catalog.match_igdb()
 
     case Dockd.Catalog.curate() do

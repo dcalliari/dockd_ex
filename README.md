@@ -182,7 +182,9 @@ Para ligar a publicação automática, uma única vez:
 1. Crie um token só de deploy para o app: `fly tokens create deploy -a dockd-ex`.
 2. Cadastre o valor impresso como segredo do repositório: `gh secret set FLY_API_TOKEN` (cole o token quando pedido) ou, no GitHub, Settings, Secrets and variables, Actions, New repository secret com o nome `FLY_API_TOKEN`.
 
-O token nunca vai para o repositório nem para o log. Segredos do app (`DATABASE_URL`, `SECRET_KEY_BASE`, `PHX_HOST`) continuam em `fly secrets set`.
+O token nunca vai para o repositório nem para o log. Segredos do app (`DATABASE_URL`, `SECRET_KEY_BASE`, `PHX_HOST`, `IGDB_CLIENT_ID`, `IGDB_CLIENT_SECRET`, `ESHOP_ALGOLIA_SEARCH_KEY`) continuam em `fly secrets set`.
+
+No Fly a máquina para quando ninguém acessa, e a sincronização diária dentro do app morreria no meio. Por isso `fly.toml` desliga o agendador (`CATALOG_SYNC_SCHEDULER=false`) e `.github/workflows/sync.yml` roda a sincronização uma vez por dia, às 06:17 de Brasília, numa máquina descartável com a imagem publicada: `bin/dockd eval 'Dockd.Release.sync()'`, que é o mesmo passo do agendador. Para rodar na hora, `gh workflow run sync`. Em outro ambiente, sem a variável, o agendador continua dentro do app.
 
 ## Roadmap
 

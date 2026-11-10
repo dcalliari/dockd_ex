@@ -25,7 +25,12 @@ defmodule Dockd.Application do
     Supervisor.start_link(children, opts)
   end
 
-  defp sync?, do: Dockd.IGDB.configured?() or Dockd.Eshop.configured?()
+  # Where the machine stops when idle (Fly), a daily run inside it would die halfway;
+  # there `CATALOG_SYNC_SCHEDULER=false` leaves the sync to `Dockd.Release.sync/0`.
+  defp sync? do
+    scheduled? = :dockd |> Application.get_env(:igdb, []) |> Keyword.get(:sync_scheduler, true)
+    scheduled? and (Dockd.IGDB.configured?() or Dockd.Eshop.configured?())
+  end
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
