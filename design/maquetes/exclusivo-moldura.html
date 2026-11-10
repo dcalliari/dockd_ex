@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Exclusivo na capa · dockd.</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
+<style>
+:root, [data-theme="light"]{--surface:#ffffff;--surface-raised:#f4f2f1;--surface-sunken:#ebe8e6;--line:#dedad8;--line-strong:#8f8886;--ink:#161414;--ink-muted:#6a6462;--on-ink:#ffffff;--red:#e60012;--red-hover:#cc0010;--on-red:#ffffff;--red-ink:#d4000f;--poster-edge:#0000001f;--gamecard-edge:#00000000;}
+[data-theme="dark"]{--surface:#131212;--surface-raised:#1c1b1b;--surface-sunken:#242222;--line:#2e2c2b;--line-strong:#6b6664;--ink:#f3f1f0;--ink-muted:#a39d9b;--on-ink:#131212;--red:#e60012;--red-hover:#f21a2a;--on-red:#ffffff;--red-ink:#ff5a5a;--poster-edge:#ffffff1a;--gamecard-edge:#8f8886;}
+:root{--gold:#f2c200;--on-gold:#ffffff;--gamecard:#1c1a1a;--scrim:#000000a6;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--radius-sm:3px;--radius-md:6px;--font-sans:"Archivo","Helvetica Neue",Arial,sans-serif;}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+img { display: block; max-width: 100%; }
+
+.page { max-width: 1240px; margin: 0 auto; padding: var(--space-6) var(--space-4); }
+h1 { font-size: 32px; line-height: 36px; font-weight: 800; letter-spacing: -.02em; font-stretch: 110%; margin: 0 0 var(--space-2); }
+.lede { color: var(--ink-muted); margin: 0 0 var(--space-6); max-width: 70ch; }
+.option { border-top: 1px solid var(--line); padding: var(--space-5) 0 var(--space-6); }
+.option h2 { font-size: 20px; line-height: 24px; font-weight: 800; margin: 0 0 var(--space-1); }
+.option p { margin: 0 0 var(--space-4); color: var(--ink-muted); max-width: 75ch; }
+.themes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+@media (max-width: 900px) { .themes { grid-template-columns: 1fr; } }
+.theme { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); }
+.theme > small { display: block; margin-bottom: var(--space-3); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-stretch: 90%; color: var(--ink-muted); }
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4) var(--space-3); }
+@media (max-width: 560px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Cartão e capa, como em bundle.css */
+.dk-card { position: relative; display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.dk-poster { position: relative; display: block; aspect-ratio: 3 / 4; width: 100%; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-sunken); }
+.dk-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dk-poster::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--poster-edge); pointer-events: none; transition: box-shadow 120ms; }
+.dk-card__title { font-size: 13px; line-height: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-card__meta { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.dk-status { position: absolute; left: var(--space-2); top: var(--space-2); z-index: 2; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 10px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-stretch: 90%; white-space: nowrap; }
+.dk-status--quero { background: var(--gold); color: var(--on-gold); }
+.dk-status--backlog { background: var(--ink); color: var(--on-ink); }
+.dk-status--jogando { background: var(--red); color: var(--on-red); }
+.dk-status--pausado { background: var(--surface); color: var(--red-ink); border-color: var(--red-ink); }
+.dk-status--zerado { background: var(--surface-sunken); color: var(--ink); opacity: .75; }
+.dk-poster--faded img { opacity: .55; }
+
+/* ExclusiveMark atual, para comparação */
+.dk-exclusive { position: absolute; right: 6px; bottom: 6px; z-index: 1; height: 16px; width: auto; aspect-ratio: 16 / 22; filter: drop-shadow(0 1px 2px var(--scrim)); overflow: visible; }
+.dk-exclusive path { stroke-width: 1px; vector-effect: non-scaling-stroke; stroke: var(--on-red); }
+.dk-exclusive--nintendo path { fill: var(--gamecard); }
+.dk-exclusive--switch2 path { fill: var(--red); }
+
+/* Hoje: hover é o anel vermelho de 2px por dentro da capa. */
+.now .dk-card.is-hover .dk-poster::after { box-shadow: inset 0 0 0 2px var(--red); }
+
+/* Nos caminhos A, B e C o hover sai da capa: anel de 2px por fora, em ink, para nunca
+   disputar com a moldura vermelha do Switch 2. */
+.frame .dk-card.is-hover .dk-poster { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* A: moldura de 3px na cor do cartão, o cartão continua no canto. */
+.a .is-nintendo .dk-poster::after { box-shadow: inset 0 0 0 3px var(--gamecard), inset 0 0 0 4px var(--gamecard-edge); }
+.a .is-switch2 .dk-poster::after { box-shadow: inset 0 0 0 3px var(--red); }
+
+/* B: moldura de 5px, sem cartão: a moldura é a marca. */
+.b .is-nintendo .dk-poster::after { box-shadow: inset 0 0 0 5px var(--gamecard), inset 0 0 0 6px var(--gamecard-edge); }
+.b .is-switch2 .dk-poster::after { box-shadow: inset 0 0 0 5px var(--red); }
+.b .dk-exclusive { display: none; }
+
+/* C: moldura de 3px que engrossa no canto inferior direito numa aba com o cartão vazado. */
+.c .is-nintendo .dk-poster::after { box-shadow: inset 0 0 0 3px var(--gamecard), inset 0 0 0 4px var(--gamecard-edge); }
+.c .is-switch2 .dk-poster::after { box-shadow: inset 0 0 0 3px var(--red); }
+.c .dk-exclusive { display: none; }
+.c .tab { position: absolute; right: 0; bottom: 0; z-index: 1; display: flex; align-items: center; justify-content: center; width: 24px; height: 28px; border-top-left-radius: var(--radius-sm); }
+.c .is-nintendo .tab { background: var(--gamecard); }
+.c .is-switch2 .tab { background: var(--red); }
+.c .tab svg { height: 15px; width: auto; aspect-ratio: 16 / 22; overflow: visible; }
+.c .tab path { fill: none; stroke: #fff; stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.tab { display: none; }
+.c .tab { display: flex; }
+</style>
+</head>
+<body>
+<main class="page">
+  <h1>Exclusivo na capa</h1>
+  <p class="lede">Hoje o exclusivo é só o cartãozinho no canto da capa. O pedido é uma borda na capa inteira. Os três caminhos usam as cores do cartão (preto para Exclusivo Nintendo, vermelho para Exclusivo Switch 2), e em todos o hover vai para fora da capa, porque o anel vermelho de hoje some em cima da moldura vermelha. A segunda capa de cada linha mostra o hover.</p>
+
+  <section class="option now" data-option="hoje">
+    <h2>Hoje</h2>
+    <p>Cartão de 16px no canto inferior direito. Hover: anel vermelho de 2px por dentro.</p>
+    <div class="themes" data-slot></div>
+  </section>
+
+  <section class="option frame a" data-option="A">
+    <h2>A · Moldura fina com cartão</h2>
+    <p>Moldura de 3px na cor do cartão, e o cartão continua no canto. É a mudança mais leve: a moldura chama a atenção na grade, e o cartão continua dizendo o que é.</p>
+    <div class="themes" data-slot></div>
+  </section>
+
+  <section class="option frame b" data-option="B">
+    <h2>B · Moldura grossa, sem cartão</h2>
+    <p>Moldura de 5px, e o cartão sai da capa. A moldura passa a ser a marca. É a mais visível, mas perde a silhueta do cartão, que continua só na linha de texto.</p>
+    <div class="themes" data-slot></div>
+  </section>
+
+  <section class="option frame c" data-option="C">
+    <h2>C · Moldura com aba do cartão</h2>
+    <p>Moldura de 3px que engrossa no canto inferior direito numa aba com o cartão vazado em branco. A moldura marca, a aba diz qual console, e o cartão nunca briga com a arte da capa.</p>
+    <div class="themes" data-slot></div>
+  </section>
+</main>
+
+<script>
+var BODY = 'M4.5 .5H14A1.5 1.5 0 0 1 15.5 2V20A1.5 1.5 0 0 1 14 21.5H2A1.5 1.5 0 0 1 .5 20V4.5Z';
+var games = [
+  {t: "Metroid Dread", k: "nintendo", s: "quero", m: "Switch · 2021", c: "coba9g"},
+  {t: "Donkey Kong Bananza", k: "switch2", s: "zerado", m: "Switch 2 · 2025", c: "cobd1q", hover: true},
+  {t: "Hades II", k: null, s: "pausado", m: "Switch · Switch 2 · 2025", c: "coaknx"},
+  {t: "The Legend of Zelda: Ocarina of Time", k: "switch2", s: "jogando", m: "Switch 2 · 2026", c: "cocv5r"},
+  {t: "The Legend of Zelda: Tears of the Kingdom", k: "nintendo", s: "quero", m: "Switch · 2023", c: "co5vmg"},
+  {t: "Hollow Knight", k: null, s: "pausado", m: "Switch · 2018", c: "cobfzp"},
+  {t: "Mario Kart World", k: "switch2", s: "quero", m: "Switch 2 · 2025", c: "cob9s9"},
+  {t: "Pokémon Pokopia", k: "switch2", s: "pausado", m: "Switch 2 · 2026", c: "cobbur"}
+];
+var label = {quero: "Quero", zerado: "Zerado", pausado: "Pausado", jogando: "Jogando"};
+var card = function (g) {
+  var svg = '<svg viewBox="0 0 16 22"><path d="' + BODY + '"/></svg>';
+  return '<div class="dk-card' + (g.k ? ' is-' + g.k : '') + (g.hover ? ' is-hover' : '') + '">' +
+    '<span class="dk-poster' + (g.s === 'zerado' ? ' dk-poster--faded' : '') + '">' +
+    '<img alt="" src="https://images.igdb.com/igdb/image/upload/t_cover_big/' + g.c + '.jpg">' +
+    (g.k ? '<svg class="dk-exclusive dk-exclusive--' + g.k + '" viewBox="0 0 16 22"><path d="' + BODY + '"/></svg>' : '') +
+    (g.k ? '<span class="tab">' + svg + '</span>' : '') +
+    '</span>' +
+    '<span class="dk-status dk-status--' + g.s + '">' + label[g.s] + '</span>' +
+    '<span class="dk-card__title">' + g.t + '</span>' +
+    '<span class="dk-card__meta">' + g.m + '</span></div>';
+};
+document.querySelectorAll('[data-slot]').forEach(function (slot) {
+  slot.innerHTML = ['light', 'dark'].map(function (theme) {
+    return '<div class="theme" data-theme="' + theme + '"><small>' + (theme === 'light' ? 'Claro' : 'Escuro') + '</small><div class="grid">' + games.map(card).join('') + '</div></div>';
+  }).join('');
+});
+</script>
+</body>
+</html>
