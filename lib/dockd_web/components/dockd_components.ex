@@ -529,6 +529,47 @@ defmodule DockdWeb.DockdComponents do
     """
   end
 
+  @doc """
+  A favorite: cover and title. `editable` (Configurações) makes it a draggable position
+  (hook FavoriteSlots): the X clears it, shown on hover and focus, and the arrow keys move
+  it. The profile shows it read-only.
+  """
+  attr :id, :string, required: true
+  attr :favorite, :map, required: true
+  attr :editable, :boolean, default: false
+
+  def favorite_card(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      class={["dk-card", @editable && "dk-fav-slot"]}
+      data-game-id={@editable && @favorite.game_id}
+      data-position={@editable && @favorite.position}
+    >
+      <.poster
+        title={@favorite.game.title}
+        cover_url={@favorite.game.cover_url}
+        availability={@favorite.game.availability}
+        navigate={~p"/jogos/#{@favorite.game.id}"}
+      />
+      <button
+        :if={@editable}
+        id={"favorite-remove-#{@favorite.position}"}
+        type="button"
+        class="dk-fav-remove"
+        phx-click="clear_favorite"
+        phx-value-position={@favorite.position}
+        aria-label={"Remover #{@favorite.game.title} dos favoritos"}
+      >
+        <.icon name="hero-x-mark" />
+      </button>
+      <.link navigate={~p"/jogos/#{@favorite.game.id}"} class="dk-card__text">
+        <span class="dk-card__title">{@favorite.game.title}</span>
+      </.link>
+    </div>
+    """
+  end
+
   attr :platforms, :string, required: true
 
   def poster_caption(assigns) do

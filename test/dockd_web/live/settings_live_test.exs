@@ -3,8 +3,9 @@ defmodule DockdWeb.SettingsLiveTest do
 
   import Phoenix.LiveViewTest
   import Dockd.AccountsFixtures
+  import Dockd.DomainFixtures, only: [game_fixture: 1]
 
-  alias Dockd.Accounts
+  alias Dockd.{Accounts, Social}
 
   describe "settings" do
     setup :register_and_log_in_user
@@ -254,6 +255,79 @@ defmodule DockdWeb.SettingsLiveTest do
 
       refute html =~ "confirm("
       refute html =~ "data-confirm"
+    end
+  end
+
+  describe "favorites" do
+    setup :register_and_log_in_user
+
+    test "fills a position from the search modal, empties it with the X and keeps four at most",
+         %{conn: conn, user: user} do
+      hollow = game_fixture(%{title: "Hollow Knight"})
+      zelda = game_fixture(%{title: "Zelda Echoes"})
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+
+      assert has_element?(view, "#favorite-add-1")
+      assert has_element?(view, "#favorite-add-4")
+      refute has_element?(view, "#favorite-picker")
+      assert has_element?(view, "#settings-sections a[href='#settings-favorites']", "Favoritos")
+
+      view |> element("#favorite-add-1") |> render_click()
+      assert has_element?(view, "#favorite-picker[role=presentation] [role=dialog]")
+      view |> form("#favorite-search-form", %{q: "hollow"}) |> render_change()
+      view |> element("#favorite-choose-#{hollow.id}") |> render_click()
+
+      refute has_element?(view, "#favorite-picker")
+      assert has_element?(view, "#favorite-#{hollow.id}[data-position='1']")
+      refute has_element?(view, "#favorite-add-1")
+
+      # a favorite already placed never shows up as a result
+      view |> element("#favorite-add-2") |> render_click()
+      view |> form("#favorite-search-form", %{q: "hollow"}) |> render_change()
+      refute has_element?(view, "#favorite-result-#{hollow.id}")
+      view |> form("#favorite-search-form", %{q: "zelda"}) |> render_change()
+      view |> element("#favorite-choose-#{zelda.id}") |> render_click()
+      assert has_element?(view, "#favorite-#{zelda.id}[data-position='2']")
+
+      view |> element("#favorite-remove-1") |> render_click()
+      assert has_element?(view, "#favorite-add-1")
+      refute has_element?(view, "#favorite-#{hollow.id}")
+      assert has_element?(view, "#favorite-#{zelda.id}[data-position='2']")
+    end
+
+    test "the picker closes with Fechar and Escape, choosing nothing", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+
+      view |> element("#favorite-add-3") |> render_click()
+      view |> element("#favorite-picker-close") |> render_click()
+      refute has_element?(view, "#favorite-picker")
+
+      view |> element("#favorite-add-3") |> render_click()
+      render_keydown(view, "close_picker", %{"key" => "Escape"})
+      refute has_element?(view, "#favorite-picker")
+      assert Social.favorites(user) == []
+    end
+
+    test "dragging a favorite onto a position moves it and swaps with the one there",
+         %{conn: conn, user: user} do
+      a = game_fixture(%{title: "Fav A"})
+      b = game_fixture(%{title: "Fav B"})
+      :ok = Social.put_favorite(user, a, 1)
+      :ok = Social.put_favorite(user, b, 2)
+      {:ok, view, _html} = live(conn, ~p"/configuracoes")
+
+      render_click(view, "place_favorite", %{"game_id" => a.id, "position" => "2"})
+      assert has_element?(view, "#favorite-#{a.id}[data-position='2']")
+      assert has_element?(view, "#favorite-#{b.id}[data-position='1']")
+
+      render_click(view, "place_favorite", %{"game_id" => a.id, "position" => "4"})
+      assert has_element?(view, "#favorite-#{a.id}[data-position='4']")
+      assert has_element?(view, "#favorite-add-2")
+
+      # an out-of-range or unreadable position changes nothing
+      render_click(view, "place_favorite", %{"game_id" => a.id, "position" => "5"})
+      render_click(view, "place_favorite", %{"game_id" => a.id, "position" => "x"})
+      assert Enum.map(Social.favorite_slots(user), &(&1 && &1.position)) == [1, nil, nil, 4]
     end
   end
 end

@@ -2,12 +2,16 @@ defmodule DockdWeb.SettingsLive do
   @moduledoc """
   The account settings page. Each change is saved in place, while the destructive
   account deletion confirmation stays in the app instead of using a browser dialog.
+
+  Favoritos is the profile's four favorites, edited here and only shown on the profile
+  (decidido em 10/11/2026): the + opens a catalog search in a modal, the X clears a
+  position, and dragging a cover or the arrow keys reorder them (hook FavoriteSlots).
   """
   use DockdWeb, :live_view
 
-  alias Dockd.Accounts
+  alias Dockd.{Accounts, Catalog, Repo, Social}
   alias Dockd.Accounts.Scope
-  alias Dockd.Social
+  alias Dockd.Catalog.Game
   alias DockdWeb.UserAuth
 
   @delete_confirmation "EXCLUIR"
@@ -28,12 +32,65 @@ defmodule DockdWeb.SettingsLive do
        password_notice: nil,
        session_notice: nil,
        delete_open: false,
+       picker: nil,
+       q: "",
+       results: [],
        page_title: "Configurações"
      )
-     |> assign_forms(user)}
+     |> assign_forms(user)
+     |> load_favorites()}
   end
 
   @impl true
+  def handle_event("open_picker", %{"position" => position}, socket),
+    do: {:noreply, assign(socket, picker: slot_number(position), q: "", results: [])}
+
+  def handle_event("close_picker", _params, socket), do: {:noreply, assign(socket, picker: nil)}
+
+  def handle_event("search_favorites", %{"q" => q}, socket) do
+    taken = socket.assigns.slots |> Enum.reject(&is_nil/1) |> MapSet.new(& &1.game_id)
+
+    results =
+      q
+      |> Catalog.search()
+      |> Enum.reject(&MapSet.member?(taken, &1.game.id))
+
+    {:noreply, assign(socket, q: String.trim(q), results: results)}
+  end
+
+  def handle_event("choose_favorite", %{"game_id" => game_id}, socket) do
+    with position when is_integer(position) <- socket.assigns.picker,
+         %Game{} = game <- Repo.get(Game, game_id) do
+      _ = Social.put_favorite(socket.assigns.user, game, position)
+      {:noreply, socket |> assign(picker: nil) |> load_favorites()}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  # Dragging a cover onto a position, or the arrow keys, moves a favorite there; the one
+  # already there swaps into its old position.
+  def handle_event("place_favorite", %{"game_id" => game_id, "position" => position}, socket) do
+    with %Game{} = game <- Repo.get(Game, game_id),
+         position when position in 1..4 <- slot_number(position) do
+      _ = Social.put_favorite(socket.assigns.user, game, position)
+      {:noreply, load_favorites(socket)}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("clear_favorite", %{"position" => position}, socket) do
+    case slot_number(position) do
+      position when position in 1..4 ->
+        _ = Social.clear_favorite(socket.assigns.user, position)
+        {:noreply, load_favorites(socket)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("edit", %{"section" => "email"}, socket),
     do: {:noreply, assign(socket, editing: :email)}
 
@@ -220,6 +277,16 @@ defmodule DockdWeb.SettingsLive do
     to_form(params, as: as, errors: errors)
   end
 
+  defp load_favorites(socket),
+    do: assign(socket, slots: Social.favorite_slots(socket.assigns.user))
+
+  defp slot_number(position) do
+    case Integer.parse(position) do
+      {number, ""} -> number
+      _ -> nil
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -237,6 +304,7 @@ defmodule DockdWeb.SettingsLive do
 
       <nav id="settings-sections" class="dk-settings-nav" aria-label="Configurações">
         <a href="#settings-profile">Perfil</a>
+        <a href="#settings-favorites">Favoritos</a>
         <a href="#settings-access">Acesso</a>
         <a href="#settings-data">Dados</a>
       </nav>
@@ -288,6 +356,110 @@ defmodule DockdWeb.SettingsLive do
           <.visibility_choice id="settings-visibility" visibility={@user.profile_visibility} />
         </div>
       </section>
+
+      <section id="settings-favorites" class="dk-settings-section">
+        <.section_head title="Favoritos" />
+        <div
+          id="settings-favorites-grid"
+          class="dk-profile-favorites"
+          phx-hook="FavoriteSlots"
+          aria-description="Arraste uma capa, ou use as setas esquerda e direita, para mudar a ordem"
+        >
+          <%= for {favorite, index} <- Enum.with_index(@slots, 1) do %>
+            <.favorite_card
+              :if={favorite}
+              id={"favorite-#{favorite.game_id}"}
+              favorite={favorite}
+              editable
+            />
+            <div
+              :if={!favorite}
+              id={"favorite-slot-#{index}"}
+              class="dk-fav-slot"
+              data-position={index}
+            >
+              <button
+                id={"favorite-add-#{index}"}
+                type="button"
+                class="dk-fav-add"
+                phx-click="open_picker"
+                phx-value-position={index}
+                aria-label={"Adicionar favorito na posição #{index}"}
+              >
+                <.icon name="hero-plus" />
+              </button>
+            </div>
+          <% end %>
+        </div>
+      </section>
+
+      <div
+        :if={@picker}
+        id="favorite-picker"
+        class="dk-modal"
+        role="presentation"
+        phx-hook="FavoritePicker"
+      >
+        <section
+          class="dk-modal__panel dk-modal__panel--wide"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="favorite-picker-title"
+          phx-window-keydown="close_picker"
+          phx-key="Escape"
+          phx-click-away="close_picker"
+        >
+          <div class="dk-modal__head">
+            <h2 id="favorite-picker-title">Escolher favorito</h2>
+            <button id="favorite-picker-close" type="button" class="dk-link" phx-click="close_picker">
+              Fechar
+            </button>
+          </div>
+          <form
+            id="favorite-search-form"
+            class="dk-search"
+            role="search"
+            phx-change="search_favorites"
+            phx-submit="search_favorites"
+          >
+            <.icon name="hero-magnifying-glass" />
+            <input
+              id="favorite-search"
+              type="search"
+              name="q"
+              value={@q}
+              placeholder="Buscar no catálogo"
+              aria-label="Buscar no catálogo"
+              autocomplete="off"
+              phx-debounce="300"
+              autofocus
+            />
+          </form>
+          <div id="favorite-results" class="dk-modal__results">
+            <div :for={result <- @results} id={"favorite-result-#{result.game.id}"} class="dk-row">
+              <.poster title={result.game.title} cover_url={result.game.cover_url} size="sm" />
+              <div>
+                <b class="dk-row__title">{result.game.title}</b>
+                <div class="dk-row__meta">{platform_label(result.game.releases)}</div>
+              </div>
+              <div class="dk-row__end">
+                <button
+                  id={"favorite-choose-#{result.game.id}"}
+                  type="button"
+                  class="dk-btn dk-btn--secondary"
+                  phx-click="choose_favorite"
+                  phx-value-game_id={result.game.id}
+                >
+                  Escolher
+                </button>
+              </div>
+            </div>
+            <.empty_state :if={@q != "" and @results == []} id="favorite-empty">
+              Nenhum jogo encontrado.
+            </.empty_state>
+          </div>
+        </section>
+      </div>
 
       <section id="settings-access" class="dk-settings-section">
         <.section_head title="Acesso" />

@@ -56,10 +56,13 @@ test("Editar perfil leads to Configurações and the bio, place and link show on
   await expect(page.locator("#profile-link")).toHaveAttribute("href", "https://e2e.example.com");
 });
 
-test("favorites live on the profile: X on hover, + opens the search, drag and arrows order them", async ({ page }) => {
+test("favorites are edited in Configurações: X on hover, + opens the search, drag and arrows order them", async ({ page }) => {
   await signIn(page);
   await page.goto("/u/e2e");
-  await expect(page.locator("#profile-edit-favorites")).toHaveCount(0);
+  await expect(page.locator("#profile-favorites .dk-fav-add")).toHaveCount(0);
+  await page.locator("#profile-edit-favorites").click();
+  await expect(page).toHaveURL(/\/configuracoes#settings-favorites$/);
+  await expect(page.locator("#settings-favorites")).toBeInViewport();
 
   // start empty: earlier runs may have left favorites behind
   while ((await page.locator(".dk-fav-remove").count()) > 0) {
@@ -80,7 +83,7 @@ test("favorites live on the profile: X on hover, + opens the search, drag and ar
 
   await choose(1, "Store Quest");
   await choose(2, "Sale Quest");
-  await expect(page.locator("#profile-favorites-grid .dk-fav-slot[data-game-id]")).toHaveCount(2);
+  await expect(page.locator("#settings-favorites-grid .dk-fav-slot[data-game-id]")).toHaveCount(2);
 
   // the X shows on hover only
   const first = page.locator(".dk-fav-slot[data-position='1']");
@@ -101,7 +104,7 @@ test("favorites live on the profile: X on hover, + opens the search, drag and ar
   await page.mouse.up();
   await expect(title(1)).toHaveText("Sale Quest");
   await expect(title(2)).toHaveText("Store Quest");
-  await expect(page).toHaveURL(/\/u\/e2e$/);
+  await expect(page).toHaveURL(/\/configuracoes/);
 
   // the arrow keys move the focused cover one position
   await page.locator(".dk-fav-slot[data-position='2'] .dk-poster").focus();
@@ -141,6 +144,17 @@ test("favorites live on the profile: X on hover, + opens the search, drag and ar
   }
   await expect(page.locator(".dk-fav-remove")).toHaveCount(0);
   await expect(page.getByText("Remover favorito")).toHaveCount(0);
+
+  // the profile shows what was chosen, read-only
+  await choose(1, "Store Quest");
+  await page.goto("/u/e2e");
+  await expect(page.locator("#profile-favorites-grid .dk-card__title")).toHaveText(["Store Quest"]);
+  await expect(page.locator("#profile-favorites .dk-fav-remove")).toHaveCount(0);
+  await page.locator("#profile-edit-favorites").click();
+  const slot = page.locator(".dk-fav-slot[data-position='1']");
+  await slot.hover();
+  await slot.locator(".dk-fav-remove").click();
+  await expect(page.locator(".dk-fav-remove")).toHaveCount(0);
 });
 
 test("followers show the friend, and following back makes a friend", async ({ page }) => {
@@ -229,7 +243,7 @@ test.describe("on a phone", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
     if (shots) await page.screenshot({ path: `${shots}/seguidores-375.png`, fullPage: true });
 
-    await page.goto("/u/e2e");
+    await page.goto("/configuracoes");
     await page.locator("#favorite-add-1").click();
     await page.locator("#favorite-search").fill("Store Quest");
     await expect(page.locator("#favorite-results .dk-row").first()).toBeVisible();
