@@ -60,10 +60,21 @@ defmodule DockdWeb.DiscoverLiveTest do
     refute has_element?(view, "#result-#{ctx.candidate.id} .dk-status--add")
   end
 
-  test "clicking the current tag takes the game out, in place", %{conn: conn} = ctx do
+  test "clicking the current tag asks, and Tirar takes the game out, in place",
+       %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/descobrir?q=listed")
 
     view |> element("#status-result-#{ctx.listed.id} .dk-status-menu__current") |> render_click()
+
+    assert has_element?(
+             view,
+             "#status-result-#{ctx.listed.id} .dk-status-menu__ask",
+             "Tirar da biblioteca?"
+           )
+
+    assert Library.get_entry_for_game(ctx.user, ctx.listed.id)
+
+    view |> element("#status-result-#{ctx.listed.id} .dk-status-menu__remove") |> render_click()
 
     assert Library.get_entry_for_game(ctx.user, ctx.listed.id) == nil
     assert has_element?(view, "#result-#{ctx.listed.id}:not([data-status]) .dk-status--add")

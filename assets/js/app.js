@@ -9,8 +9,10 @@ import topbar from "../vendor/topbar"
 // O tema segue o sistema operacional: nenhum estado guardado no navegador.
 
 // StatusMenu (DockdComponents.status_menu): com mouse, apontar abre as opções e clicar na
-// etiqueta atual desmarca. No toque não há apontar: o primeiro toque abre, o segundo desmarca.
-// `data-open` é o servidor pedindo o menu aberto (URL com abrir, ou a pergunta da versão).
+// etiqueta atual pergunta se tira da biblioteca. No toque não há apontar: o primeiro toque
+// abre, o segundo pergunta.
+// `data-open` é o servidor pedindo o menu aberto (URL com abrir, a pergunta da versão ou a
+// de tirar da biblioteca).
 const canHover = window.matchMedia("(hover: hover)")
 
 const StatusMenu = {

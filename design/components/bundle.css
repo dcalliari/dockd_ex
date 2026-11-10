@@ -91,6 +91,8 @@ a.dk-poster:hover::after, a.dk-card:hover .dk-poster::after { box-shadow: inset 
 .dk-status-menu__ask > button:hover { background: var(--surface-sunken); }
 .dk-status-menu__ask > .dk-link { font-weight: 600; }
 .dk-status-menu__ask > .dk-link--muted { color: var(--ink-muted); font-weight: 500; }
+.dk-status-menu__ask > .dk-status-menu__note { padding-top: 0; color: var(--ink); }
+.dk-status-menu__ask > .dk-status-menu__remove { color: var(--red-ink); font-weight: 600; }
 /* Sobre a capa o menu ocupa a largura do cartão, para as opções nunca passarem da borda. */
 .dk-card > .dk-status-menu { position: absolute; left: var(--space-2); right: var(--space-2); top: var(--space-2); z-index: 2; align-items: flex-start; pointer-events: none; }
 .dk-card > .dk-status-menu > * { pointer-events: auto; }

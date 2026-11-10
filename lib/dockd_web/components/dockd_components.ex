@@ -570,13 +570,15 @@ defmodule DockdWeb.DockdComponents do
   The status control, the same on every screen that shows a game's status.
 
   The current StatusChip is the trigger: pointing at it opens the other statuses below it,
-  and clicking it clears the status, which takes the game out of the library. On a touch
-  screen the first tap opens and the second clears (hook `StatusMenu`). `status` nil renders
-  the add chip. `options` are the statuses offered (`Dockd.Library.status_options/1`); every
-  button sends its event with the `values` pairs. `ask` swaps the options for the versions
-  the game can be owned in, after Backlog, Jogando, Pausado, Zerado or Larguei on a game
-  without ownership; a played status also offers "Joguei em outro lugar"
-  (`%{elsewhere: true, label:}`, sent as `own_elsewhere` instead of `own`).
+  and clicking it asks, in the same panel, whether to take the game out of the library;
+  only Tirar clears the status. On a touch screen the first tap opens and the second asks
+  (hook `StatusMenu`). `status` nil renders the add chip. `options` are the statuses offered
+  (`Dockd.Library.status_options/1`); every button sends its event with the `values` pairs.
+  `ask` swaps the options for a question: the versions the game can be owned in, after
+  Backlog, Jogando, Pausado, Zerado or Larguei on a game without ownership, where a played
+  status also offers "Joguei em outro lugar" (`%{elsewhere: true, label:}`, sent as
+  `own_elsewhere` instead of `own`); or `%{remove: true, owned: owned?}`, the confirmation
+  of leaving the library, which says the ownership goes too when there is one.
   """
   attr :id, :string, required: true
   attr :status, :atom, default: nil
@@ -586,9 +588,10 @@ defmodule DockdWeb.DockdComponents do
   attr :since, :any, default: nil, doc: "when the status was set, shown on the game page"
   attr :open, :boolean, default: false, doc: "opened by the URL (`abrir`)"
 
-  attr :ask, :list,
+  attr :ask, :any,
     default: nil,
-    doc: "`%{label, release_id, media}` choices to own, or `%{label, elsewhere: true}`"
+    doc:
+      "`%{label, release_id, media}` choices to own, or `%{label, elsewhere: true}`; or `%{remove: true, owned:}`"
 
   def status_menu(assigns) do
     assigns =
@@ -612,8 +615,7 @@ defmodule DockdWeb.DockdComponents do
         aria-expanded={to_string(@shown)}
         aria-label={"#{status_label(@status)}: tirar da biblioteca"}
         title="Tirar da biblioteca"
-        phx-click="set_status"
-        phx-value-status=""
+        phx-click="ask_remove"
         {@phx_values}
       >
         <.status_chip status={@status} size={@size} />
@@ -642,7 +644,25 @@ defmodule DockdWeb.DockdComponents do
           {status_label(option)}
         </button>
       </div>
-      <div :if={@ask} class="dk-status-menu__options dk-status-menu__ask" role="group">
+      <div
+        :if={match?(%{remove: true}, @ask)}
+        class="dk-status-menu__options dk-status-menu__ask"
+        role="group"
+      >
+        <span>Tirar da biblioteca?</span>
+        <span :if={@ask.owned} class="dk-status-menu__note">A posse registrada sai junto.</span>
+        <button
+          type="button"
+          class="dk-status-menu__remove"
+          phx-click="set_status"
+          phx-value-status=""
+          {@phx_values}
+        >
+          Tirar
+        </button>
+        <button type="button" class="dk-link" phx-click="close_status">Cancelar</button>
+      </div>
+      <div :if={is_list(@ask)} class="dk-status-menu__options dk-status-menu__ask" role="group">
         <span>Tem em qual versão?</span>
         <button
           :for={choice <- @ask}

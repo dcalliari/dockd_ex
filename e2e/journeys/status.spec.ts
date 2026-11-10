@@ -2,9 +2,10 @@ import { expect, test } from "@playwright/test";
 import { signIn } from "./sign-in";
 
 // One status control everywhere: pointing opens the other statuses, clicking the current tag
-// takes the game out, in place. On a touch screen the first tap opens and the second clears.
+// asks, in the same panel, whether to take the game out; only Tirar does it, in place. On a
+// touch screen the first tap opens and the second asks.
 
-test("the tag clears the status on the grid and on the game page, in place", async ({ page }) => {
+test("the tag asks, and Tirar clears the status on the grid and on the game page", async ({ page }) => {
   await signIn(page);
   await page.goto("/biblioteca");
   await expect(page.locator(".dk-card__trash")).toHaveCount(0);
@@ -17,6 +18,13 @@ test("the tag clears the status on the grid and on the game page, in place", asy
   await expect(menu.locator(".dk-status-menu__options .dk-status--backlog")).toHaveCount(0);
 
   await menu.locator(".dk-status-menu__current").click();
+  await expect(menu.locator(".dk-status-menu__ask")).toContainText("Tirar da biblioteca?");
+  await menu.locator(".dk-status-menu__ask .dk-link", { hasText: "Cancelar" }).click();
+  await expect(menu.locator(".dk-status-menu__ask")).toHaveCount(0);
+  await expect(card).toHaveAttribute("data-status", "backlog");
+
+  await menu.locator(".dk-status-menu__current").click();
+  await menu.locator(".dk-status-menu__remove").click();
   await expect(card.locator(".dk-status--add")).toHaveText("+ Adicionar");
   await expect(card).not.toHaveAttribute("data-status");
 
@@ -34,6 +42,7 @@ test("the tag clears the status on the grid and on the game page, in place", asy
   await control.locator(".dk-status-menu__current").hover();
   await expect(control.locator(".dk-status-menu__options")).toBeVisible();
   await control.locator(".dk-status-menu__current").click();
+  await control.locator(".dk-status-menu__remove").click();
   await expect(control.locator(".dk-status--add")).toBeVisible();
   await expect(page).toHaveURL(/\/jogos\//);
   await expect(page.locator("#game-history .dk-history__item--current")).toContainText("Saiu da biblioteca");
@@ -43,7 +52,7 @@ test("the tag clears the status on the grid and on the game page, in place", asy
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 375, height: 800 }, hasTouch: true, isMobile: true });
 
-  test("first tap opens, second clears, and nothing overflows", async ({ page }) => {
+  test("first tap opens, second asks, and nothing overflows", async ({ page }) => {
     await signIn(page);
     await page.goto("/biblioteca?tab=quero");
     const card = page.locator("#library-grid .dk-card").filter({ hasText: "Future Veto" });
@@ -55,6 +64,10 @@ test.describe("on a phone", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
 
     await menu.locator(".dk-status-menu__current").tap();
+    await expect(menu.locator(".dk-status-menu__ask")).toContainText("Tirar da biblioteca?");
+    const ask = await menu.locator(".dk-status-menu__ask").boundingBox();
+    expect(ask!.x + ask!.width).toBeLessThanOrEqual(375);
+    await menu.locator(".dk-status-menu__remove").tap();
     await expect(card.locator(".dk-status--add")).toBeVisible();
 
     await menu.locator(".dk-status-menu__current").tap();

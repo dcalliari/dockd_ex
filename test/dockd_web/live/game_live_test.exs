@@ -276,6 +276,16 @@ defmodule DockdWeb.GameLiveTest do
 
     view |> element("#game-status .dk-status-menu__current") |> render_click()
 
+    assert has_element?(
+             view,
+             "#game-status .dk-status-menu__ask",
+             "A posse registrada sai junto."
+           )
+
+    assert Shelf.item(ctx.user, ctx.game).status == :backlog
+
+    view |> element("#game-status .dk-status-menu__remove", "Tirar") |> render_click()
+
     item = Shelf.item(ctx.user, ctx.game)
     assert item.status == nil
     assert item.ownerships == []

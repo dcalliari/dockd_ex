@@ -10,7 +10,8 @@ defmodule DockdWeb.GameEvents do
         do: GameEvents.handle_event(event, params, socket, &load/1)
 
   The screen keeps these assigns, set by `init/2`: `status_open`, a menu the URL asked to
-  open (`abrir`); `asking`, the game whose Backlog waits for the version it is owned in;
+  open (`abrir`); `asking`, the game whose Backlog waits for the version it is owned in,
+  or whose current tag was clicked and waits for Tirar;
   `buying`, the game whose Comprei waits for a version, edition or media; `bought`, the purchases
   made on this screen, which show Desfazer until the screen is left; and `form`, the price
   or paid value being typed, with its `form_error`.
@@ -23,7 +24,7 @@ defmodule DockdWeb.GameEvents do
   alias Dockd.Catalog.Release
   alias Dockd.Library.Shelf
 
-  @events ~w(set_status own own_elsewhere close_status buy more_choices undo_purchase paid_form save_paid price_form save_price cancel)
+  @events ~w(set_status ask_remove own own_elsewhere close_status buy more_choices undo_purchase paid_form save_paid price_form save_price cancel)
   @media %{"physical" => :physical, "digital" => :digital}
 
   @doc "Event names handled here."
@@ -41,8 +42,8 @@ defmodule DockdWeb.GameEvents do
   end
 
   @doc """
-  The versions to own for the card of `item` (a shelf item or a Descobrir result), when
-  its game is the one asking; nil otherwise.
+  The question for the card of `item` (a shelf item or a Descobrir result), when its game
+  is the one asking: the versions to own, or `%{remove: true, owned:}`; nil otherwise.
   """
   def ask(nil, _item), do: nil
 
@@ -147,6 +148,20 @@ defmodule DockdWeb.GameEvents do
       end
     else
       _ -> {:noreply, failed(socket)}
+    end
+  end
+
+  # The current tag clicked: leaving the library deletes the entry and the ownership, so
+  # it asks first, in the control itself (design/README.md, rule 7).
+  def handle_event("ask_remove", params, socket, _reload) do
+    case resolve_game(params) do
+      {:ok, game} ->
+        owned? = Shelf.item(user(socket), game).ownerships != []
+        asking = %{game: game, status: nil, choices: %{remove: true, owned: owned?}}
+        {:noreply, socket |> init() |> assign(:asking, asking)}
+
+      :error ->
+        {:noreply, failed(socket)}
     end
   end
 

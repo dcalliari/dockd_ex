@@ -94,7 +94,7 @@ Um jogo tem um status visível, derivado do domínio (`ownerships` e `entries.pl
 
 A mídia é um segundo eixo, por versão: Físico, Digital ou Key card, sempre como MediaTag em `t-label`, nunca como cor nem como ícone.
 
-O status só se troca pelo StatusMenu, o mesmo sobre a capa (Biblioteca, Descobrir) e na página do jogo: o chip atual é o controle, apontar para ele abre os outros estados embaixo, e clicar nele desmarca. No toque, o primeiro toque abre e o segundo desmarca. Desmarcar é a única forma de tirar um jogo da biblioteca: não há lixeira, link de remoção, confirmação nem aviso, e compra, preço visto e histórico ficam. Ver StatusMenu.
+O status só se troca pelo StatusMenu, o mesmo sobre a capa (Biblioteca, Descobrir) e na página do jogo: o chip atual é o controle, apontar para ele abre os outros estados embaixo, e clicar nele pergunta, no mesmo painel, `Tirar da biblioteca?` com Tirar e Cancelar; só Tirar desmarca. No toque, o primeiro toque abre e o segundo pergunta. Desmarcar é a única forma de tirar um jogo da biblioteca: não há lixeira nem link de remoção. Sai a entrada e a posse, por isso a pergunta avisa `A posse registrada sai junto.` quando há posse; compra, preço visto e histórico ficam. A confirmação foi pedida por Daniel em 10/11/2026, depois de remover jogos sem querer com um clique. Ver StatusMenu.
 
 Na página do jogo, a plataforma não vai no texto do herói: fica na legenda da capa (`SWITCH · SWITCH 2`). A exclusividade é o ExclusiveMark sobre a capa, como na grade.
 

@@ -177,11 +177,37 @@ defmodule DockdWeb.LibraryLiveTest do
            )
   end
 
-  test "clicking the current tag takes the game out, in place", %{conn: conn} = ctx do
+  test "clicking the current tag asks first, and only Tirar takes the game out",
+       %{conn: conn} = ctx do
     {:ok, view, _html} = live(conn, "/biblioteca")
     refute has_element?(view, ".dk-card__trash")
 
     view |> element("#status-#{ctx.owned.id} .dk-status-menu__current") |> render_click()
+
+    assert has_element?(
+             view,
+             "#status-#{ctx.owned.id}.is-open .dk-status-menu__ask",
+             "Tirar da biblioteca?"
+           )
+
+    assert has_element?(
+             view,
+             "#status-#{ctx.owned.id} .dk-status-menu__ask",
+             "A posse registrada sai junto."
+           )
+
+    refute has_element?(view, "#status-#{ctx.playing.id} .dk-status-menu__ask")
+    assert Shelf.item(ctx.user, ctx.owned).status == :backlog
+
+    view
+    |> element("#status-#{ctx.owned.id} .dk-status-menu__ask .dk-link", "Cancelar")
+    |> render_click()
+
+    refute has_element?(view, ".dk-status-menu__ask")
+    assert has_element?(view, "#shelf-#{ctx.owned.id}[data-status=backlog]")
+
+    view |> element("#status-#{ctx.owned.id} .dk-status-menu__current") |> render_click()
+    view |> element("#status-#{ctx.owned.id} .dk-status-menu__remove", "Tirar") |> render_click()
 
     assert Shelf.item(ctx.user, ctx.owned).status == nil
     assert Library.get_entry_for_game(ctx.user, ctx.owned.id) == nil
@@ -199,6 +225,20 @@ defmodule DockdWeb.LibraryLiveTest do
 
     view |> element("#library-tabs a", "Backlog") |> render_click()
     refute has_element?(view, "#shelf-#{ctx.owned.id}")
+  end
+
+  test "a wish leaves without mentioning ownership", %{conn: conn} = ctx do
+    {:ok, view, _html} = live(conn, "/biblioteca?tab=quero")
+
+    view |> element("#status-#{ctx.wanted.id} .dk-status-menu__current") |> render_click()
+
+    assert has_element?(
+             view,
+             "#status-#{ctx.wanted.id} .dk-status-menu__ask",
+             "Tirar da biblioteca?"
+           )
+
+    refute has_element?(view, ".dk-status-menu__note")
   end
 
   test "Backlog without ownership asks the version on the card", %{conn: conn} = ctx do
