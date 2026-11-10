@@ -32,13 +32,22 @@ jobs:
             --restart no --autostart=false --skip-dns-registration --detach \
             -e ECTO_SSL=true -e POOL_SIZE=2
 
-          id=$(flyctl machine list -a "$APP" --json | jq -r --arg name "$name" '.[] | select(.name == $name) | .id')
+          machine() { flyctl machine list -a "$APP" --json | jq --arg name "$name" '.[] | select(.name == $name)'; }
+          id=$(machine | jq -r .id)
           trap 'flyctl machine destroy "$id" -a "$APP" --force >/dev/null || true' EXIT
 
-          flyctl machine wait "$id" -a "$APP" --state stopped --wait-timeout 110m
-          flyctl logs -a "$APP" --machine "$id" --no-tail || true
+          # The Machines API caps each wait at about a minute, so one long
+          # `flyctl machine wait` gives up early; poll until it stops instead.
+          deadline=$((SECONDS + 110 * 60))
+          until [ "$(machine | jq -r .state)" = stopped ]; do
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "sync did not finish in 110 minutes"
+              exit 1
+            fi
+            sleep 30
+          done
 
-          code=$(flyctl machine status "$id" -a "$APP" --display-config --json 2>/dev/null \
-            | jq -r '[.events[]? | select(.type == "exit") | .request.exit_event.exit_code] | first // empty' || true)
-          echo "exit code: ${code:-unknown}"
-          test "${code:-0}" = "0"
+          flyctl logs -a "$APP" --machine "$id" --no-tail || true
+          code=$(machine | jq -r '[.events[]? | select(.type == "exit") | .request.exit_event.exit_code] | first // "unknown"')
+          echo "exit code: $code"
+          test "$code" = "0"
